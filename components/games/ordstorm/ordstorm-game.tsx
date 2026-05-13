@@ -20,6 +20,7 @@ import {
 import {
   GAME_DURATION_SECONDS,
   ORDSTORM_WORD_SET,
+  createInitialRound,
   createRound,
   getRoundPotentialScore,
   getWordScore,
@@ -36,7 +37,7 @@ type FeedbackState = {
 const SHOW_DEBUG = true;
 
 export function OrdstormGame() {
-  const [round, setRound] = useState(() => createRound());
+  const [round, setRound] = useState(() => createInitialRound());
   const [input, setInput] = useState("");
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [score, setScore] = useState(0);

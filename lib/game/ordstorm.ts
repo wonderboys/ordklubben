@@ -51,13 +51,16 @@ export function getRoundPotentialScore(words: string[]) {
   return words.reduce((total, word) => total + getWordScore(word), 0);
 }
 
-export function createRound(): OrdstormRound {
-  const seedWord =
-    seedWordsSv[Math.floor(Math.random() * seedWordsSv.length)] ?? "spelar";
+export function createRoundFromSeedWord(
+  seedWord: string,
+  options?: { shuffleLetters?: boolean },
+): OrdstormRound {
   const normalizedSeedWord = normalizeSwedish(seedWord);
-  const letters = shuffleLetters(
-    normalizedSeedWord.toLocaleUpperCase("sv-SE").split(""),
-  );
+  const baseLetters = normalizedSeedWord.toLocaleUpperCase("sv-SE").split("");
+  const letters =
+    options?.shuffleLetters === false
+      ? baseLetters
+      : shuffleLetters(baseLetters);
   const validWords = ORDSTORM_WORDS.filter((word) =>
     canBuildWord(word, letters),
   ).sort((a, b) => b.length - a.length || a.localeCompare(b, "sv-SE"));
@@ -68,4 +71,17 @@ export function createRound(): OrdstormRound {
     validWords,
     validWordSet: new Set(validWords),
   };
+}
+
+export function createInitialRound(): OrdstormRound {
+  return createRoundFromSeedWord(seedWordsSv[0] ?? "spelar", {
+    shuffleLetters: false,
+  });
+}
+
+export function createRound(): OrdstormRound {
+  const seedWord =
+    seedWordsSv[Math.floor(Math.random() * seedWordsSv.length)] ?? "spelar";
+
+  return createRoundFromSeedWord(seedWord);
 }
