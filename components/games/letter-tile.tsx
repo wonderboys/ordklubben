@@ -7,6 +7,7 @@ type LetterTileProps = {
   letter: string;
   state?: "idle" | "active" | "success" | "used";
   size?: "sm" | "md" | "lg";
+  className?: string;
 };
 
 const sizeClasses = {
@@ -26,6 +27,7 @@ export function LetterTile({
   letter,
   state = "idle",
   size = "md",
+  className,
 }: LetterTileProps) {
   return (
     <motion.div
@@ -37,6 +39,7 @@ export function LetterTile({
         "flex shrink-0 items-center justify-center rounded-[1.35rem] border font-semibold uppercase tracking-[0.02em] shadow-[0_10px_24px_rgba(24,38,31,0.06)] transition-colors duration-200",
         sizeClasses[size],
         stateClasses[state],
+        className,
       )}
     >
       {letter}

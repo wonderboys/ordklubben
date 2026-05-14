@@ -33,6 +33,9 @@ export function validateWord({
   minLength = 3,
   maxLength = 6,
 }: ValidateWordInput): WordValidationResult {
+  // TODO: When a larger Swedish word source is connected, keep Ordstorm a bit
+  // more generous than strict. Common inflections and less common but clearly
+  // legitimate Swedish words should be supported if they reduce frustration.
   const word = normalizeSwedish(value);
 
   if (!word.length) {

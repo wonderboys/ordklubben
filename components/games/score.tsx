@@ -16,8 +16,9 @@ export function Score({ score, wordsFound }: ScoreProps) {
           <p className="text-xs uppercase tracking-[0.16em] text-muted">Poäng</p>
           <motion.p
             key={score}
-            initial={{ opacity: 0.6, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0.6, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className="text-3xl font-semibold tracking-[-0.05em]"
           >
             {score}

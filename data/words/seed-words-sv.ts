@@ -1,7 +1,6 @@
 // Seed-ord driver bokstavsgenereringen i Ordstorm. Daily mode kan senare
 // använda samma struktur med ett stabilt seed per datum.
 export const seedWordsSv = [
-  "spelar",
   "skolan",
   "staden",
   "landet",
@@ -10,4 +9,21 @@ export const seedWordsSv = [
   "vinter",
   "sommar",
   "vädret",
+  "spegel",
+  "kronan",
+  "svalka",
+  "eldare",
+  "hamnen",
+  "stenen",
+  "stigen",
+  "brygga",
+  "glänta",
+  "sanden",
+  "trappa",
+  "granen",
+  "färgen",
+  "ormars",
+  "ankare",
+  "bordet",
+  "skogar",
 ];

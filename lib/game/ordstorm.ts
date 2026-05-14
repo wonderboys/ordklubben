@@ -3,16 +3,22 @@ import { commonSvWords } from "@/data/words/common-sv";
 import { seedWordsSv } from "@/data/words/seed-words-sv";
 import { canBuildWord } from "@/lib/dictionary/can-build-word";
 import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
-import { shuffleLetters } from "@/lib/dictionary/letter-pool";
 
 export const GAME_DURATION_SECONDS = 60;
 export const ORDSTORM_MIN_WORD_LENGTH = 3;
 export const ORDSTORM_MAX_WORD_LENGTH = 6;
 export const ORDSTORM_FULL_WORD_BONUS = 300;
+export const ORDSTORM_RECENT_SEED_LIMIT = 10;
+const MINIMUM_SHUFFLE_DISTANCE = 3;
+const MAX_SHUFFLE_ATTEMPTS = 12;
+const MINIMUM_VALID_WORDS = 8;
+const MAX_SEED_SELECTION_ATTEMPTS = 24;
 
 export type OrdstormRound = {
   seedWord: string;
+  originalLetters: string[];
   letters: string[];
+  shuffleAttempts: number;
   validWords: string[];
   validWordSet: Set<string>;
 };
@@ -51,37 +57,105 @@ export function getRoundPotentialScore(words: string[]) {
   return words.reduce((total, word) => total + getWordScore(word), 0);
 }
 
+function shuffleArray<T>(values: T[], randomValue = Math.random) {
+  const copy = [...values];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(randomValue() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+
+  return copy;
+}
+
+function getShuffleDistance(original: string[], shuffled: string[]) {
+  return original.reduce((count, letter, index) => {
+    return count + Number(letter !== shuffled[index]);
+  }, 0);
+}
+
+function createStrongShuffle(letters: string[], randomValue = Math.random) {
+  let attempts = 0;
+  let shuffled = [...letters];
+
+  while (attempts < MAX_SHUFFLE_ATTEMPTS) {
+    attempts += 1;
+    shuffled = shuffleArray(letters, randomValue);
+
+    if (getShuffleDistance(letters, shuffled) >= MINIMUM_SHUFFLE_DISTANCE) {
+      break;
+    }
+  }
+
+  return {
+    letters: shuffled,
+    attempts,
+  };
+}
+
+export function selectSeedWord(
+  recentSeedWords: string[] = [],
+  randomValue = Math.random(),
+) {
+  const normalizedRecentSeedWords = recentSeedWords.map((seedWord) =>
+    normalizeSwedish(seedWord),
+  );
+  const availableSeedWords = seedWordsSv.filter(
+    (seedWord) => !normalizedRecentSeedWords.includes(normalizeSwedish(seedWord)),
+  );
+  const source = availableSeedWords.length ? availableSeedWords : seedWordsSv;
+  const index = Math.floor(randomValue * source.length);
+
+  return source[index] ?? source[0] ?? "spelar";
+}
+
+function getValidRoundWords(letters: string[]) {
+  return ORDSTORM_WORDS.filter((word) => canBuildWord(word, letters)).sort(
+    (a, b) => b.length - a.length || a.localeCompare(b, "sv-SE"),
+  );
+}
+
 export function createRoundFromSeedWord(
   seedWord: string,
   options?: { shuffleLetters?: boolean },
 ): OrdstormRound {
   const normalizedSeedWord = normalizeSwedish(seedWord);
   const baseLetters = normalizedSeedWord.toLocaleUpperCase("sv-SE").split("");
-  const letters =
+  const shuffleResult =
     options?.shuffleLetters === false
-      ? baseLetters
-      : shuffleLetters(baseLetters);
-  const validWords = ORDSTORM_WORDS.filter((word) =>
-    canBuildWord(word, letters),
-  ).sort((a, b) => b.length - a.length || a.localeCompare(b, "sv-SE"));
+      ? { letters: baseLetters, attempts: 0 }
+      : createStrongShuffle(baseLetters);
+  const letters = shuffleResult.letters;
+  const validWords = getValidRoundWords(letters);
 
   return {
     seedWord: normalizedSeedWord,
+    originalLetters: baseLetters,
     letters,
+    shuffleAttempts: shuffleResult.attempts,
     validWords,
     validWordSet: new Set(validWords),
   };
 }
 
-export function createInitialRound(): OrdstormRound {
-  return createRoundFromSeedWord(seedWordsSv[0] ?? "spelar", {
-    shuffleLetters: false,
-  });
-}
+export function createRound(recentSeedWords: string[] = []): OrdstormRound {
+  let bestRound: OrdstormRound | null = null;
 
-export function createRound(): OrdstormRound {
-  const seedWord =
-    seedWordsSv[Math.floor(Math.random() * seedWordsSv.length)] ?? "spelar";
+  for (let attempt = 0; attempt < MAX_SEED_SELECTION_ATTEMPTS; attempt += 1) {
+    const candidateSeedWord = selectSeedWord(recentSeedWords);
+    const candidateRound = createRoundFromSeedWord(candidateSeedWord);
 
-  return createRoundFromSeedWord(seedWord);
+    if (
+      !bestRound ||
+      candidateRound.validWords.length > bestRound.validWords.length
+    ) {
+      bestRound = candidateRound;
+    }
+
+    if (candidateRound.validWords.length >= MINIMUM_VALID_WORDS) {
+      return candidateRound;
+    }
+  }
+
+  return bestRound ?? createRoundFromSeedWord(selectSeedWord([]));
 }
