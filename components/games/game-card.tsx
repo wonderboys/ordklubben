@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { BodyText, PageTitle } from "@/components/ui/typography";
 
 type GameCardProps = {
   href: string;
@@ -11,18 +12,22 @@ type GameCardProps = {
 };
 
 export function GameCard({ href, title, description, status }: GameCardProps) {
+  const isPlayable = status.toLowerCase() === "spelbar";
+
   return (
     <Link href={href} className="group">
-      <Card className="h-full transition-transform duration-300 group-hover:-translate-y-1">
+      <Card className="h-full transition-transform duration-300 sm:group-hover:-translate-y-1">
         <CardContent className="flex h-full flex-col gap-4">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xl font-semibold tracking-[-0.04em]">{title}</p>
-              <p className="mt-2 fine-text">{description}</p>
+            <div className="space-y-1.5">
+              <PageTitle variant="card">{title}</PageTitle>
+              <BodyText variant="card">{description}</BodyText>
             </div>
-            <Badge>{status}</Badge>
+            <Badge variant={isPlayable ? "green" : "default"} className="shrink-0">
+              {status}
+            </Badge>
           </div>
-          <div className="mt-auto flex items-center gap-2 text-sm font-medium text-accent">
+          <div className="mt-auto flex items-center gap-2 text-sm font-black uppercase tracking-[0.04em] text-print-green">
             Spela
             <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </div>

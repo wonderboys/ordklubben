@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { GameCard } from "@/components/games/game-card";
+import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { BodyText, PageTitle, SectionTitle } from "@/components/ui/typography";
 
 const games = [
   {
@@ -28,87 +29,59 @@ const games = [
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col gap-8 py-6 sm:gap-10 sm:py-8">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.8fr)]">
-        <Card className="overflow-hidden">
-          <CardContent className="space-y-8 p-6 sm:p-8">
-            <div className="space-y-4">
-              <Badge>Minimalistisk svensk spelplattform</Badge>
-              <div className="space-y-3">
-                <h1 className="max-w-3xl text-5xl font-semibold tracking-[-0.07em] sm:text-6xl lg:text-7xl">
-                  Ordspel som känns snabba, lugna och vassa.
-                </h1>
-                <p className="max-w-2xl text-base leading-7 text-muted sm:text-lg">
-                  Ordklubben är byggd för flera framtida spel, men startar med
-                  ett fokuserat första läge inspirerat av Anagram Race. Mobil
-                  först, lätt att expandera och med polish i varje interaktion.
-                </p>
-              </div>
+    <MobileInsetShell>
+      <div className="flex flex-1 flex-col gap-6 py-2 sm:gap-10 sm:py-8">
+        <section className="w-full space-y-6 sm:space-y-8">
+          <div className="space-y-3">
+            <Badge>Minimalistisk svensk spelplattform</Badge>
+            <div className="space-y-2">
+              <PageTitle variant="hero">
+                Ordspel som känns snabba, lugna och vassa.
+              </PageTitle>
+              <BodyText className="sm:text-lg">
+                Ordklubben är byggd för flera framtida spel, men startar med
+                ett fokuserat första läge inspirerat av Anagram Race. Mobil
+                först, lätt att expandera och med polish i varje interaktion.
+              </BodyText>
             </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/ordstorm">
-                <Button variant="accent" size="lg" className="w-full sm:w-auto">
-                  Spela Ordstorm
-                  <ArrowRight className="ml-2 size-4" />
-                </Button>
-              </Link>
-              <Link href="/stats">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Se statistik
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-ink text-canvas">
-          <CardContent className="flex h-full flex-col gap-5 p-6 sm:p-8">
-            <div className="flex items-center gap-3">
-              <Sparkles className="size-5 text-highlight" />
-              <p className="text-sm uppercase tracking-[0.18em] text-canvas/70">
-                Designriktning
-              </p>
-            </div>
-            <div className="space-y-4">
-              <p className="text-3xl font-semibold tracking-[-0.05em]">
-                NYT Games möter svensk indie.
-              </p>
-              <p className="text-sm leading-7 text-canvas/75">
-                Mjuk typografi, lågmäld färgpalett, tydliga systemkomponenter och
-                animationer som stödjer spelkänslan istället för att stjäla fokus.
-              </p>
-            </div>
-            <div className="mt-auto grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-3xl bg-white/8 p-4">
-                <p className="text-canvas/65">Första fokus</p>
-                <p className="mt-1 font-semibold">Ordstorm</p>
-              </div>
-              <div className="rounded-3xl bg-white/8 p-4">
-                <p className="text-canvas/65">State</p>
-                <p className="mt-1 font-semibold">Lokal, enkel</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="section-title">Spel</p>
-            <p className="fine-text">
-              Första versionen innehåller en spelbar vertikal slice och tydliga
-              expansionspunkter för nästa ordspel.
-            </p>
           </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {games.map((game) => (
-            <GameCard key={game.href} {...game} />
-          ))}
-        </div>
-      </section>
-    </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+            <Link href="/ordstorm" className="block">
+              <Button variant="accent" size="lg" className="w-full sm:w-auto">
+                Spela Ordstorm
+                <ArrowRight className="ml-2 size-4" />
+              </Button>
+            </Link>
+            <Link href="/ordstorm/stats" className="block">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full bg-print-bg hover:bg-print-bg sm:w-auto"
+              >
+                Se statistik
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        <section className="space-y-3 sm:space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-1">
+              <SectionTitle>Spel</SectionTitle>
+              <BodyText variant="card" className="max-w-2xl">
+                Första versionen innehåller en spelbar vertikal slice och tydliga
+                expansionspunkter för nästa ordspel.
+              </BodyText>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3 sm:gap-4">
+            {games.map((game) => (
+              <GameCard key={game.href} {...game} />
+            ))}
+          </div>
+        </section>
+      </div>
+    </MobileInsetShell>
   );
 }

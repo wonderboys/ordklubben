@@ -1,45 +1,114 @@
+"use client";
+
 import Link from "next/link";
-import { BookOpenText, ChartColumnBig, Flame, Grid2x2, UserRound } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/ordstorm", label: "Ordstorm", icon: Flame },
-  { href: "/ladder", label: "Ladder", icon: BookOpenText },
-  { href: "/connections", label: "Connections", icon: Grid2x2 },
-  { href: "/stats", label: "Stats", icon: ChartColumnBig },
-  { href: "/profile", label: "Profil", icon: UserRound },
+  { href: "/ordstorm", label: "Ordstorm" },
+  { href: "/ladder", label: "Ladder" },
+  { href: "/connections", label: "Connections" },
+  { href: "/profile", label: "Profil" },
 ];
 
 export function MainNav() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-canvas/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-2xl bg-ink text-sm font-semibold text-canvas">
-            OK
-          </span>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold tracking-[-0.04em]">Ordklubben</span>
-            <span className="text-xs uppercase tracking-[0.18em] text-muted">
-              Svenska ordspel
-            </span>
-          </div>
+    <header className="relative sticky top-0 z-40 bg-print-bg">
+      <div className="mx-auto flex h-[45px] w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className={cn(
+            "font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink",
+          )}
+          onClick={() => setMenuOpen(false)}
+        >
+          Ordklubben
         </Link>
 
-        <nav className="hidden items-center gap-2 md:flex">
-          {navItems.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-ink",
-              )}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <button
+          type="button"
+          aria-expanded={menuOpen}
+          aria-controls={menuId}
+          aria-label={menuOpen ? "Stäng meny" : "Öppna meny"}
+          className="flex size-10 items-center justify-center text-print-ink"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? (
+            <span className="relative block size-5" aria-hidden="true">
+              <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-current" />
+              <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current" />
+            </span>
+          ) : (
+            <span className="flex w-5 flex-col gap-[5px]" aria-hidden="true">
+              <span className="h-px w-full bg-current" />
+              <span className="h-px w-full bg-current" />
+              <span className="h-px w-full bg-current" />
+            </span>
+          )}
+        </button>
       </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-0 top-[46px] h-px bg-print-ink/10"
+        aria-hidden="true"
+      />
+
+      {menuOpen ? (
+        <button
+          type="button"
+          aria-label="Stäng meny"
+          className="fixed inset-0 top-[47px] z-40 bg-print-ink/10"
+          onClick={() => setMenuOpen(false)}
+        />
+      ) : null}
+
+      <nav
+        id={menuId}
+        aria-hidden={!menuOpen}
+        className={cn(
+          "absolute inset-x-0 top-[47px] z-50 border-b border-print-ink/10 bg-print-bg",
+          menuOpen ? "visible opacity-100" : "invisible opacity-0 pointer-events-none",
+        )}
+      >
+        <ul className="mx-auto flex w-full max-w-6xl flex-col px-4 py-2 sm:px-6 lg:px-8">
+          {navItems.map(({ href, label }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="block py-3 text-sm font-normal leading-snug text-print-ink max-md:print-text"
+                onClick={() => setMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </header>
   );
 }

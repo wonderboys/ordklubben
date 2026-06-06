@@ -1,40 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f1e8;
-  --foreground: #18261f;
-  --canvas: #f5f1e8;
-  --surface: #fbf8f2;
-  --surface-strong: #f0ebe2;
-  --line: rgba(24, 38, 31, 0.12);
-  --muted: #607066;
-  --accent: #1f6f5f;
-  --accent-strong: #165447;
-  --accent-soft: #d4e9e5;
-  --highlight: #f7c948;
-  --danger: #b54f3a;
-  --success: #1d8a64;
-  --shadow: 0 12px 40px rgba(24, 38, 31, 0.08);
+  /* Print Theme — canonical design foundation */
+  --print-background: #f2efe8;
+  --print-surface: #ffffff;
+  --print-ink: #111111;
+  --print-muted: #6a6a6a;
+  --print-accent-red: #c93c3c;
+  --print-accent-green: #00916e;
+  --print-accent-green-soft: #e6f5ef;
+  --print-accent-red-soft: #fce8e8;
+  --print-feedback-error: #f8e8e3;
+  --print-feedback-urgent: #faf0eb;
+  --print-feedback-success: #e2f5ee;
+  --print-tile-depleted: #dcefe8;
+  --print-border: #111111;
+  --print-shadow-offset-x: 3px;
+  --print-shadow-offset-y: 3px;
+  --print-shadow-soft: var(--print-shadow-offset-x) var(--print-shadow-offset-y) 0 0
+    #c8c3b8;
+  --print-shadow-strong: var(--print-shadow-offset-x) var(--print-shadow-offset-y) 0 0
+    var(--print-ink);
+  --print-shadow: var(--print-shadow-soft);
+  --print-radius: 0px;
+  --print-radius-sm: 0px;
+  --print-raster-gap: 5px;
+  --print-raster-dot-size: 1px;
+  --print-raster-dot-color: rgba(17, 17, 17, 0.075);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-canvas: var(--canvas);
-  --color-surface: var(--surface);
-  --color-surface-strong: var(--surface-strong);
-  --color-line: var(--line);
-  --color-ink: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-soft: var(--accent-soft);
-  --color-highlight: var(--highlight);
-  --color-danger: var(--danger);
-  --color-success: var(--success);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --radius-card: 1.75rem;
+  /* Print Theme — canonical Tailwind tokens */
+  --color-print-bg: var(--print-background);
+  --color-print-surface: var(--print-surface);
+  --color-print-ink: var(--print-ink);
+  --color-print-muted: var(--print-muted);
+  --color-print-red: var(--print-accent-red);
+  --color-print-green: var(--print-accent-green);
+  --color-print-green-soft: var(--print-accent-green-soft);
+  --color-print-red-soft: var(--print-accent-red-soft);
+  --color-print-feedback-error: var(--print-feedback-error);
+  --color-print-feedback-urgent: var(--print-feedback-urgent);
+  --color-print-feedback-success: var(--print-feedback-success);
+  --color-print-tile-depleted: var(--print-tile-depleted);
+  --radius-print: var(--print-radius);
+  --radius-print-sm: var(--print-radius-sm);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 * {
@@ -46,11 +58,9 @@ html {
 }
 
 body {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 30%),
-    var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), sans-serif;
+  color: var(--print-ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 400;
 }
 
 button,
@@ -61,28 +71,155 @@ select {
 }
 
 ::selection {
-  background: rgba(31, 111, 95, 0.18);
+  background: color-mix(in srgb, var(--print-accent-green) 22%, transparent);
+}
+
+.print-theme .fine-text {
+  color: var(--print-ink);
+}
+
+.print-theme .print-button {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 @utility shell-card {
-  @apply rounded-[1.75rem] border border-line bg-surface shadow-[var(--shadow)];
+  @apply rounded-none border border-print-ink bg-print-surface shadow-none;
 }
 
 @utility fine-text {
-  @apply text-sm leading-5 text-muted;
+  @apply text-sm leading-snug text-print-ink;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+@utility print-text {
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--print-ink);
+}
+
+@utility print-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--print-ink);
+  border-radius: 0;
+  background-color: var(--print-surface);
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--print-ink);
+}
+
+@utility print-pill-green {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--print-accent-green);
+  border-radius: 0;
+  background-color: var(--print-accent-green-soft);
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--print-accent-green);
+}
+
+@utility print-pill-red {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--print-accent-red);
+  border-radius: 0;
+  background-color: var(--print-accent-red-soft);
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--print-accent-red);
 }
 
 @utility section-title {
-  @apply text-xl font-semibold tracking-[-0.03em] text-ink sm:text-2xl;
+  @apply text-xl font-black uppercase tracking-[0.02em] text-print-ink sm:text-2xl;
+  line-height: 1.1;
+}
+
+@utility print-shadow-strong {
+  box-shadow: var(--print-shadow-strong);
+}
+
+@utility print-shadow-soft {
+  box-shadow: var(--print-shadow-soft);
+}
+
+@utility print-surface {
+  border-radius: 0;
+  border: 1px solid var(--print-border);
+  background-color: var(--print-surface);
+  box-shadow: var(--print-shadow-strong);
+}
+
+@utility print-black {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@utility print-body {
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--print-ink);
+}
+
+@utility print-mono {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@utility print-raster-bg {
+  background-color: var(--print-background);
+  background-image: radial-gradient(
+    circle,
+    var(--print-raster-dot-color) var(--print-raster-dot-size),
+    transparent var(--print-raster-dot-size)
+  );
+  background-size: var(--print-raster-gap) var(--print-raster-gap);
+}
+
+@media (max-width: 767px) {
+  .print-shell {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    margin-top: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
 }
 
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(31, 111, 95, 0);
+    box-shadow: 0 0 0 rgba(0, 145, 110, 0);
   }
   50% {
-    box-shadow: 0 0 0.9rem rgba(31, 111, 95, 0.24);
+    box-shadow: 0 0 0.9rem rgba(0, 145, 110, 0.24);
   }
 }
 

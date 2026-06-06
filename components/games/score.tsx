@@ -13,20 +13,20 @@ export function Score({ score, wordsFound }: ScoreProps) {
     <Card>
       <CardContent className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">Poäng</p>
+          <p className="print-mono text-print-muted">Poäng</p>
           <motion.p
             key={score}
             initial={{ opacity: 0.6, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="text-3xl font-semibold tracking-[-0.05em]"
+            className="text-3xl font-black tabular-nums tracking-[-0.05em]"
           >
             {score}
           </motion.p>
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">Ord</p>
-          <p className="text-xl font-semibold">{wordsFound}</p>
+          <p className="print-mono text-print-muted">Ord</p>
+          <p className="text-xl font-black tabular-nums">{wordsFound}</p>
         </div>
       </CardContent>
     </Card>

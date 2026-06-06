@@ -1,6 +1,4 @@
-import { allowedSvWords } from "@/data/words/allowed-sv";
-import { commonSvWords } from "@/data/words/common-sv";
-import { seedWordsSv } from "@/data/words/seed-words-sv";
+import { allowedSvWords, commonSvWords, seedWordsSv } from "@/data/words/ordstorm-wordlists";
 import { canBuildWord } from "@/lib/dictionary/can-build-word";
 import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
 
@@ -41,6 +39,30 @@ export const ORDSTORM_WORDS = [...new Set([...commonSvWords, ...allowedSvWords])
   .sort((a, b) => a.localeCompare(b, "sv-SE"));
 
 export const ORDSTORM_WORD_SET = new Set(ORDSTORM_WORDS);
+
+export const ORDSTORM_COMMON_WORD_SET = new Set(
+  commonSvWords.map((word) => normalizeSwedish(word)),
+);
+
+export function isOrdstormCommonWord(word: string) {
+  return ORDSTORM_COMMON_WORD_SET.has(normalizeSwedish(word));
+}
+
+export function splitOrdstormWordsByCategory(words: string[]) {
+  const commonWords: string[] = [];
+  const otherAcceptedWords: string[] = [];
+
+  for (const word of words) {
+    if (isOrdstormCommonWord(word)) {
+      commonWords.push(word);
+      continue;
+    }
+
+    otherAcceptedWords.push(word);
+  }
+
+  return { commonWords, otherAcceptedWords };
+}
 
 export function getWordScore(word: string) {
   const length = word.length;

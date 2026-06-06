@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { MainNav } from "@/components/layout/main-nav";
 import "./globals.css";
-
-const sans = Manrope({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -31,14 +21,12 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${sans.variable} ${mono.variable} h-full antialiased`}
+      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-canvas text-ink">
+      <body className="print-theme min-h-full bg-print-bg text-print-ink print-raster-bg">
         <div className="relative min-h-screen overflow-x-hidden">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(212,233,229,0.9),_transparent_60%)]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-[radial-gradient(circle_at_bottom,_rgba(247,201,72,0.12),_transparent_65%)]" />
           <MainNav />
-          <main className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-6xl flex-col px-4 pb-10 pt-4 sm:px-6 lg:px-8">
+          <main className="mx-auto flex min-h-[calc(100vh-45px)] w-full max-w-6xl flex-col px-4 pb-10 pt-4 sm:px-6 lg:px-8">
             {children}
           </main>
         </div>

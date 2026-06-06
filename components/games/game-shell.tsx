@@ -1,30 +1,48 @@
 import { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { BodyText, PageTitle } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 
 type GameShellProps = {
   eyebrow: string;
   title: string;
   description: string;
+  mobileDescription?: string;
   children: ReactNode;
+  className?: string;
+  headerClassName?: string;
 };
 
 export function GameShell({
   eyebrow,
   title,
   description,
+  mobileDescription,
   children,
+  className,
+  headerClassName,
 }: GameShellProps) {
   return (
-    <section className="flex flex-1 flex-col gap-6 py-6 sm:py-8">
-      <div className="max-w-2xl space-y-3">
+    <section
+      className={cn(
+        "flex flex-1 flex-col gap-4 py-2 sm:gap-6 sm:py-8",
+        className,
+      )}
+    >
+      <div className={cn("max-w-2xl space-y-2 sm:space-y-3", headerClassName)}>
         <Badge>{eyebrow}</Badge>
-        <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">
-            {title}
-          </h1>
-          <p className="max-w-xl text-base leading-7 text-muted sm:text-lg">
-            {description}
-          </p>
+        <div className="space-y-1 sm:space-y-2">
+          <PageTitle>{title}</PageTitle>
+          <BodyText className="max-w-xl sm:text-lg">
+            {mobileDescription ? (
+              <>
+                <span className="sm:hidden">{mobileDescription}</span>
+                <span className="hidden sm:inline">{description}</span>
+              </>
+            ) : (
+              description
+            )}
+          </BodyText>
         </div>
       </div>
       {children}

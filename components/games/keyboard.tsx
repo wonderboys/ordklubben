@@ -37,10 +37,7 @@ export function Keyboard({
             <Button
               key={`${letter}-${index}`}
               variant="outline"
-              className={cn(
-                "h-14 rounded-2xl border bg-white text-xl font-semibold uppercase tracking-[0.04em]",
-                disabled && "opacity-35",
-              )}
+              className={cn("h-14 text-xl", disabled && "opacity-35")}
               disabled={disabled}
               onClick={() => onLetter(normalizeSwedish(letter))}
             >
@@ -52,7 +49,7 @@ export function Keyboard({
       <div className="mt-3 grid grid-cols-[1fr_1fr] gap-2">
         <Button
           variant="ghost"
-          className="h-12 rounded-2xl"
+          className="h-12"
           onClick={onBackspace}
           disabled={!input.length}
         >
@@ -61,7 +58,7 @@ export function Keyboard({
         </Button>
         <Button
           variant="accent"
-          className="h-12 rounded-2xl"
+          className="h-12"
           onClick={onSubmit}
           disabled={input.length < 3}
         >

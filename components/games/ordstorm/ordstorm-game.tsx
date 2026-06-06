@@ -9,10 +9,9 @@ import {
   type ChangeEvent,
 } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { Eye, RotateCcw, Trophy } from "lucide-react";
-import { Keyboard } from "@/components/games/keyboard";
+import { ChevronDown, Eye, RotateCcw } from "lucide-react";
 import { LetterTile } from "@/components/games/letter-tile";
-import { Score } from "@/components/games/score";
+import { OrdstormStatsPreview } from "@/components/games/ordstorm/ordstorm-stats-preview";
 import { Timer } from "@/components/games/timer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +29,21 @@ import {
   createRound,
   getRoundPotentialScore,
   getWordScore,
+  isOrdstormCommonWord,
+  splitOrdstormWordsByCategory,
   type OrdstormRound,
 } from "@/lib/game/ordstorm";
+import {
+  getLetterTilePlayState,
+  getPlayingIdleMessage,
+  getRoundResultCopy,
+  getSubmitLengthHint,
+  getSuccessMessage,
+  getTypingHint,
+  indicesToWord,
+  wordToSelectedIndices,
+  type TypingHint,
+} from "@/lib/game/ordstorm-ux";
 import { useOrdstormStats } from "@/hooks/use-ordstorm-stats";
 import { loadStats, saveStats, updateStatsAfterRound } from "@/lib/storage/stats";
 import { cn } from "@/lib/utils";
@@ -46,7 +58,8 @@ type GamePhase = "pregame" | "starting" | "playing" | "finished";
 const SHOW_DEBUG = false;
 const START_SEQUENCE_MS = 620;
 const FEEDBACK_RESET_MS = 850;
-const SUCCESS_RESET_MS = 520;
+const SUCCESS_RESET_MS = 2500;
+const TYPING_HINT_RESET_MS = 1400;
 
 const lettersVariants: Variants = {
   hidden: (index: number) => ({
@@ -72,7 +85,7 @@ const lettersVariants: Variants = {
 export function OrdstormGame() {
   const [round, setRound] = useState<OrdstormRound | null>(null);
   const [phase, setPhase] = useState<GamePhase>("pregame");
-  const [input, setInput] = useState("");
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION_SECONDS);
@@ -81,10 +94,15 @@ export function OrdstormGame() {
     message: "60 sekunder. Bygg så många svenska ord som möjligt.",
   });
   const [showMissedWords, setShowMissedWords] = useState(false);
+  const [showOtherAcceptedMissed, setShowOtherAcceptedMissed] = useState(false);
   const [animationNonce, setAnimationNonce] = useState(0);
   const [feedbackNonce, setFeedbackNonce] = useState(0);
   const [successPulse, setSuccessPulse] = useState(0);
   const [errorShake, setErrorShake] = useState(0);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [typingHint, setTypingHint] = useState<TypingHint>(null);
+  const [recentFoundWords, setRecentFoundWords] = useState<string[]>([]);
+  const [roundIsNewRecord, setRoundIsNewRecord] = useState(false);
   const stats = useOrdstormStats();
   const persistedRoundRef = useRef(false);
   const recentSeedWordsRef = useRef<string[]>([]);
@@ -96,15 +114,39 @@ export function OrdstormGame() {
   const isPlaying = phase === "playing";
   const isStarting = phase === "starting";
   const finished = phase === "finished";
+  const input = useMemo(
+    () =>
+      round ? indicesToWord(selectedIndices, round.letters) : "",
+    [round, selectedIndices],
+  );
+  const showMobileSubmit = isPlaying && (input.length >= 3 || !inputFocused);
   const availableWords = round?.validWords.length ?? 0;
+  const roundWordCategories = useMemo(
+    () => splitOrdstormWordsByCategory(round?.validWords ?? []),
+    [round],
+  );
+  const availableCommonWords = roundWordCategories.commonWords.length;
+  const availableOtherAcceptedWords = roundWordCategories.otherAcceptedWords.length;
   const roundPotentialScore = useMemo(
     () => getRoundPotentialScore(round?.validWords ?? []),
     [round],
   );
   const foundWordSet = useMemo(() => new Set(foundWords), [foundWords]);
-  const missedWords = useMemo(
-    () => (round?.validWords ?? []).filter((word) => !foundWordSet.has(word)),
-    [foundWordSet, round],
+  const foundCommonWords = useMemo(
+    () => foundWords.filter((word) => isOrdstormCommonWord(word)),
+    [foundWords],
+  );
+  const missedCommonWords = useMemo(
+    () =>
+      roundWordCategories.commonWords.filter((word) => !foundWordSet.has(word)),
+    [foundWordSet, roundWordCategories.commonWords],
+  );
+  const missedOtherAcceptedWords = useMemo(
+    () =>
+      roundWordCategories.otherAcceptedWords.filter(
+        (word) => !foundWordSet.has(word),
+      ),
+    [foundWordSet, roundWordCategories.otherAcceptedWords],
   );
   const bestFoundWord = useMemo(
     () =>
@@ -116,19 +158,66 @@ export function OrdstormGame() {
       )[0] ?? "",
     [foundWords],
   );
-  const foundPercentage = availableWords
+  const commonFoundPercentage = availableCommonWords
+    ? Math.round((foundCommonWords.length / availableCommonWords) * 100)
+    : 0;
+  const totalFoundPercentage = availableWords
     ? Math.round((foundWords.length / availableWords) * 100)
     : 0;
+  const feedbackMessage =
+    feedback.tone === "idle" && isPlaying
+      ? getPlayingIdleMessage({
+          wordsFound: foundWords.length,
+          timeLeft,
+          inputLength: input.length,
+        })
+      : feedback.message;
+  const showUrgentStatus =
+    isPlaying && feedback.tone === "idle" && timeLeft <= 10;
 
-  const focusInput = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      inputShellRef.current?.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
+  const keepInputFocused = useCallback(() => {
+    const refocus = () => {
+      if (!inputRef.current) {
+        return;
+      }
+
+      inputRef.current.focus({ preventScroll: true });
+    };
+
+    refocus();
+    window.requestAnimationFrame(refocus);
+    window.setTimeout(refocus, 0);
+    window.setTimeout(refocus, 50);
+  }, []);
+
+  const focusInput = useCallback(
+    (options?: { select?: boolean; scroll?: boolean }) => {
+      const { select = true, scroll = true } = options ?? {};
+
+      window.requestAnimationFrame(() => {
+        if (scroll) {
+          inputShellRef.current?.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+          });
+        }
+
+        keepInputFocused();
+
+        if (select) {
+          window.setTimeout(() => {
+            inputRef.current?.select();
+          }, 0);
+        }
       });
-      inputRef.current?.focus({ preventScroll: true });
-      inputRef.current?.select();
-    });
+    },
+    [keepInputFocused],
+  );
+
+  const scheduleTypingHintReset = useCallback(() => {
+    window.setTimeout(() => {
+      setTypingHint(null);
+    }, TYPING_HINT_RESET_MS);
   }, []);
 
   const scheduleFeedbackReset = useCallback((duration: number) => {
@@ -138,9 +227,7 @@ export function OrdstormGame() {
 
     feedbackTimeoutRef.current = window.setTimeout(() => {
       setFeedback((current) =>
-        current.tone === "idle"
-          ? current
-          : { tone: "idle", message: "KÖR VIDARE." },
+        current.tone === "idle" ? current : { tone: "idle", message: "" },
       );
     }, duration);
   }, []);
@@ -160,11 +247,16 @@ export function OrdstormGame() {
     persistedRoundRef.current = false;
     setRound(null);
     setPhase("pregame");
-    setInput("");
+    setSelectedIndices([]);
     setFoundWords([]);
     setScore(0);
     setTimeLeft(GAME_DURATION_SECONDS);
     setShowMissedWords(false);
+    setShowOtherAcceptedMissed(false);
+    setInputFocused(false);
+    setTypingHint(null);
+    setRecentFoundWords([]);
+    setRoundIsNewRecord(false);
     setFeedback({
       tone: "idle",
       message: "60 sekunder. Bygg så många svenska ord som möjligt.",
@@ -201,7 +293,11 @@ export function OrdstormGame() {
     }
 
     persistedRoundRef.current = true;
-    const nextStats = updateStatsAfterRound(loadStats(), {
+    const previousStats = loadStats();
+    setRoundIsNewRecord(
+      score > previousStats.bestScore && foundWords.length > 0,
+    );
+    const nextStats = updateStatsAfterRound(previousStats, {
       score,
       wordsFound: foundWords.length,
       bestWord: bestFoundWord,
@@ -232,11 +328,16 @@ export function OrdstormGame() {
     persistedRoundRef.current = false;
     setRound(nextRound);
     setPhase("starting");
-    setInput("");
+    setSelectedIndices([]);
     setFoundWords([]);
     setScore(0);
     setTimeLeft(GAME_DURATION_SECONDS);
     setShowMissedWords(false);
+    setShowOtherAcceptedMissed(false);
+    setInputFocused(false);
+    setTypingHint(null);
+    setRecentFoundWords([]);
+    setRoundIsNewRecord(false);
     setFeedback({
       tone: "idle",
       message: "Nu börjar stormen.",
@@ -252,7 +353,7 @@ export function OrdstormGame() {
       setPhase("playing");
       setFeedback({
         tone: "idle",
-        message: "Kör. Skriv direkt och tryck enter för att lägga ord.",
+        message: "Skriv direkt. Enter lägger ordet.",
       });
       setFeedbackNonce((current) => current + 1);
       focusInput();
@@ -279,6 +380,7 @@ export function OrdstormGame() {
       setFeedbackNonce((current) => current + 1);
       setErrorShake((current) => current + 1);
       scheduleFeedbackReset(FEEDBACK_RESET_MS);
+      keepInputFocused();
       return;
     }
 
@@ -287,8 +389,12 @@ export function OrdstormGame() {
     );
 
     setFoundWords(nextFoundWords);
+    setRecentFoundWords((current) =>
+      [result.word, ...current].slice(0, 5),
+    );
+    setTypingHint(null);
     setScore((current) => current + getWordScore(result.word));
-    setInput("");
+    setSelectedIndices([]);
     setFeedback({
       tone: "success",
       message: getSuccessMessage(result.word),
@@ -296,22 +402,59 @@ export function OrdstormGame() {
     setFeedbackNonce((current) => current + 1);
     setSuccessPulse((current) => current + 1);
     scheduleFeedbackReset(SUCCESS_RESET_MS);
-    focusInput();
-  }, [focusInput, foundWordSet, foundWords, input, isPlaying, round, scheduleFeedbackReset]);
+    keepInputFocused();
+  }, [
+    foundWordSet,
+    foundWords,
+    input,
+    isPlaying,
+    keepInputFocused,
+    round,
+    scheduleFeedbackReset,
+  ]);
 
-  const addLetter = useCallback(
-    (letter: string) => {
+  const toggleTileIndex = useCallback(
+    (index: number) => {
       if (!isPlaying || !round) {
         return;
       }
 
-      setInput((current) => {
-        const nextWord = `${current}${letter}`;
-        return canBuildWord(nextWord, round.letters) ? nextWord : current;
+      setSelectedIndices((current) => {
+        if (current[current.length - 1] === index) {
+          const next = current.slice(0, -1);
+          if (next.length >= 3 || next.length === 0) {
+            setTypingHint(null);
+          }
+          return next;
+        }
+
+        if (current.includes(index)) {
+          return current;
+        }
+
+        const next = [...current, index];
+        const nextWord = indicesToWord(next, round.letters);
+
+        if (canBuildWord(nextWord, round.letters)) {
+          setTypingHint(null);
+          return next;
+        }
+
+        const hint = getTypingHint(
+          nextWord,
+          indicesToWord(current, round.letters),
+          round.letters,
+        );
+        if (hint) {
+          setTypingHint(hint);
+          scheduleTypingHintReset();
+        }
+
+        return current;
       });
       focusInput();
     },
-    [focusInput, isPlaying, round],
+    [focusInput, isPlaying, round, scheduleTypingHintReset],
   );
 
   const removeLetter = useCallback(() => {
@@ -319,7 +462,13 @@ export function OrdstormGame() {
       return;
     }
 
-    setInput((current) => current.slice(0, -1));
+    setSelectedIndices((current) => {
+      const next = current.slice(0, -1);
+      if (next.length >= 3 || next.length === 0) {
+        setTypingHint(null);
+      }
+      return next;
+    });
     focusInput();
   }, [focusInput, isPlaying]);
 
@@ -339,9 +488,17 @@ export function OrdstormGame() {
         }
       }
 
-      setInput(nextValue);
+      const hint = getTypingHint(normalizedValue, nextValue, round.letters);
+      if (hint) {
+        setTypingHint(hint);
+        scheduleTypingHintReset();
+      } else if (nextValue.length >= 3 || nextValue.length === 0) {
+        setTypingHint(null);
+      }
+
+      setSelectedIndices(wordToSelectedIndices(nextValue, round.letters));
     },
-    [isPlaying, round],
+    [isPlaying, round, scheduleTypingHintReset],
   );
 
   const handleInputKeyDown = useCallback(
@@ -353,48 +510,53 @@ export function OrdstormGame() {
       if (event.key === "Enter") {
         event.preventDefault();
         submitWord();
+        keepInputFocused();
       }
     },
-    [isPlaying, submitWord],
+    [isPlaying, keepInputFocused, submitWord],
   );
 
+  const hudTimeLeft = phase === "pregame" ? GAME_DURATION_SECONDS : timeLeft;
+  const hudWordsFound = phase === "pregame" ? 0 : foundWords.length;
+  const showStickyTimer = isPlaying || isStarting;
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.9fr)]">
-      <section className="relative space-y-4 pb-24 sm:pb-10">
-        <div className="grid gap-4 sm:grid-cols-2">
+    <div className="space-y-1.5 pb-6 sm:space-y-4 sm:pb-10">
+      {showStickyTimer ? (
+        <div
+          className={cn(
+            "z-30 w-full pb-1.5",
+            "max-md:sticky max-md:top-0 max-md:-mx-1 max-md:px-1 max-md:backdrop-blur-sm max-md:bg-print-bg/95",
+            inputFocused ? "max-md:pt-2.5" : "max-md:pt-1",
+          )}
+        >
           <Timer
-            timeLeft={phase === "pregame" ? GAME_DURATION_SECONDS : timeLeft}
+            compact
+            timeLeft={hudTimeLeft}
             duration={GAME_DURATION_SECONDS}
           />
-          <Score
-            score={phase === "pregame" ? 0 : score}
-            wordsFound={phase === "pregame" ? 0 : foundWords.length}
-          />
         </div>
+      ) : null}
 
+      {!finished ? (
         <motion.div
-          animate={{
-            opacity: finished ? 0.42 : 1,
-            scale: finished ? 0.985 : 1,
-            filter: finished ? "blur(1px)" : "blur(0px)",
-          }}
           transition={{ duration: 0.24, ease: "easeOut" }}
-          className="space-y-4"
+          className="space-y-3 sm:space-y-4"
         >
           <Card>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4 sm:space-y-5">
               {phase === "pregame" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="shell-card space-y-5 border-dashed bg-white/80 p-6 sm:p-7"
+                  className="space-y-4 max-md:py-1 sm:space-y-5 sm:border sm:border-dashed sm:border-print-ink/25 sm:bg-print-surface sm:p-7"
                 >
-                  <Badge>Redo</Badge>
-                  <div className="space-y-3">
-                    <p className="text-3xl font-semibold tracking-[-0.05em] text-ink sm:text-4xl">
+                  <Badge className="hidden sm:inline-flex">Redo</Badge>
+                  <div className="space-y-2 sm:space-y-3">
+                    <p className="text-2xl font-medium tracking-[-0.05em] text-print-ink max-md:print-body sm:text-4xl">
                       Starta stormen när du är redo.
                     </p>
-                    <p className="max-w-md text-base leading-7 text-muted">
+                    <p className="hidden max-w-md text-base leading-7 text-print-muted sm:block">
                       60 sekunder. Bygg så många svenska ord som möjligt.
                     </p>
                   </div>
@@ -409,34 +571,12 @@ export function OrdstormGame() {
                 </motion.div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                        Bokstäver
-                      </p>
-                      <p className="mt-1 text-sm text-muted">
-                        {isStarting
-                          ? "Stormen bygger upp. Bokstäverna faller in nu."
-                          : "Skriv ord med tre till sex bokstäver innan tiden tar slut."}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetToPregame}
-                      disabled={isStarting}
-                    >
-                      <RotateCcw className="mr-2 size-4" />
-                      Ny runda
-                    </Button>
-                  </div>
-
                   {round ? (
                     <motion.div
                       key={`${round.seedWord}-${animationNonce}`}
                       initial="hidden"
                       animate="show"
-                      className="flex flex-wrap gap-2 sm:gap-3"
+                      className="grid w-full grid-cols-6 gap-3 sm:gap-3.5"
                       variants={{
                         hidden: {},
                         show: {
@@ -448,17 +588,18 @@ export function OrdstormGame() {
                       }}
                     >
                       {round.letters.map((letter, index) => {
-                        const usedCount = input
-                          .split("")
-                          .filter(
-                            (inputLetter) =>
-                              inputLetter === normalizeSwedish(letter),
-                          ).length;
-                        const availableCount = round.letters
-                          .slice(0, index + 1)
-                          .filter((candidate) => candidate === letter).length;
+                        const tileState = getLetterTilePlayState({
+                          index,
+                          selectedIndices,
+                          isStarting,
+                        });
+                        const isLastSelected =
+                          selectedIndices[selectedIndices.length - 1] === index;
+                        const isSelected = selectedIndices.includes(index);
                         const clickable =
-                          isPlaying && usedCount < availableCount && !finished;
+                          isPlaying &&
+                          !finished &&
+                          (!isSelected || isLastSelected);
 
                         return (
                           <motion.button
@@ -468,24 +609,19 @@ export function OrdstormGame() {
                             variants={lettersVariants}
                             whileTap={clickable ? { scale: 0.96 } : undefined}
                             className={cn(
-                              "rounded-[1.35rem]",
+                              "min-w-0",
                               !clickable && "cursor-default",
                             )}
                             onClick={() =>
-                              clickable && addLetter(normalizeSwedish(letter))
+                              clickable && toggleTileIndex(index)
                             }
                             disabled={!clickable}
                           >
                             <LetterTile
                               letter={letter}
-                              size="lg"
-                              state={
-                                usedCount >= availableCount
-                                  ? "active"
-                                  : isStarting
-                                    ? "used"
-                                    : "idle"
-                              }
+                              size="xs"
+                              className="!size-auto aspect-square w-full max-w-none min-h-[3.75rem] text-[1.9rem] leading-none"
+                              state={tileState}
                             />
                           </motion.button>
                         );
@@ -511,44 +647,84 @@ export function OrdstormGame() {
                           : { x: 0, scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)" }
                     }
                     transition={{ duration: 0.24, ease: "easeOut" }}
-                    className="shell-card border-dashed bg-white/75 p-4 sm:p-5"
+                    className={cn(
+                      "shell-card border border-print-ink/25 bg-print-surface p-3 shadow-none sm:p-5",
+                      inputFocused && "border-print-green ring-0",
+                    )}
                   >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                        Ditt ord
-                      </p>
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                        {input.length}/6
-                      </p>
-                    </div>
-
-                    <div className="mt-3">
-                      <label className="block">
-                        <span className="sr-only">Skriv ditt ord</span>
+                    <label
+                      htmlFor="ordstorm-word-input"
+                      className={cn(
+                        "block w-full",
+                        isPlaying ? "cursor-text" : "cursor-default",
+                      )}
+                    >
+                      <div className="relative flex items-center gap-2">
                         <input
+                          id="ordstorm-word-input"
                           ref={inputRef}
                           value={input}
                           onChange={handleInputChange}
                           onKeyDown={handleInputKeyDown}
+                          onFocus={() => setInputFocused(true)}
+                          onBlur={() => setInputFocused(false)}
                           type="text"
                           inputMode="text"
-                          enterKeyHint="done"
+                          enterKeyHint="go"
                           autoCapitalize="none"
+                          autoComplete="off"
                           autoCorrect="off"
                           spellCheck={false}
                           disabled={!isPlaying}
                           placeholder={
-                            isStarting ? "Stormen startar..." : "Skriv ord här"
+                            isStarting
+                              ? "Stormen startar..."
+                              : isPlaying
+                                ? "Skriv ord..."
+                                : ""
                           }
-                          className="w-full border-0 bg-transparent text-3xl font-semibold uppercase tracking-[-0.05em] text-ink outline-none placeholder:text-muted/70 sm:text-4xl"
+                          className={cn(
+                            "w-full min-w-0 flex-1 border-0 bg-transparent font-semibold uppercase text-print-ink outline-none",
+                            "max-md:min-h-[5.75rem] max-md:text-[5.75rem] max-md:font-black max-md:leading-none max-md:tracking-wide",
+                            "md:min-h-[5rem] md:text-4xl md:tracking-[-0.05em]",
+                            "placeholder:font-normal placeholder:normal-case",
+                            "max-md:placeholder:text-lg max-md:placeholder:font-medium max-md:placeholder:tracking-normal max-md:placeholder:text-print-muted/40",
+                            "md:placeholder:text-print-muted/70",
+                          )}
                         />
-                      </label>
-                    </div>
+                        {showMobileSubmit ? (
+                          <Button
+                            type="button"
+                            variant="accent"
+                            size="sm"
+                            className="shrink-0 px-3 py-2 text-sm md:hidden"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onTouchStart={(event) => event.preventDefault()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              submitWord();
+                              keepInputFocused();
+                            }}
+                            disabled={input.length < 3 || !isPlaying}
+                          >
+                            Lägg ord
+                          </Button>
+                        ) : null}
+                      </div>
+                    </label>
 
-                    <div className="mt-4 flex gap-2">
+                    {isPlaying &&
+                    (typingHint || getSubmitLengthHint(input.length)) ? (
+                      <p className="mt-1.5 text-sm text-print-muted/90 md:text-xs">
+                        {(typingHint ?? getSubmitLengthHint(input.length))
+                          ?.message}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-4 hidden gap-2 md:flex">
                       <Button
                         variant="ghost"
-                        className="flex-1 rounded-2xl"
+                        className="flex-1"
                         onClick={removeLetter}
                         disabled={!input.length || !isPlaying}
                       >
@@ -556,7 +732,7 @@ export function OrdstormGame() {
                       </Button>
                       <Button
                         variant="accent"
-                        className="flex-1 rounded-2xl"
+                        className="flex-1"
                         onClick={submitWord}
                         disabled={input.length < 3 || !isPlaying}
                       >
@@ -573,134 +749,105 @@ export function OrdstormGame() {
                   initial={{ opacity: 0.72, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
-                    "rounded-2xl px-4 py-3 text-sm",
-                    feedback.tone === "error" && "bg-[#f8e8e3] text-danger",
+                    "rounded-none border px-4 py-3 text-sm print-mono normal-case tracking-normal max-md:py-2.5",
+                    feedback.tone === "error" &&
+                      "border-print-red bg-print-red-soft text-print-red",
                     feedback.tone === "success" &&
-                      "animate-pulse-glow bg-[#e2f5ee] text-success",
-                    feedback.tone === "idle" && "bg-surface-strong text-muted",
+                      "animate-pulse-glow border-print-green bg-print-green-soft text-print-green",
+                    showUrgentStatus &&
+                      "border-print-red bg-print-red-soft text-print-red",
+                    feedback.tone === "idle" &&
+                      !showUrgentStatus &&
+                      "border-print-ink/20 bg-print-bg text-print-ink",
                   )}
                 >
-                  {renderFeedbackMessage(feedback.message)}
+                  <span>{feedbackMessage}</span>
                 </motion.div>
               ) : null}
             </CardContent>
           </Card>
 
-          {isPlaying ? (
-            <div className="hidden md:block">
-              <Keyboard
-                letters={round?.letters ?? []}
-                input={input}
-                onLetter={addLetter}
-                onBackspace={removeLetter}
-                onSubmit={submitWord}
-              />
-            </div>
-          ) : null}
+          {phase === "pregame" ? <OrdstormStatsPreview stats={stats} /> : null}
+
+          <div className="w-full space-y-2.5">
+            {isPlaying && recentFoundWords.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-print-ink max-md:print-mono max-md:font-medium max-md:uppercase max-md:tracking-[0.06em] max-md:text-print-muted">
+                  {hudWordsFound} ord hittade
+                </p>
+                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {recentFoundWords.map((word, index) => (
+                    <span
+                      key={word}
+                      className={cn(
+                        "shrink-0 px-3 py-1.5 text-sm",
+                        index === 0 ? "print-pill-green" : "print-pill shadow-none",
+                      )}
+                    >
+                      {word.toLocaleUpperCase("sv-SE")}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {(isPlaying || isStarting) ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 w-full text-sm max-md:!bg-print-bg max-md:hover:!bg-print-bg"
+                onClick={resetToPregame}
+                disabled={isStarting}
+              >
+                <RotateCcw className="mr-2 size-4" />
+                Starta ny runda
+              </Button>
+            ) : null}
+          </div>
+
         </motion.div>
+        ) : null}
 
         <AnimatePresence>
           {finished ? (
-            <GameOverOverlay
+            <GameOverView
               score={score}
-              foundWords={foundWords}
+              bestScore={stats.bestScore}
+              isNewRecord={roundIsNewRecord}
+              foundCommonWordsCount={foundCommonWords.length}
+              foundWordsCount={foundWords.length}
+              availableCommonWords={availableCommonWords}
+              availableOtherAcceptedWords={availableOtherAcceptedWords}
               availableWords={availableWords}
-              foundPercentage={foundPercentage}
+              commonFoundPercentage={commonFoundPercentage}
+              totalFoundPercentage={totalFoundPercentage}
               bestFoundWord={bestFoundWord}
               showMissedWords={showMissedWords}
-              missedWords={missedWords}
+              showOtherAcceptedMissed={showOtherAcceptedMissed}
+              missedCommonWords={missedCommonWords}
+              missedOtherAcceptedWords={missedOtherAcceptedWords}
               onPlayAgain={resetToPregame}
               onToggleMissedWords={() =>
                 setShowMissedWords((current) => !current)
               }
+              onToggleOtherAcceptedMissed={() =>
+                setShowOtherAcceptedMissed((current) => !current)
+              }
             />
           ) : null}
         </AnimatePresence>
-      </section>
 
-      <section className="space-y-4">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                Hittade ord
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                {phase === "pregame"
-                  ? "Starta stormen för att se ordjakten ta form."
-                  : `${foundWords.length} av ${availableWords} möjliga ord i rundan.`}
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <AnimatePresence mode="popLayout">
-              <div className="flex max-h-[28rem] flex-wrap gap-2 overflow-auto">
-                {foundWords.length ? (
-                  foundWords.map((word) => (
-                    <motion.div
-                      key={word}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                      animate={{ opacity: 1, scale: [0.96, 1.04, 1], y: 0 }}
-                      exit={{ opacity: 0, scale: 0.94 }}
-                      transition={{ duration: 0.22, ease: "easeOut" }}
-                      className="rounded-full bg-accent-soft px-3 py-2 text-sm font-medium text-accent-strong"
-                    >
-                      {word.toLocaleUpperCase("sv-SE")}
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="fine-text">
-                    {phase === "pregame"
-                      ? "Här landar orden när stormen väl drar igång."
-                      : isStarting
-                        ? "Stormen bygger upp. Första ordet är snart inom räckhåll."
-                        : "Första ordet sätter rytmen. Tre bokstäver räcker för att börja."}
-                  </p>
-                )}
-              </div>
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="space-y-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">
-              Lokal statistik
-            </p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl bg-surface-strong p-4">
-                <p className="text-muted">Bästa poäng</p>
-                <p className="mt-1 text-2xl font-semibold">
-                  {stats.bestScore}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-surface-strong p-4">
-                <p className="text-muted">Rundor</p>
-                <p className="mt-1 text-2xl font-semibold">
-                  {stats.roundsPlayed}
-                </p>
-              </div>
-            </div>
-            <p className="fine-text">
-              Statistik sparas i `localStorage`. Perfekt som lätt grund tills vi
-              väljer om plattformen ska få dagliga lägen, konton eller sync.
-            </p>
-          </CardContent>
-        </Card>
-
-        {SHOW_DEBUG ? (
-          <DebugCard
-            seedWord={round?.seedWord ?? "inte genererad"}
-            originalLetters={round?.originalLetters ?? []}
-            letters={round?.letters ?? []}
-            shuffleAttempts={round?.shuffleAttempts ?? 0}
-            availableWords={availableWords}
-            validWords={round?.validWords ?? []}
-            potentialScore={roundPotentialScore}
-          />
-        ) : null}
-      </section>
+      {SHOW_DEBUG ? (
+        <DebugCard
+          seedWord={round?.seedWord ?? "inte genererad"}
+          originalLetters={round?.originalLetters ?? []}
+          letters={round?.letters ?? []}
+          shuffleAttempts={round?.shuffleAttempts ?? 0}
+          availableWords={availableWords}
+          validWords={round?.validWords ?? []}
+          potentialScore={roundPotentialScore}
+        />
+      ) : null}
     </div>
   );
 }
@@ -722,160 +869,254 @@ function getValidationMessage(reason: WordValidationReason, word: string) {
   }
 }
 
-function getSuccessMessage(word: string) {
-  if (word.length === 6) {
-    return "Fullträff!";
-  }
-
-  if (word.length >= 5) {
-    return "Snyggt!";
-  }
-
-  return "Bra!";
-}
-
-function renderFeedbackMessage(message: string) {
-  return message.toLocaleUpperCase("sv-SE");
-}
-
-type GameOverOverlayProps = {
+type GameOverViewProps = {
   score: number;
-  foundWords: string[];
+  bestScore: number;
+  isNewRecord: boolean;
+  foundCommonWordsCount: number;
+  foundWordsCount: number;
+  availableCommonWords: number;
+  availableOtherAcceptedWords: number;
   availableWords: number;
-  foundPercentage: number;
+  commonFoundPercentage: number;
+  totalFoundPercentage: number;
   bestFoundWord: string;
   showMissedWords: boolean;
-  missedWords: string[];
+  showOtherAcceptedMissed: boolean;
+  missedCommonWords: string[];
+  missedOtherAcceptedWords: string[];
   onPlayAgain: () => void;
   onToggleMissedWords: () => void;
+  onToggleOtherAcceptedMissed: () => void;
 };
 
-function GameOverOverlay({
+function GameOverView({
   score,
-  foundWords,
+  bestScore,
+  isNewRecord,
+  foundCommonWordsCount,
+  foundWordsCount,
+  availableCommonWords,
+  availableOtherAcceptedWords,
   availableWords,
-  foundPercentage,
+  commonFoundPercentage,
+  totalFoundPercentage,
   bestFoundWord,
   showMissedWords,
-  missedWords,
+  showOtherAcceptedMissed,
+  missedCommonWords,
+  missedOtherAcceptedWords,
   onPlayAgain,
   onToggleMissedWords,
-}: GameOverOverlayProps) {
+  onToggleOtherAcceptedMissed,
+}: GameOverViewProps) {
+  const resultCopy = getRoundResultCopy({
+    score,
+    wordsFound: foundWordsCount,
+    commonFoundPercentage,
+    bestScore,
+    isNewRecord,
+  });
+  const recordValue = isNewRecord
+    ? score
+    : bestScore > 0
+      ? bestScore
+      : "—";
+  const recordLabel = isNewRecord ? "nytt rekord" : "rekord";
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-0 z-20 flex items-center justify-center rounded-[1.75rem] bg-canvas/72 p-3 backdrop-blur-sm sm:p-5"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.24, ease: "easeOut" }}
+      className="w-full space-y-5 pt-2 sm:space-y-6"
     >
-      <motion.div
-        initial={{ opacity: 0, y: 16, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.98 }}
-        transition={{ duration: 0.24, ease: "easeOut" }}
-        className="w-full max-w-xl"
-      >
-        <Card className="border-accent/20 bg-surface">
-          <CardContent className="space-y-5 p-5 sm:p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent text-white">
-                <Trophy className="size-5" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                  Rundan slut
-                </p>
-                <p className="text-2xl font-semibold tracking-[-0.05em]">
-                  Stormen lugnade sig
-                </p>
-              </div>
-            </div>
+      <div className="space-y-1">
+        <p className="print-mono text-print-muted">
+          Rundan slut
+        </p>
+        <p className="text-2xl font-semibold tracking-[-0.05em] max-md:font-black max-md:uppercase max-md:tracking-[0.02em] sm:text-3xl">
+          {resultCopy.headline}
+        </p>
+        <p className="text-sm text-print-muted max-md:print-body max-md:normal-case max-md:tracking-normal">
+          {resultCopy.subline}
+        </p>
+      </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <SummaryStat label="Total poäng" value={`${score}`} highlight />
-              <SummaryStat label="Hittade ord" value={`${foundWords.length}`} />
-              <SummaryStat label="Procent hittade" value={`${foundPercentage}%`} />
-              <SummaryStat
-                label="Bästa ord"
-                value={
-                  bestFoundWord
-                    ? bestFoundWord.toLocaleUpperCase("sv-SE")
-                    : "INGET ÄNNU"
-                }
-              />
-            </div>
-
-            <p className="fine-text">
-              {foundWords.length} av {availableWords} möjliga ord hittade i rundan.
+      {bestFoundWord ? (
+        <div
+          className={cn(
+            "rounded-none border border-print-ink/20 px-4 py-4 text-center shadow-none",
+            bestFoundWord.length === 6
+              ? "border-print-green bg-print-feedback-success"
+              : "border-print-green bg-print-green-soft",
+          )}
+        >
+          <p className="print-mono text-print-muted">
+            Bästa ord
+          </p>
+          <p
+            className={cn(
+              "mt-1 font-black uppercase tracking-wide",
+              bestFoundWord.length >= 5
+                ? "text-3xl sm:text-4xl"
+                : "text-2xl sm:text-3xl",
+              "text-print-green",
+            )}
+          >
+            {bestFoundWord.toLocaleUpperCase("sv-SE")}
+          </p>
+          {bestFoundWord.length === 6 ? (
+            <p className="mt-1 print-mono text-print-green">
+              Fullträff
             </p>
+          ) : null}
+        </div>
+      ) : null}
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="accent" className="flex-1" onClick={onPlayAgain}>
-                Spela igen
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={onToggleMissedWords}>
-                <Eye className="mr-2 size-4" />
-                {showMissedWords ? "Dölj missade ord" : "Visa missade ord"}
-              </Button>
-            </div>
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <ResultStat label="poäng" value={score} />
+          <ResultStat label="ord" value={foundWordsCount} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <ResultStat
+            label="vanliga"
+            value={`${commonFoundPercentage}%`}
+          />
+          <ResultStat
+            label={recordLabel}
+            value={recordValue}
+            highlight={isNewRecord}
+          />
+        </div>
+      </div>
 
-            <AnimatePresence>
-              {showMissedWords ? (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="rounded-3xl bg-surface-strong p-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                      Missade ord
-                    </p>
-                    <div className="mt-3 flex max-h-40 flex-wrap gap-2 overflow-auto">
-                      {missedWords.map((word) => (
-                        <span
-                          key={word}
-                          className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink"
-                        >
-                          {word.toLocaleUpperCase("sv-SE")}
-                        </span>
-                      ))}
-                    </div>
+      <p className="hidden text-xs text-print-muted sm:block">
+        {foundCommonWordsCount} av {availableCommonWords} vanliga ord. Totalt{" "}
+        {foundWordsCount} av {availableWords} möjliga ({totalFoundPercentage}%),
+        varav {availableOtherAcceptedWords} övriga godkända.
+      </p>
+
+      <div className="flex flex-col gap-2">
+        <Button variant="accent" className="w-full" onClick={onPlayAgain}>
+          Spela igen
+        </Button>
+        <Button variant="outline" className="w-full" onClick={onToggleMissedWords}>
+          <Eye className="mr-2 size-4" />
+          {showMissedWords ? "Dölj missade ord" : "Visa missade ord"}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {showMissedWords ? (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-4 border-t border-print-ink/12 pt-5 max-md:border-print-ink/20">
+              <div className="rounded-none border border-print-ink/20 bg-print-bg p-4 shadow-none">
+                <p className="print-mono text-print-muted">
+                  Missade vanliga ord
+                </p>
+                {missedCommonWords.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {missedCommonWords.map((word) => (
+                      <span key={word} className="print-pill px-3 py-2 text-sm">
+                        {word.toLocaleUpperCase("sv-SE")}
+                      </span>
+                    ))}
                   </div>
-                </motion.div>
+                ) : (
+                  <p className="mt-3 text-sm text-print-ink">
+                    Du hittade alla vanliga ord i rundan.
+                  </p>
+                )}
+              </div>
+
+              {missedOtherAcceptedWords.length > 0 ? (
+                <div className="rounded-none border border-print-ink/20 bg-print-surface p-3 shadow-none">
+                  <button
+                    type="button"
+                    onClick={onToggleOtherAcceptedMissed}
+                    className="flex w-full items-center justify-between gap-3 text-left"
+                  >
+                    <span className="print-mono text-print-muted">
+                      Övriga godkända ord ({missedOtherAcceptedWords.length})
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 text-print-muted transition-transform",
+                        showOtherAcceptedMissed && "rotate-180",
+                      )}
+                    />
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {showOtherAcceptedMissed ? (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {missedOtherAcceptedWords.map((word) => (
+                            <span
+                              key={word}
+                              className="print-pill px-2.5 py-1.5 text-xs shadow-none"
+                            >
+                              {word.toLocaleUpperCase("sv-SE")}
+                            </span>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
               ) : null}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
-function SummaryStat({
+function ResultStat({
   label,
   value,
   highlight = false,
 }: {
   label: string;
-  value: string;
+  value: string | number;
   highlight?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "rounded-2xl bg-surface-strong p-4",
-        highlight && "bg-accent text-white",
+        "rounded-none border border-print-ink/20 bg-print-bg p-3 shadow-none",
+        highlight && "border-print-green bg-print-green text-white",
       )}
     >
-      <p className="text-xs uppercase tracking-[0.12em] text-muted">{label}</p>
       <p
         className={cn(
-          "mt-2 text-lg font-semibold tracking-[-0.03em]",
+          "text-lg font-black uppercase tracking-wide tabular-nums",
           highlight && "text-white",
         )}
       >
         {value}
+      </p>
+      <p
+        className={cn(
+          "print-mono normal-case tracking-normal",
+          highlight ? "text-white/85" : "text-print-muted",
+        )}
+      >
+        {label}
       </p>
     </div>
   );
@@ -901,7 +1142,7 @@ function DebugCard({
   potentialScore,
 }: DebugCardProps) {
   return (
-    <Card className="border-dashed border-accent/30 bg-white/70">
+    <Card className="border-dashed border-print-green/30 bg-print-surface">
       <CardHeader className="flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Debug</p>
@@ -916,15 +1157,12 @@ function DebugCard({
         <DebugRow label="Möjliga ord" value={`${availableWords}`} />
         <DebugRow label="Poängpotential" value={`${potentialScore}`} />
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted">
+          <p className="print-mono text-print-muted">
             Ordlisteutfall
           </p>
           <div className="flex max-h-56 flex-wrap gap-2 overflow-auto">
             {validWords.map((word) => (
-              <span
-                key={word}
-                className="rounded-full bg-surface-strong px-3 py-1.5 text-xs font-medium text-ink"
-              >
+              <span key={word} className="print-pill px-3 py-1.5 text-xs shadow-none">
                 {word.toLocaleUpperCase("sv-SE")}
               </span>
             ))}
@@ -937,9 +1175,9 @@ function DebugCard({
 
 function DebugRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface-strong p-3">
-      <p className="text-xs uppercase tracking-[0.12em] text-muted">{label}</p>
-      <p className="font-mono text-sm text-ink">{value}</p>
+    <div className="flex items-center justify-between gap-4 rounded-none border border-print-ink/20 bg-print-bg p-3 shadow-none">
+      <p className="print-mono text-print-muted">{label}</p>
+      <p className="font-mono text-sm text-print-ink">{value}</p>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { GameShell } from "@/components/games/game-shell";
 import { Card, CardContent } from "@/components/ui/card";
+import { BodyText, SectionTitle } from "@/components/ui/typography";
 
 type ComingSoonGameProps = {
   title: string;
@@ -15,12 +16,12 @@ export function ComingSoonGame({ title, description }: ComingSoonGameProps) {
     >
       <Card className="max-w-3xl">
         <CardContent className="space-y-4">
-          <p className="section-title">Plattformen är redo för fler spel</p>
-          <p className="fine-text max-w-2xl">
+          <SectionTitle>Plattformen är redo för fler spel</SectionTitle>
+          <BodyText className="max-w-2xl">
             Den här vyn är avsiktligt enkel. Nästa spel kan återanvända samma
             layout, HUD-komponenter, statistikmönster och mobilnav utan att vi
             behöver förändra grundarkitekturen.
-          </p>
+          </BodyText>
         </CardContent>
       </Card>
     </GameShell>
