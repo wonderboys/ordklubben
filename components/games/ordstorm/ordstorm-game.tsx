@@ -45,7 +45,11 @@ import {
   type TypingHint,
 } from "@/lib/game/ordstorm-ux";
 import { useOrdstormStats } from "@/hooks/use-ordstorm-stats";
-import { loadStats, saveStats, updateStatsAfterRound } from "@/lib/storage/stats";
+import {
+  loadStats,
+  saveStats,
+  updateStatsAfterRound,
+} from "@/lib/storage/ordstorm-stats";
 import { cn } from "@/lib/utils";
 
 type FeedbackState = {
@@ -547,8 +551,7 @@ export function OrdstormGame() {
             <CardContent className="space-y-4 sm:space-y-5">
               {phase === "pregame" ? (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={false}
                   className="space-y-4 max-md:py-1 sm:space-y-5 sm:border sm:border-dashed sm:border-print-ink/25 sm:bg-print-surface sm:p-7"
                 >
                   <Badge className="hidden sm:inline-flex">Redo</Badge>
@@ -609,8 +612,8 @@ export function OrdstormGame() {
                             variants={lettersVariants}
                             whileTap={clickable ? { scale: 0.96 } : undefined}
                             className={cn(
-                              "min-w-0",
-                              !clickable && "cursor-default",
+                              "group min-w-0 w-full",
+                              clickable ? "cursor-pointer" : "cursor-default",
                             )}
                             onClick={() =>
                               clickable && toggleTileIndex(index)
@@ -620,7 +623,11 @@ export function OrdstormGame() {
                             <LetterTile
                               letter={letter}
                               size="xs"
-                              className="!size-auto aspect-square w-full max-w-none min-h-[3.75rem] text-[1.9rem] leading-none"
+                              className={cn(
+                                "!size-auto aspect-[5/6] w-full max-w-none leading-none max-md:text-[1.65rem] sm:min-h-[4rem] sm:text-[2.125rem]",
+                                clickable &&
+                                  "md:transition-[filter] md:duration-200 md:group-hover:brightness-95",
+                              )}
                               state={tileState}
                             />
                           </motion.button>
@@ -685,7 +692,7 @@ export function OrdstormGame() {
                           }
                           className={cn(
                             "w-full min-w-0 flex-1 border-0 bg-transparent font-semibold uppercase text-print-ink outline-none",
-                            "max-md:min-h-[5.75rem] max-md:text-[5.75rem] max-md:font-black max-md:leading-none max-md:tracking-wide",
+                            "max-md:min-h-[5.75rem] max-md:text-[5.75rem] max-md:font-black max-md:leading-none",
                             "md:min-h-[5rem] md:text-4xl md:tracking-[-0.05em]",
                             "placeholder:font-normal placeholder:normal-case",
                             "max-md:placeholder:text-lg max-md:placeholder:font-medium max-md:placeholder:tracking-normal max-md:placeholder:text-print-muted/40",
@@ -795,7 +802,7 @@ export function OrdstormGame() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 w-full text-sm max-md:!bg-print-bg max-md:hover:!bg-print-bg"
+                className="h-10 w-full bg-print-bg text-sm"
                 onClick={resetToPregame}
                 disabled={isStarting}
               >
@@ -936,7 +943,7 @@ function GameOverView({
         <p className="print-mono text-print-muted">
           Rundan slut
         </p>
-        <p className="text-2xl font-semibold tracking-[-0.05em] max-md:font-black max-md:uppercase max-md:tracking-[0.02em] sm:text-3xl">
+        <p className="text-2xl font-semibold tracking-[-0.05em] max-md:font-black max-md:uppercase max-md:tracking-normal sm:text-3xl">
           {resultCopy.headline}
         </p>
         <p className="text-sm text-print-muted max-md:print-body max-md:normal-case max-md:tracking-normal">
@@ -958,7 +965,7 @@ function GameOverView({
           </p>
           <p
             className={cn(
-              "mt-1 font-black uppercase tracking-wide",
+              "mt-1 font-black uppercase",
               bestFoundWord.length >= 5
                 ? "text-3xl sm:text-4xl"
                 : "text-2xl sm:text-3xl",
@@ -1104,7 +1111,7 @@ function ResultStat({
     >
       <p
         className={cn(
-          "text-lg font-black uppercase tracking-wide tabular-nums",
+          "text-lg font-black uppercase tabular-nums",
           highlight && "text-white",
         )}
       >

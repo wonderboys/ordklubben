@@ -12,10 +12,10 @@ export function PageTitle({
   ...props
 }: PageTitleProps) {
   const sharedClassName = cn(
-    "font-black uppercase tracking-[0.02em] text-print-ink leading-tight",
-    variant === "page" && "text-2xl sm:text-4xl",
+    "font-black uppercase text-print-ink leading-tight",
+    variant === "page" && "text-3xl sm:text-5xl",
     variant === "compact" && "text-xl sm:text-2xl",
-    variant === "hero" && "max-w-3xl text-2xl sm:text-5xl lg:text-6xl",
+    variant === "hero" && "max-w-3xl text-3xl sm:text-5xl lg:text-6xl",
     variant === "card" && "text-lg sm:text-xl",
     className,
   );

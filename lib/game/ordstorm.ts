@@ -1,4 +1,5 @@
-import { allowedSvWords, commonSvWords, seedWordsSv } from "@/data/words/ordstorm-wordlists";
+import { allowedSvWords, commonSvWords } from "@/data/words";
+import { seedWordsSv } from "@/data/words/ordstorm-wordlists";
 import { canBuildWord } from "@/lib/dictionary/can-build-word";
 import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
 

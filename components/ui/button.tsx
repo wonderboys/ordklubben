@@ -3,16 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "print-button inline-flex items-center justify-center rounded-none border border-print-ink text-sm shadow-[var(--print-shadow-strong)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-print-green/40 active:translate-x-px active:translate-y-px active:shadow-none disabled:pointer-events-none disabled:opacity-50",
+  "print-button inline-flex cursor-pointer items-center justify-center rounded-none border border-print-ink text-sm shadow-[var(--print-shadow-strong)] transition-[transform,filter] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-print-green/40 active:translate-x-px active:translate-y-px active:shadow-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
           "bg-print-ink text-print-surface hover:brightness-95",
         ghost:
-          "bg-print-surface text-print-ink hover:bg-print-bg",
+          "bg-print-surface text-print-ink hover:brightness-95",
         outline:
-          "bg-print-surface text-print-ink hover:bg-print-bg",
+          "bg-print-surface text-print-ink hover:brightness-95",
         accent:
           "border-print-green bg-print-green text-white hover:brightness-95",
       },

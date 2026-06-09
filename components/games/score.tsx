@@ -19,7 +19,7 @@ export function Score({ score, wordsFound }: ScoreProps) {
             initial={{ opacity: 0.6, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="text-3xl font-black tabular-nums tracking-[-0.05em]"
+            className="text-3xl font-black tabular-nums"
           >
             {score}
           </motion.p>

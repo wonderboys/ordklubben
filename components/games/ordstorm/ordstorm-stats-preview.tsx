@@ -23,7 +23,7 @@ export function OrdstormStatsPreview({ stats }: OrdstormStatsPreviewProps) {
       </div>
 
       <Link href="/ordstorm/stats" className="block">
-        <Button variant="outline" className="w-full bg-print-bg hover:bg-print-bg">
+        <Button variant="outline" className="w-full bg-print-bg">
           Visa all statistik
         </Button>
       </Link>

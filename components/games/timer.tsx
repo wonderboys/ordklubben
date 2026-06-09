@@ -54,7 +54,7 @@ export function Timer({ timeLeft, duration, compact = false }: TimerProps) {
                 : { duration: 0.2 }
             }
             className={cn(
-              "text-3xl font-black tabular-nums tracking-[-0.05em]",
+              "text-3xl font-black tabular-nums",
               urgent && "text-print-red",
             )}
           >

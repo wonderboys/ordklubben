@@ -38,7 +38,7 @@ export function OrdstormStatsView() {
             stats.bestWords.map((word) => (
               <span
                 key={word}
-                className="rounded-none border border-print-ink/20 bg-print-bg px-3 py-2 text-sm font-black uppercase tracking-wide text-print-ink"
+                className="rounded-none border border-print-ink/20 bg-print-bg px-3 py-2 text-sm font-black uppercase text-print-ink"
               >
                 {word.toLocaleUpperCase("sv-SE")}
               </span>
@@ -52,7 +52,7 @@ export function OrdstormStatsView() {
       </div>
 
       <Link href="/ordstorm" className="block md:hidden">
-        <Button variant="outline" className="w-full bg-print-bg hover:bg-print-bg">
+        <Button variant="outline" className="w-full bg-print-bg">
           Tillbaka till Ordstorm
         </Button>
       </Link>

@@ -3,16 +3,21 @@ import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BodyText, PageTitle } from "@/components/ui/typography";
+import {
+  getGameStatusLabel,
+  type GameStatus,
+} from "@/lib/games/registry";
 
 type GameCardProps = {
   href: string;
   title: string;
   description: string;
-  status: string;
+  status: GameStatus;
 };
 
 export function GameCard({ href, title, description, status }: GameCardProps) {
-  const isPlayable = status.toLowerCase() === "spelbar";
+  const isPlayable = status === "playable";
+  const statusLabel = getGameStatusLabel(status);
 
   return (
     <Link href={href} className="group">
@@ -24,10 +29,10 @@ export function GameCard({ href, title, description, status }: GameCardProps) {
               <BodyText variant="card">{description}</BodyText>
             </div>
             <Badge variant={isPlayable ? "green" : "default"} className="shrink-0">
-              {status}
+              {statusLabel}
             </Badge>
           </div>
-          <div className="mt-auto flex items-center gap-2 text-sm font-black uppercase tracking-[0.04em] text-print-green">
+          <div className="mt-auto flex items-center gap-2 text-sm font-black uppercase text-print-green">
             Spela
             <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </div>

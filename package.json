@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "check:legacy-design": "node scripts/check-legacy-design.mjs",
+    "check:stegvis": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-puzzles.ts",
+    "check:dagens-ord": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-dagens-ord-eval.ts",
     "build:wordlists": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/build-wordlists.ts"
   },
   "dependencies": {

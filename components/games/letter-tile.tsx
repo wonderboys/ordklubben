@@ -5,9 +5,19 @@ import { cn } from "@/lib/utils";
 
 type LetterTileProps = {
   letter: string;
-  state?: "idle" | "active" | "selected" | "depleted" | "success" | "used";
+  state?:
+    | "idle"
+    | "active"
+    | "selected"
+    | "depleted"
+    | "success"
+    | "used"
+    | "correct"
+    | "present"
+    | "absent";
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
+  disableEntryAnimation?: boolean;
 };
 
 const sizeClasses = {
@@ -28,6 +38,10 @@ const stateClasses = {
   success:
     "border-print-green bg-print-feedback-success text-print-green shadow-none",
   used: "border-print-ink/20 bg-print-bg text-print-muted shadow-none",
+  correct: "border-print-green bg-print-green text-white shadow-none",
+  present:
+    "border-print-yellow bg-print-yellow-soft text-print-ink shadow-none",
+  absent: "border-print-ink/15 bg-print-bg text-print-muted shadow-none",
 };
 
 export function LetterTile({
@@ -35,15 +49,16 @@ export function LetterTile({
   state = "idle",
   size = "md",
   className,
+  disableEntryAnimation = false,
 }: LetterTileProps) {
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.92, y: 8 }}
+      layout={!disableEntryAnimation}
+      initial={disableEntryAnimation ? false : { opacity: 0, scale: 0.92, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       whileTap={{ scale: 0.95 }}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-none border font-black uppercase tracking-[0.02em] transition-colors duration-200 print-black",
+        "flex shrink-0 items-center justify-center rounded-none border font-black uppercase transition-colors duration-200 print-black",
         stateClasses[state],
         sizeClasses[size],
         className,

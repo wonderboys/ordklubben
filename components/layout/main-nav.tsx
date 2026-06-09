@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
+import { games } from "@/lib/games/registry";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/ordstorm", label: "Ordstorm" },
-  { href: "/ladder", label: "Ladder" },
-  { href: "/connections", label: "Connections" },
+  ...games.map((game) => ({ href: game.href, label: game.title })),
   { href: "/profile", label: "Profil" },
 ];
 
@@ -38,12 +37,12 @@ export function MainNav() {
   }, [menuOpen]);
 
   return (
-    <header className="relative sticky top-0 z-40 bg-print-bg">
+    <header className="relative sticky top-0 z-50 bg-print-bg">
       <div className="mx-auto flex h-[45px] w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           className={cn(
-            "font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink",
+            "cursor-pointer font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink",
           )}
           onClick={() => setMenuOpen(false)}
         >
@@ -55,7 +54,7 @@ export function MainNav() {
           aria-expanded={menuOpen}
           aria-controls={menuId}
           aria-label={menuOpen ? "Stäng meny" : "Öppna meny"}
-          className="flex size-10 items-center justify-center text-print-ink"
+          className="flex size-10 cursor-pointer items-center justify-center text-print-ink"
           onClick={() => setMenuOpen((open) => !open)}
         >
           {menuOpen ? (
@@ -82,7 +81,7 @@ export function MainNav() {
         <button
           type="button"
           aria-label="Stäng meny"
-          className="fixed inset-0 top-[47px] z-40 bg-print-ink/10"
+          className="fixed inset-0 top-[47px] z-40 cursor-pointer bg-print-ink/10"
           onClick={() => setMenuOpen(false)}
         />
       ) : null}
@@ -92,7 +91,7 @@ export function MainNav() {
         aria-hidden={!menuOpen}
         className={cn(
           "absolute inset-x-0 top-[47px] z-50 border-b border-print-ink/10 bg-print-bg",
-          menuOpen ? "visible opacity-100" : "invisible opacity-0 pointer-events-none",
+          !menuOpen && "hidden",
         )}
       >
         <ul className="mx-auto flex w-full max-w-6xl flex-col px-4 py-2 sm:px-6 lg:px-8">
@@ -100,7 +99,7 @@ export function MainNav() {
             <li key={href}>
               <Link
                 href={href}
-                className="block py-3 text-sm font-normal leading-snug text-print-ink max-md:print-text"
+                className="block cursor-pointer py-3 text-sm font-normal leading-snug text-print-ink max-md:print-text"
                 onClick={() => setMenuOpen(false)}
               >
                 {label}
