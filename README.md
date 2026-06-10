@@ -188,7 +188,23 @@ Miljövariabel:
 cp .env.example .env
 ```
 
-Sätt sedan `DATABASE_URL` till din Postgres-databas.
+### Postgres med Docker (samma setup som lokalt)
+
+```bash
+docker compose up -d
+npm run prisma:deploy
+```
+
+Det startar Postgres med:
+
+- användare: `postgres`
+- lösenord: `postgres`
+- databas: `ordklubben`
+- port: `5432`
+
+`.env.example` innehåller motsvarande `DATABASE_URL`.
+
+Sätt annars `DATABASE_URL` till din egen Postgres-databas.
 
 Generera Prisma Client:
 
