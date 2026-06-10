@@ -265,6 +265,7 @@ export async function importContentAction(formData: FormData) {
 
   revalidatePath("/admin/import");
   revalidatePath("/admin/words");
+  revalidatePath("/admin/themes");
 
   redirectWithMessage(
     `/admin/import?batchId=${result.batchId}`,

@@ -4,6 +4,9 @@ import type {
   HintType,
   ImportBatchStatus,
   ImportBatchType,
+  PuzzleDirection,
+  PuzzleStatus,
+  PuzzleType,
 } from "@prisma/client";
 
 export const CONTENT_STATUSES: ContentStatus[] = [
@@ -138,4 +141,52 @@ export const IMPORT_BATCH_TYPE_LABELS: Record<ImportBatchType, string> = {
   WORDS: "Ord",
   HINTS: "Nycklar",
   WORDS_AND_HINTS: "Ord + nycklar",
+};
+
+export const PUZZLE_TYPES: PuzzleType[] = [
+  "WORD_GRID",
+  "DAILY_WORD",
+  "STEPWISE",
+  "CROSSWORD",
+];
+
+export const PUZZLE_TYPE_SELECT_OPTIONS = ["WORD_GRID"] as const satisfies readonly PuzzleType[];
+
+export const PUZZLE_STATUSES: PuzzleStatus[] = [
+  "DRAFT",
+  "REVIEW",
+  "PUBLISHED",
+  "ARCHIVED",
+];
+
+export const PUZZLE_DIRECTIONS: PuzzleDirection[] = ["ACROSS", "DOWN"];
+
+export const PUZZLE_TYPE_LABELS: Record<PuzzleType, string> = {
+  WORD_GRID: "Ordfläta",
+  DAILY_WORD: "Dagens ord",
+  STEPWISE: "Stegvis",
+  CROSSWORD: "Korsord",
+};
+
+export const PUZZLE_STATUS_LABELS: Record<PuzzleStatus, string> = {
+  DRAFT: "Utkast",
+  REVIEW: "Granskning",
+  PUBLISHED: "Publicerad",
+  ARCHIVED: "Arkiverad",
+};
+
+export const PUZZLE_DIRECTION_LABELS: Record<PuzzleDirection, string> = {
+  ACROSS: "Vågrätt",
+  DOWN: "Lodrätt",
+};
+
+export const PUZZLE_GENERATION_DIFFICULTIES = [1, 2, 3] as const;
+
+export const PUZZLE_GENERATION_DIFFICULTY_LABELS: Record<
+  (typeof PUZZLE_GENERATION_DIFFICULTIES)[number],
+  string
+> = {
+  1: "Lätt",
+  2: "Medel",
+  3: "Svår",
 };

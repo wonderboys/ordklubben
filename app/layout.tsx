@@ -23,7 +23,7 @@ export default function RootLayout({
       lang="sv"
       className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
     >
-      <body className="print-theme min-h-full bg-print-bg text-print-ink">
+      <body className="print-theme min-h-full bg-print-bg text-print-ink print-raster-bg">
         <AdminRouteShell>{children}</AdminRouteShell>
       </body>
     </html>

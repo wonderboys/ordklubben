@@ -83,6 +83,11 @@ select {
   font-size: var(--admin-control-font-size);
 }
 
+.admin-ui button[data-puzzle-cell] {
+  font-size: unset;
+  line-height: 1;
+}
+
 @utility admin-control {
   font-size: 14px;
   line-height: 1;

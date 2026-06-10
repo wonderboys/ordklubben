@@ -8,6 +8,10 @@ export type BatchSummary = {
   createdHints: number;
   skippedHints: number;
   failedRows: number;
+  createdThemes: number;
+  reusedThemes: number;
+  createdThemeLinks: number;
+  reusedThemeLinks: number;
 };
 
 export type BatchErrorRow = {
@@ -32,6 +36,10 @@ export function parseBatchSummary(value: Prisma.JsonValue | null): BatchSummary 
     createdHints: Number(record.createdHints ?? 0),
     skippedHints: Number(record.skippedHints ?? 0),
     failedRows: Number(record.failedRows ?? 0),
+    createdThemes: Number(record.createdThemes ?? 0),
+    reusedThemes: Number(record.reusedThemes ?? 0),
+    createdThemeLinks: Number(record.createdThemeLinks ?? 0),
+    reusedThemeLinks: Number(record.reusedThemeLinks ?? 0),
   };
 }
 

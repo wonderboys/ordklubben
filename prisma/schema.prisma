@@ -39,6 +39,25 @@ enum HintCandidateStatus {
   REJECTED
 }
 
+enum PuzzleType {
+  WORD_GRID
+  DAILY_WORD
+  STEPWISE
+  CROSSWORD
+}
+
+enum PuzzleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PuzzleDirection {
+  ACROSS
+  DOWN
+}
+
 model Word {
   id               String         @id @default(cuid())
   answer           String
@@ -55,6 +74,7 @@ model Word {
   hints            Hint[]
   hintCandidates   HintCandidate[]
   themes           WordTheme[]
+  puzzleEntries    PuzzleEntry[]
 
   @@index([answer])
   @@index([status])
@@ -74,6 +94,7 @@ model Hint {
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   approvedFromCandidates HintCandidate[]
+  puzzleEntries        PuzzleEntry[]
 
   @@index([wordId])
   @@index([status])
@@ -121,6 +142,59 @@ model WordTheme {
 
   @@id([wordId, themeId])
   @@index([themeId])
+}
+
+model Puzzle {
+  id          String        @id @default(cuid())
+  type        PuzzleType    @default(WORD_GRID)
+  title       String
+  slug        String?       @unique
+  status      PuzzleStatus  @default(DRAFT)
+  width       Int
+  height      Int
+  description String?       @db.Text
+  publishDate DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  entries      PuzzleEntry[]
+  blockedCells PuzzleBlockedCell[]
+
+  @@index([status])
+  @@index([type])
+}
+
+model PuzzleBlockedCell {
+  id        String   @id @default(cuid())
+  puzzleId  String
+  puzzle    Puzzle   @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  row       Int
+  col       Int
+  createdAt DateTime @default(now())
+
+  @@unique([puzzleId, row, col])
+  @@index([puzzleId])
+}
+
+model PuzzleEntry {
+  id             String          @id @default(cuid())
+  puzzleId       String
+  puzzle         Puzzle          @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  wordId         String
+  word           Word            @relation(fields: [wordId], references: [id], onDelete: Restrict)
+  hintId         String?
+  hint           Hint?           @relation(fields: [hintId], references: [id], onDelete: SetNull)
+  answerSnapshot String
+  hintSnapshot   String?
+  row            Int
+  col            Int
+  direction      PuzzleDirection
+  number         Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([puzzleId, wordId])
+  @@index([puzzleId])
+  @@index([wordId])
 }
 
 model ImportBatch {

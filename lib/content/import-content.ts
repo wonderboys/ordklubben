@@ -10,6 +10,7 @@ import type { BatchSummary } from "@/lib/content/import-batch";
 import {
   isValidAnswerFormat,
   normalizeAnswer,
+  slugifyThemeName,
 } from "@/lib/content/normalize-answer";
 
 type CsvRow = Record<string, string>;
@@ -143,6 +144,29 @@ function parseHintType(value: string): HintType {
   return HINT_TYPES.includes(normalized) ? normalized : "OTHER";
 }
 
+function parseContentStatus(
+  value: string,
+  defaultStatus: ContentStatus,
+  label: string,
+) {
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return { ok: true as const, value: defaultStatus };
+  }
+
+  const normalized = trimmed.toLocaleUpperCase("sv-SE");
+
+  if (normalized === "DRAFT" || normalized === "APPROVED") {
+    return { ok: true as const, value: normalized as ContentStatus };
+  }
+
+  return {
+    ok: false as const,
+    reason: `${label} måste vara DRAFT eller APPROVED.`,
+  };
+}
+
 export function normalizeHintTextForDuplicateCheck(text: string) {
   return text
     .trim()
@@ -160,7 +184,146 @@ function buildSummary(summary: ImportSummary): Prisma.InputJsonObject {
     createdHints: summary.createdHints,
     skippedHints: summary.skippedHints,
     failedRows: summary.failedRows,
+    createdThemes: summary.createdThemes,
+    reusedThemes: summary.reusedThemes,
+    createdThemeLinks: summary.createdThemeLinks,
+    reusedThemeLinks: summary.reusedThemeLinks,
   };
+}
+
+type ThemeCacheEntry = {
+  id: string;
+  created: boolean;
+};
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: string }).code === "P2002"
+  );
+}
+
+async function linkWordToTheme({
+  prisma,
+  wordId,
+  rawTheme,
+  themeCache,
+  wordThemeCache,
+  summary,
+}: {
+  prisma: PrismaClient;
+  wordId: string;
+  rawTheme: string;
+  themeCache: Map<string, ThemeCacheEntry>;
+  wordThemeCache: Set<string>;
+  summary: ImportSummary;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const themeName = rawTheme.trim();
+
+  if (themeName.length === 0) {
+    return { ok: true };
+  }
+
+  const slug = slugifyThemeName(themeName);
+
+  if (slug.length === 0) {
+    return {
+      ok: false,
+      reason: "theme måste innehålla minst ett giltigt tecken.",
+    };
+  }
+
+  let themeEntry = themeCache.get(slug);
+
+  if (!themeEntry) {
+    const existingTheme = await prisma.theme.findFirst({
+      where: {
+        OR: [{ slug }, { name: { equals: themeName, mode: "insensitive" } }],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingTheme) {
+      themeEntry = { id: existingTheme.id, created: false };
+      summary.reusedThemes += 1;
+    } else {
+      try {
+        const createdTheme = await prisma.theme.create({
+          data: {
+            name: themeName,
+            slug,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        themeEntry = { id: createdTheme.id, created: true };
+        summary.createdThemes += 1;
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) {
+          throw error;
+        }
+
+        const racedTheme = await prisma.theme.findUnique({
+          where: { slug },
+          select: { id: true },
+        });
+
+        if (!racedTheme) {
+          throw error;
+        }
+
+        themeEntry = { id: racedTheme.id, created: false };
+        summary.reusedThemes += 1;
+      }
+    }
+
+    themeCache.set(slug, themeEntry);
+  } else {
+    summary.reusedThemes += 1;
+  }
+
+  const linkKey = `${wordId}:${themeEntry.id}`;
+
+  if (wordThemeCache.has(linkKey)) {
+    summary.reusedThemeLinks += 1;
+    return { ok: true };
+  }
+
+  const existingLink = await prisma.wordTheme.findUnique({
+    where: {
+      wordId_themeId: {
+        wordId,
+        themeId: themeEntry.id,
+      },
+    },
+    select: {
+      wordId: true,
+    },
+  });
+
+  if (existingLink) {
+    wordThemeCache.add(linkKey);
+    summary.reusedThemeLinks += 1;
+    return { ok: true };
+  }
+
+  await prisma.wordTheme.create({
+    data: {
+      wordId,
+      themeId: themeEntry.id,
+    },
+  });
+
+  wordThemeCache.add(linkKey);
+  summary.createdThemeLinks += 1;
+
+  return { ok: true };
 }
 
 function buildErrorRowsJson(errorRows: ImportErrorRow[]): Prisma.InputJsonArray {
@@ -198,6 +361,10 @@ export async function importContent({
     createdHints: 0,
     skippedHints: 0,
     failedRows: 0,
+    createdThemes: 0,
+    reusedThemes: 0,
+    createdThemeLinks: 0,
+    reusedThemeLinks: 0,
   };
   const errorRows: ImportErrorRow[] = [];
 
@@ -213,6 +380,8 @@ export async function importContent({
 
     const wordCache = new Map<string, { id: string; existsBefore: boolean }>();
     const hintCache = new Map<string, Set<string>>();
+    const themeCache = new Map<string, ThemeCacheEntry>();
+    const wordThemeCache = new Set<string>();
 
     for (const [index, row] of parsedCsv.rows.entries()) {
       const rowNumber = index + 2;
@@ -292,6 +461,50 @@ export async function importContent({
         continue;
       }
 
+      const rowWordStatus = parseContentStatus(
+        row.wordstatus ?? "",
+        defaultWordStatus,
+        "wordStatus",
+      );
+
+      if (!rowWordStatus.ok) {
+        summary.failedRows += 1;
+        summary.skippedWords += 1;
+        if (importType !== "WORDS") {
+          summary.skippedHints += 1;
+        }
+        errorRows.push({
+          rowNumber,
+          reason: rowWordStatus.reason,
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+        });
+        continue;
+      }
+
+      let rowHintStatus: { ok: true; value: ContentStatus } | { ok: false; reason: string } | null =
+        null;
+
+      if (importType !== "WORDS") {
+        rowHintStatus = parseContentStatus(
+          row.hintstatus ?? "",
+          defaultHintStatus,
+          "hintStatus",
+        );
+
+        if (!rowHintStatus.ok) {
+          summary.failedRows += 1;
+          summary.skippedHints += 1;
+          errorRows.push({
+            rowNumber,
+            reason: rowHintStatus.reason,
+            answer: normalized.answer,
+            hint: rawHint || undefined,
+          });
+          continue;
+        }
+      }
+
       let word = wordCache.get(normalized.normalizedAnswer);
 
       if (!word) {
@@ -315,7 +528,7 @@ export async function importContent({
               normalizedAnswer: normalized.normalizedAnswer,
               length: normalized.length,
               language: "sv",
-              status: defaultWordStatus,
+              status: rowWordStatus.value,
               difficulty: rowDifficulty.value,
               crosswordScore: rowCrosswordScore.value,
               notes: row.notes?.trim() || undefined,
@@ -335,9 +548,34 @@ export async function importContent({
         summary.skippedWords += 1;
       }
 
+      const themeLink = await linkWordToTheme({
+        prisma,
+        wordId: word.id,
+        rawTheme: row.theme ?? "",
+        themeCache,
+        wordThemeCache,
+        summary,
+      });
+
+      if (!themeLink.ok) {
+        summary.failedRows += 1;
+        if (importType !== "WORDS") {
+          summary.skippedHints += 1;
+        }
+        errorRows.push({
+          rowNumber,
+          reason: themeLink.reason,
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+        });
+        continue;
+      }
+
       if (importType === "WORDS") {
         continue;
       }
+
+      const hintStatusForRow = rowHintStatus!.value;
 
       const hintText = rawHint.trim().replace(/\s+/g, " ");
       const normalizedHintText = normalizeHintTextForDuplicateCheck(hintText);
@@ -388,7 +626,7 @@ export async function importContent({
           wordId: word.id,
           text: hintText,
           type: parseHintType(row.type ?? ""),
-          status: defaultHintStatus,
+          status: hintStatusForRow,
           difficulty: rowDifficulty.value,
           tone: row.tone?.trim() || undefined,
           source: row.source?.trim() || source,

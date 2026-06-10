@@ -84,6 +84,10 @@ export default async function ImportBatchDetailPage({
               ["Skippade ord", String(summary?.skippedWords ?? 0)],
               ["Skapade nycklar", String(summary?.createdHints ?? 0)],
               ["Skippade nycklar", String(summary?.skippedHints ?? 0)],
+              ["Skapade teman", String(summary?.createdThemes ?? 0)],
+              ["Återanvända teman", String(summary?.reusedThemes ?? 0)],
+              ["Skapade temakopplingar", String(summary?.createdThemeLinks ?? 0)],
+              ["Återanvända temakopplingar", String(summary?.reusedThemeLinks ?? 0)],
               ["Felrader", String(summary?.failedRows ?? errorRows.length)],
             ].map(([label, value]) => (
               <tr key={label} className="border-b border-print-ink/10 align-top">

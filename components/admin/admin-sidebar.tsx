@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/admin/words", label: "Ord", match: (path: string) => path.startsWith("/admin/words") },
   { href: "/admin/themes", label: "Teman", match: (path: string) => path.startsWith("/admin/themes") },
+  { href: "/admin/puzzles", label: "Pussel", match: (path: string) => path.startsWith("/admin/puzzles") },
   { href: "/admin/import", label: "Import", match: (path: string) => path.startsWith("/admin/import") },
   { href: "/admin/proposals", label: "Förslag", match: (path: string) => path.startsWith("/admin/proposals") },
   {

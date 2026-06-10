@@ -81,7 +81,11 @@ export default async function AdminImportPage({
             </Field>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Defaultstatus för nya ord" htmlFor="wordStatus">
+              <Field
+                label="Defaultstatus för nya ord"
+                htmlFor="wordStatus"
+                hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya ord."
+              >
                 <SelectInput id="wordStatus" name="wordStatus" defaultValue="DRAFT">
                   {CONTENT_STATUSES.filter((status) => status !== "REJECTED").map(
                     (value) => (
@@ -93,7 +97,11 @@ export default async function AdminImportPage({
                 </SelectInput>
               </Field>
 
-              <Field label="Defaultstatus för nya nycklar" htmlFor="hintStatus">
+              <Field
+                label="Defaultstatus för nya nycklar"
+                htmlFor="hintStatus"
+                hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya nycklar."
+              >
                 <SelectInput id="hintStatus" name="hintStatus" defaultValue="DRAFT">
                   {CONTENT_STATUSES.filter((status) => status !== "REJECTED").map(
                     (value) => (
@@ -124,11 +132,16 @@ export default async function AdminImportPage({
           <div className="space-y-5 text-sm text-print-ink">
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Ord</p>
-              <p>`answer`, `difficulty`, `crosswordScore`, `notes`</p>
+              <p>
+                `answer`, `difficulty`, `crosswordScore`, `notes`, `theme`, `wordStatus` (valfria)
+              </p>
             </div>
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Nycklar</p>
-              <p>`answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`</p>
+              <p>
+                `answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`, `theme`,
+                `wordStatus`, `hintStatus` (valfria utom answer och hint)
+              </p>
             </div>
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Ord + nycklar</p>
@@ -136,7 +149,20 @@ export default async function AdminImportPage({
             </div>
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Regler</p>
-              <p>`answer` krävs alltid. `hint` krävs för nyckelimport. Okänd `type` blir `OTHER`, tom `type` blir `DEFINITION`.</p>
+              <p>
+                `answer` krävs alltid. `hint` krävs för nyckelimport. Okänd `type` blir `OTHER`, tom `type`
+                blir `DEFINITION`. `theme` kopplar ordet till tema. `wordStatus` och `hintStatus` kan
+                vara `DRAFT` eller `APPROVED` och override:ar default per rad. Befintliga ord och nycklar
+                ändras inte.
+              </p>
+            </div>
+            <div>
+              <p className="font-bold uppercase tracking-[0.04em]">Exempel</p>
+              <p className="font-mono text-xs leading-relaxed text-print-muted">
+                answer,hint,theme,source,wordStatus,hintStatus
+                <br />
+                MÅL,Det man vill göra i fotboll,Fotboll,fotboll_seed,APPROVED,APPROVED
+              </p>
             </div>
           </div>
         </AdminPanel>
@@ -145,7 +171,7 @@ export default async function AdminImportPage({
       {selectedBatch ? (
         <AdminPanel title="Senaste importresultat">
           <div className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
               <div className="border border-print-ink/10 p-3">
                 <p className="text-xs uppercase text-print-muted">Totala rader</p>
                 <p className="text-2xl font-bold text-print-ink">
@@ -171,6 +197,15 @@ export default async function AdminImportPage({
                 </p>
               </div>
               <div className="border border-print-ink/10 p-3">
+                <p className="text-xs uppercase text-print-muted">Felrader</p>
+                <p className="text-2xl font-bold text-print-ink">
+                  {selectedSummary?.failedRows ?? selectedErrors.length}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+              <div className="border border-print-ink/10 p-3">
                 <p className="text-xs uppercase text-print-muted">Skapade nycklar</p>
                 <p className="text-2xl font-bold text-print-ink">
                   {selectedSummary?.createdHints ?? 0}
@@ -183,9 +218,26 @@ export default async function AdminImportPage({
                 </p>
               </div>
               <div className="border border-print-ink/10 p-3">
-                <p className="text-xs uppercase text-print-muted">Felrader</p>
+                <p className="text-xs uppercase text-print-muted">Skapade teman</p>
                 <p className="text-2xl font-bold text-print-ink">
-                  {selectedSummary?.failedRows ?? selectedErrors.length}
+                  {selectedSummary?.createdThemes ?? 0}
+                </p>
+              </div>
+              <div className="border border-print-ink/10 p-3">
+                <p className="text-xs uppercase text-print-muted">Återanvända teman</p>
+                <p className="text-2xl font-bold text-print-ink">
+                  {selectedSummary?.reusedThemes ?? 0}
+                </p>
+              </div>
+              <div className="border border-print-ink/10 p-3">
+                <p className="text-xs uppercase text-print-muted">Temakopplingar</p>
+                <p className="text-2xl font-bold text-print-ink">
+                  {(selectedSummary?.createdThemeLinks ?? 0) +
+                    (selectedSummary?.reusedThemeLinks ?? 0)}
+                </p>
+                <p className="mt-1 text-xs text-print-muted">
+                  {selectedSummary?.createdThemeLinks ?? 0} nya ·{" "}
+                  {selectedSummary?.reusedThemeLinks ?? 0} befintliga
                 </p>
               </div>
             </div>
@@ -251,7 +303,11 @@ export default async function AdminImportPage({
                     className="underline underline-offset-2"
                   >
                     {summary
-                      ? `${summary.createdWords} ord, ${summary.createdHints} nycklar`
+                      ? `${summary.createdWords} ord, ${summary.createdHints} nycklar${
+                          summary.createdThemes + summary.reusedThemes > 0
+                            ? `, ${summary.createdThemes + summary.reusedThemes} teman`
+                            : ""
+                        }`
                       : "Öppna batch"}
                   </Link>
                 </td>
