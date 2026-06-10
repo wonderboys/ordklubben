@@ -71,7 +71,21 @@ button,
 input,
 textarea,
 select {
-  font: inherit;
+  font-family: inherit;
+}
+
+.admin-ui {
+  --admin-control-font-size: 14px;
+  font-size: var(--admin-control-font-size);
+}
+
+.admin-ui :where(input:not([type="hidden"]):not([type="checkbox"]):not(.sr-only), select, textarea, button) {
+  font-size: var(--admin-control-font-size);
+}
+
+@utility admin-control {
+  font-size: 14px;
+  line-height: 1;
 }
 
 ::selection {

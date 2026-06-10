@@ -172,6 +172,119 @@ npm run dev
 
 Öppna sedan [http://localhost:3000](http://localhost:3000).
 
+## Contentdatabas
+
+Första versionen av contentdatabasen använder Prisma + Postgres och innehåller:
+
+- `Word` för ord
+- `Hint` för teknisk hintmodell, som i UI visas som `Nyckel`
+- `HintCandidate` för föreslagna nycklar som granskas innan de blir riktiga nycklar
+- `Theme` och `WordTheme` för teman
+- `ImportBatch` för enkel importspårning
+
+Miljövariabel:
+
+```bash
+cp .env.example .env
+```
+
+Sätt sedan `DATABASE_URL` till din Postgres-databas.
+
+Generera Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+Kör migrationer lokalt:
+
+```bash
+npm run prisma:migrate -- --name init_content_db
+```
+
+Applicera migrationer i miljöer där migrationerna redan finns:
+
+```bash
+npm run prisma:deploy
+```
+
+Importera ord från CSV med kolumnen `answer`:
+
+```bash
+npm run import:words -- ./path/to/words.csv
+```
+
+Valfri källa kan skickas som andra argument:
+
+```bash
+npm run import:words -- ./path/to/words.csv kelly
+```
+
+Adminvyer:
+
+- `/admin/words`
+- `/admin/words/new`
+- `/admin/words/[id]`
+- `/admin/themes`
+- `/admin/themes/[slug]`
+- `/admin/import`
+
+### Nyckelkandidater
+
+`HintCandidate` är ett mellanlager mellan förslag och riktiga `Hint`-rader.
+
+Flöde:
+
+1. Skapa kandidater manuellt på ordsidan, eller kör `Generera testkandidater`.
+2. Granska kandidater med status `PENDING`, `APPROVED` eller `REJECTED`.
+3. Godkänn en kandidat för att skapa en riktig nyckel kopplad till ordet.
+4. Avvisa eller ta bort kandidater som inte ska bli nycklar.
+
+AI är ännu inte kopplat. Mock-generatorn i `lib/content/ai/mock-generate-hint-candidates.ts` finns bara för att testa UI och granskningsflödet utan extern tjänst.
+
+Provider-agnostisk struktur ligger i `lib/content/ai/`:
+
+- `types.ts` delade typer för framtida AI-svar
+- `generate-hint-candidates.ts` riktig AI-ingång, kastar `AI provider not configured` tills en leverantör kopplas in
+- `mock-generate-hint-candidates.ts` lokala testförslag med `source = mock_generator`
+
+Framtida AI-koppling kräver en konfigurerad provider och API-nyckel i miljön, till exempel OpenAI eller annan leverantör. Ingen API-nyckelhantering ingår i detta steg.
+
+CSV-exempel för ord:
+
+```csv
+answer
+SNÖ
+IS
+SOL
+```
+
+CSV-exempel för ordimport med metadata:
+
+```csv
+answer,difficulty,crosswordScore,notes
+SNÖ,1,12,Vanligt vinterord
+IS,1,10,
+SOL,1,8,
+```
+
+CSV-exempel för nycklar eller ord + nycklar:
+
+```csv
+answer,hint,type,difficulty,source
+SNÖ,Vitt vinterväder,DEFINITION,1,manual_csv
+SNÖ,Kan skottas,ASSOCIATION,1,manual_csv
+IS,Fruset vatten,DEFINITION,1,manual_csv
+```
+
+Rekommenderat testflöde:
+
+1. Skapa en CSV med 5 ord och 8 nycklar.
+2. Kör importen via `/admin/import`.
+3. Öppna den skapade importbatchen och kontrollera sammanfattning + felrader.
+4. Öppna ett importerat ord och kontrollera att nycklarna ligger rätt.
+5. Kör samma CSV igen och kontrollera att dubletter på ord och nycklar hoppas över.
+
 ## Arkitekturprinciper
 
 - `app/(games)` innehåller spelrutter och kan växa utan att påverka övriga sidor.

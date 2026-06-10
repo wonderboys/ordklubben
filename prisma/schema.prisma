@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContentStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum HintType {
+  DEFINITION
+  SYNONYM
+  ASSOCIATION
+  WORDPLAY
+  THEME
+  OTHER
+}
+
+enum ImportBatchStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ImportBatchType {
+  WORDS
+  HINTS
+  WORDS_AND_HINTS
+}
+
+enum HintCandidateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Word {
+  id               String         @id @default(cuid())
+  answer           String
+  normalizedAnswer String         @unique
+  length           Int
+  language         String         @default("sv")
+  status           ContentStatus  @default(DRAFT)
+  difficulty       Int?
+  frequency        Int?
+  crosswordScore   Int?
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  hints            Hint[]
+  hintCandidates   HintCandidate[]
+  themes           WordTheme[]
+
+  @@index([answer])
+  @@index([status])
+}
+
+model Hint {
+  id         String        @id @default(cuid())
+  wordId     String
+  word       Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  text       String
+  type       HintType      @default(DEFINITION)
+  status     ContentStatus @default(DRAFT)
+  difficulty Int?
+  tone       String?
+  source     String?
+  notes      String?       @db.Text
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  approvedFromCandidates HintCandidate[]
+
+  @@index([wordId])
+  @@index([status])
+  @@unique([wordId, text])
+}
+
+model HintCandidate {
+  id             String              @id @default(cuid())
+  wordId         String
+  word           Word                @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  text           String
+  type           HintType            @default(DEFINITION)
+  status         HintCandidateStatus @default(PENDING)
+  difficulty     Int?
+  tone           String?
+  source         String              @default("manual_candidate")
+  model          String?
+  promptVersion  String?
+  notes          String?             @db.Text
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  reviewedAt     DateTime?
+  approvedHintId String?
+  approvedHint   Hint?               @relation(fields: [approvedHintId], references: [id], onDelete: SetNull)
+
+  @@index([wordId])
+  @@index([status])
+}
+
+model Theme {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  words       WordTheme[]
+}
+
+model WordTheme {
+  wordId    String
+  themeId   String
+  word      Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  theme     Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@id([wordId, themeId])
+  @@index([themeId])
+}
+
+model ImportBatch {
+  id           String            @id @default(cuid())
+  type         ImportBatchType   @default(WORDS)
+  filename     String?
+  source       String?
+  status       ImportBatchStatus @default(PENDING)
+  totalRows    Int               @default(0)
+  importedRows Int               @default(0)
+  skippedRows  Int               @default(0)
+  errorRows    Json?
+  summary      Json?
+  createdAt    DateTime          @default(now())
+  completedAt  DateTime?
+}
