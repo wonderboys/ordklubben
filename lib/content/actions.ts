@@ -9,6 +9,8 @@ import { trimHintText } from "@/lib/content/normalize-hint";
 import {
   addThemeToWordSchema,
   approveEditedHintCandidateSchema,
+  bulkWordActionSchema,
+  bulkWordThemeActionSchema,
   createHintCandidateSchema,
   createHintSchema,
   createThemeSchema,
@@ -52,6 +54,29 @@ function redirectWithMessage(
 
 function getFormValues(formData: FormData) {
   return Object.fromEntries(formData.entries());
+}
+
+function getWordIdsFromForm(formData: FormData) {
+  return formData.getAll("wordIds").map(String).filter(Boolean);
+}
+
+function getBulkReturnTo(formData: FormData) {
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+  return returnTo.startsWith("/admin/words") ? returnTo : "/admin/words";
+}
+
+function redirectToWordsList(
+  formData: FormData,
+  type: "error" | "success",
+  message: string,
+): never {
+  redirectWithMessage(getBulkReturnTo(formData), type, message);
+}
+
+function revalidateWordListPaths() {
+  revalidatePath("/admin/words");
+  revalidatePath("/admin/review");
+  revalidatePath("/admin/themes");
 }
 
 function getValidationErrorMessage() {
@@ -650,5 +675,143 @@ export async function generateMockHintCandidates(formData: FormData) {
     formData,
     "success",
     `${generated.candidates.length} testförslag skapades.`,
+  );
+}
+
+export async function bulkApproveWords(formData: FormData) {
+  const parsed = bulkWordActionSchema.safeParse({
+    wordIds: getWordIdsFromForm(formData),
+    returnTo: formData.get("returnTo"),
+  });
+
+  if (!parsed.success) {
+    redirectToWordsList(formData, "error", getValidationErrorMessage());
+  }
+
+  const prisma = getPrisma();
+  const result = await prisma.word.updateMany({
+    where: { id: { in: parsed.data.wordIds } },
+    data: { status: "APPROVED" },
+  });
+
+  revalidateWordListPaths();
+  redirectToWordsList(
+    formData,
+    "success",
+    `${result.count} ord godkändes.`,
+  );
+}
+
+export async function bulkDraftWords(formData: FormData) {
+  const parsed = bulkWordActionSchema.safeParse({
+    wordIds: getWordIdsFromForm(formData),
+    returnTo: formData.get("returnTo"),
+  });
+
+  if (!parsed.success) {
+    redirectToWordsList(formData, "error", getValidationErrorMessage());
+  }
+
+  const prisma = getPrisma();
+  const result = await prisma.word.updateMany({
+    where: { id: { in: parsed.data.wordIds } },
+    data: { status: "DRAFT" },
+  });
+
+  revalidateWordListPaths();
+  redirectToWordsList(
+    formData,
+    "success",
+    `${result.count} ord sattes som utkast.`,
+  );
+}
+
+export async function bulkAddThemeToWords(formData: FormData) {
+  const parsed = bulkWordThemeActionSchema.safeParse({
+    wordIds: getWordIdsFromForm(formData),
+    themeId: formData.get("themeId"),
+    returnTo: formData.get("returnTo"),
+  });
+
+  if (!parsed.success) {
+    redirectToWordsList(formData, "error", getValidationErrorMessage());
+  }
+
+  const prisma = getPrisma();
+  const theme = await prisma.theme.findUnique({
+    where: { id: parsed.data.themeId },
+    select: { id: true, slug: true },
+  });
+
+  if (!theme) {
+    redirectToWordsList(formData, "error", "Temat kunde inte hittas.");
+  }
+
+  const result = await prisma.wordTheme.createMany({
+    data: parsed.data.wordIds.map((wordId) => ({
+      wordId,
+      themeId: parsed.data.themeId,
+    })),
+    skipDuplicates: true,
+  });
+
+  revalidateWordListPaths();
+  revalidatePath(`/admin/themes/${theme.slug}`);
+  redirectToWordsList(
+    formData,
+    "success",
+    `Tema lades till på ${result.count} ord.`,
+  );
+}
+
+export async function bulkRemoveThemeFromWords(formData: FormData) {
+  const parsed = bulkWordThemeActionSchema.safeParse({
+    wordIds: getWordIdsFromForm(formData),
+    themeId: formData.get("themeId"),
+    returnTo: formData.get("returnTo"),
+  });
+
+  if (!parsed.success) {
+    redirectToWordsList(formData, "error", getValidationErrorMessage());
+  }
+
+  const prisma = getPrisma();
+  const theme = await prisma.theme.findUnique({
+    where: { id: parsed.data.themeId },
+    select: { id: true, slug: true },
+  });
+
+  if (!theme) {
+    redirectToWordsList(formData, "error", "Temat kunde inte hittas.");
+  }
+
+  const result = await prisma.wordTheme.deleteMany({
+    where: {
+      themeId: parsed.data.themeId,
+      wordId: { in: parsed.data.wordIds },
+    },
+  });
+
+  revalidateWordListPaths();
+  revalidatePath(`/admin/themes/${theme.slug}`);
+  redirectToWordsList(
+    formData,
+    "success",
+    `Tema togs bort från ${result.count} ord.`,
+  );
+}
+
+export async function approveAllDraftWords() {
+  const prisma = getPrisma();
+  const result = await prisma.word.updateMany({
+    where: { status: "DRAFT" },
+    data: { status: "APPROVED" },
+  });
+
+  revalidateWordListPaths();
+  redirectWithMessage(
+    "/admin/review",
+    "success",
+    `${result.count} utkast godkändes.`,
   );
 }

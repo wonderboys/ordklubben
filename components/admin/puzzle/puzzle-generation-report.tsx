@@ -20,6 +20,9 @@ type PuzzleGenerationReportProps = {
   longWordCount: number;
   longestWord: number;
   averageWordLength: number;
+  themeScore: number;
+  themeHitCount: number;
+  emergencyWordCount: number;
   blockRatio: number;
   gapsFilled: number;
   openConnections: number;
@@ -68,6 +71,9 @@ export function PuzzleGenerationReport({
   longWordCount,
   longestWord,
   averageWordLength,
+  themeScore,
+  themeHitCount,
+  emergencyWordCount,
   blockRatio,
   gapsFilled,
   openConnections,
@@ -118,6 +124,24 @@ export function PuzzleGenerationReport({
             Snittlängd
           </dt>
           <dd className="mt-0.5 text-print-ink">{averageWordLength.toFixed(1)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
+            Temapoäng
+          </dt>
+          <dd className="mt-0.5 text-print-ink">{Math.round(themeScore)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
+            Tematräffar
+          </dt>
+          <dd className="mt-0.5 text-print-ink">{themeHitCount}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
+            Nödord
+          </dt>
+          <dd className="mt-0.5 text-print-ink">{emergencyWordCount}</dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">

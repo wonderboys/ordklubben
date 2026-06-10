@@ -24,6 +24,7 @@ export type OptimizationImprovement = {
 type OptimizeCandidate = {
   id: string;
   answer: string;
+  hasThemeMatch?: boolean;
   hints: Array<{
     id: string;
     text: string;
@@ -68,7 +69,7 @@ function tryPlaceAdditionalCrossings(options: {
   profile: GridSizeProfile;
   width: number;
   height: number;
-  hasTheme: boolean;
+  themeSelected: boolean;
   maxAdds: number;
 }) {
   const {
@@ -79,7 +80,7 @@ function tryPlaceAdditionalCrossings(options: {
     profile,
     width,
     height,
-    hasTheme,
+    themeSelected,
     maxAdds,
   } = options;
   const additions: Array<{ candidate: OptimizeCandidate; placement: PuzzlePlacementInput }> = [];
@@ -147,7 +148,7 @@ function tryPlaceAdditionalCrossings(options: {
               profile,
               placedLengths: localInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
               letterFrequency: buildLetterFrequency(localInputs),
-              hasTheme,
+              themeSelected,
               phase: "crossing",
             });
 
@@ -178,7 +179,7 @@ export function optimizeGridLayout(options: {
   blockedCells: BlockedCell[];
   width: number;
   height: number;
-  hasTheme: boolean;
+  themeSelected: boolean;
   placedIds: Set<string>;
   maxBlockRemovals?: number;
   deadlineMs?: number;
@@ -196,7 +197,7 @@ export function optimizeGridLayout(options: {
     blockedCells,
     width,
     height,
-    hasTheme,
+    themeSelected,
     placedIds,
     maxBlockRemovals = 10,
     deadlineMs,
@@ -251,7 +252,7 @@ export function optimizeGridLayout(options: {
       profile,
       width,
       height,
-      hasTheme,
+      themeSelected,
       maxAdds: 3,
     });
 
@@ -274,7 +275,7 @@ export function optimizeGridLayout(options: {
           profile,
           placedLengths: trialInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
           letterFrequency: buildLetterFrequency(trialInputs),
-          hasTheme,
+          themeSelected,
           phase: "gap",
           slotLength,
         }),

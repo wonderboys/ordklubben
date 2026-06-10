@@ -12,6 +12,7 @@ import {
   scoreLengthDistribution,
   type GridSizeProfile,
 } from "@/lib/content/puzzle/grid-generator-scoring";
+import { scoreGridThemeQuality } from "@/lib/content/puzzle/grid-generator-quality";
 import { getAnswerLength } from "@/lib/content/puzzle/grid";
 
 export type GridAttemptScore = {
@@ -33,6 +34,7 @@ export type GridAttemptScore = {
   openConnections: number;
   blockClusters: number;
   isolatedRegions: number;
+  themeQualityScore: number;
   gapsFilled: number;
   emptyCellsBlocked: number;
   remainingEmptyCount: number;
@@ -49,6 +51,9 @@ export function scoreGridAttempt(options: {
   emptyCellsBlocked: number;
   remainingEmptyCount: number;
   finalValidationOk: boolean;
+  themeSelected?: boolean;
+  themeHitCount?: number;
+  emergencyWordCount?: number;
 }): GridAttemptScore {
   const {
     entries,
@@ -60,6 +65,9 @@ export function scoreGridAttempt(options: {
     emptyCellsBlocked,
     remainingEmptyCount,
     finalValidationOk,
+    themeSelected = false,
+    themeHitCount = 0,
+    emergencyWordCount = 0,
   } = options;
   const totalCells = width * height;
   const utilization = computeGridUtilization(entries, width, height);
@@ -96,10 +104,12 @@ export function scoreGridAttempt(options: {
   let blockRatioPenalty = 0;
 
   if (blockRatio > profile.blockRatioMax) {
-    blockRatioPenalty = (blockRatio - profile.blockRatioMax) * 520;
+    blockRatioPenalty = (blockRatio - profile.blockRatioMax) * 880;
   } else {
-    blockRatioPenalty = (profile.blockRatioMax - blockRatio) * 55;
+    blockRatioPenalty = (profile.blockRatioMax - blockRatio) * 85;
   }
+
+  const clusterPenalty = blockClusters > 4 ? (blockClusters - 4) * 35 : 0;
 
   const wordScore = entries.length * 36;
   const crossingScore = crossingCount * 56;
@@ -108,7 +118,16 @@ export function scoreGridAttempt(options: {
   const gapFillScore = gapsFilled * 32;
   const lengthMixScore = scoreLengthDistribution(lengthStats, profile, entries.length);
   const openConnectionScore = connectivity.openConnections * 10;
-  const isolatedRegionPenalty = connectivity.isolatedEmptyRegions * 70;
+  const isolatedRegionPenalty =
+    connectivity.isolatedEmptyRegions * 110 + clusterPenalty;
+  const themeQualityScore = scoreGridThemeQuality({
+    themeHitCount,
+    themeSelected,
+    wordCount: entries.length,
+    emergencyWordCount,
+    averageWordLength: lengthStats.averageWordLength,
+    longestWord: lengthStats.longestWord,
+  });
 
   let utilizationScore = 0;
   const rate = utilization.rate;
@@ -140,6 +159,7 @@ export function scoreGridAttempt(options: {
     gapFillScore +
     lengthMixScore +
     openConnectionScore +
+    themeQualityScore +
     qualityBonus -
     isolatedRegionPenalty -
     blockRatioPenalty -
@@ -164,6 +184,7 @@ export function scoreGridAttempt(options: {
     openConnections: connectivity.openConnections,
     blockClusters,
     isolatedRegions: connectivity.isolatedEmptyRegions,
+    themeQualityScore,
     gapsFilled,
     emptyCellsBlocked,
     remainingEmptyCount,
@@ -185,6 +206,14 @@ export function compareGridAttempts(
 
   if (left.validityPenalty !== right.validityPenalty) {
     return left.validityPenalty - right.validityPenalty;
+  }
+
+  if (left.lengthMixScore !== right.lengthMixScore) {
+    return right.lengthMixScore - left.lengthMixScore;
+  }
+
+  if (left.blockRatioPenalty !== right.blockRatioPenalty) {
+    return left.blockRatioPenalty - right.blockRatioPenalty;
   }
 
   if (left.crossingCount !== right.crossingCount) {

@@ -167,6 +167,23 @@ export const generateMockHintCandidatesSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
 });
 
+function bulkWordIdsField() {
+  return z
+    .array(z.string().min(1))
+    .min(1, "Välj minst ett ord.");
+}
+
+export const bulkWordActionSchema = z.object({
+  wordIds: bulkWordIdsField(),
+  returnTo: optionalTextField(),
+});
+
+export const bulkWordThemeActionSchema = z.object({
+  wordIds: bulkWordIdsField(),
+  themeId: requiredTextField("Tema-ID"),
+  returnTo: optionalTextField(),
+});
+
 function requiredPositiveIntegerField(label: string, max?: number) {
   return z.preprocess((value) => {
     if (typeof value === "number") {

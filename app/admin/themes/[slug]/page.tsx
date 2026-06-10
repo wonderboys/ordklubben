@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ContentStatus } from "@prisma/client";
 import {
+  AdminDefinitionList,
   AdminFilterToolbar,
   AdminLinkButton,
-  AdminMetaGrid,
   AdminPage,
   AdminPanel,
   DatabaseNotice,
@@ -206,12 +206,18 @@ export default async function ThemeDetailPage({
         </AdminPanel>
 
         <AdminPanel title="Temainfo">
-          <AdminMetaGrid
+          <AdminDefinitionList
             items={[
               { label: "Slug", value: <span className="font-mono text-xs">{theme.slug}</span> },
               { label: "Beskrivning", value: theme.description?.trim() || "—" },
               { label: "Ord utan nycklar", value: wordsWithoutHints },
-              { label: "Uppdaterad", value: theme.updatedAt.toLocaleString("sv-SE") },
+              {
+                label: "Uppdaterad",
+                value: theme.updatedAt.toLocaleString("sv-SE", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                }),
+              },
             ]}
           />
         </AdminPanel>

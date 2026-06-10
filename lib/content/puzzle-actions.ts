@@ -141,6 +141,9 @@ function puzzleGenerationReportPath(
     longWordCount: number;
     longestWord: number;
     averageWordLength: number;
+    themeScore: number;
+    themeHitCount: number;
+    emergencyWordCount: number;
     blockRatio: number;
     gapsFilled: number;
     openConnections: number;
@@ -175,6 +178,9 @@ function puzzleGenerationReportPath(
     genLongWords: String(report.longWordCount),
     genLongestWord: String(report.longestWord),
     genAvgWordLength: String(report.averageWordLength),
+    genThemeScore: String(report.themeScore),
+    genThemeHits: String(report.themeHitCount),
+    genEmergencyWords: String(report.emergencyWordCount),
     genBlockRatio: String(report.blockRatio),
     genGapsFilled: String(report.gapsFilled),
     genOpenConnections: String(report.openConnections),

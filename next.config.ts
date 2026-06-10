@@ -1,6 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
+  turbopack: {
+    // Without this, Turbopack picks /Users/peppe/package-lock.json as the workspace
+    // root and watches/resolves a huge parent tree — dev becomes extremely slow.
+    root: projectRoot,
+  },
   async redirects() {
     return [
       { source: "/ladder", destination: "/stegvis", permanent: true },

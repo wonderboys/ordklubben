@@ -1,5 +1,6 @@
-import Link from "next/link";
 import type { ContentStatus } from "@prisma/client";
+import { AdminPageSizeSelect, AdminStatGrid } from "@/components/admin/admin-list-ui";
+import { WordsBulkTable } from "@/components/admin/words-bulk-table";
 import {
   AdminActionGroup,
   AdminFilterToolbar,
@@ -9,11 +10,18 @@ import {
   DatabaseNotice,
   FeedbackMessage,
   SelectInput,
-  StatusBadge,
   SubmitButton,
-  Table,
   TextInput,
 } from "@/components/admin/admin-ui";
+import {
+  buildAdminListHref,
+  buildWordListQuery,
+  buildWordListWhere,
+  clampAdminPage,
+  getAdminPagination,
+  hasActiveWordListFilters,
+  parseWordListFilters,
+} from "@/lib/content/admin-list";
 import { CONTENT_STATUSES, STATUS_LABELS } from "@/lib/content/constants";
 import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 
@@ -21,6 +29,10 @@ type SearchParams = Promise<{
   q?: string;
   status?: ContentStatus | "";
   themeId?: string;
+  withoutHint?: string;
+  withoutTheme?: string;
+  page?: string;
+  pageSize?: string;
   error?: string;
   success?: string;
 }>;
@@ -31,12 +43,9 @@ export default async function AdminWordsPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const query = params.q?.trim() ?? "";
-  const themeId = params.themeId?.trim() ?? "";
-  const status =
-    params.status && CONTENT_STATUSES.includes(params.status)
-      ? params.status
-      : undefined;
+  const filters = parseWordListFilters(params, CONTENT_STATUSES);
+  const pagination = getAdminPagination(params);
+  const where = buildWordListWhere(filters);
 
   if (!isDatabaseConfigured()) {
     return (
@@ -47,48 +56,63 @@ export default async function AdminWordsPage({
   }
 
   const prisma = getPrisma();
-  const [themes, words] = await Promise.all([
+
+  const [
+    themes,
+    total,
+    approvedCount,
+    draftCount,
+    withoutHintCount,
+    withoutThemeCount,
+    withThemeCount,
+  ] = await Promise.all([
     prisma.theme.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true },
     }),
-    prisma.word.findMany({
-      where: {
-        AND: [
-          status ? { status } : {},
-          themeId ? { themes: { some: { themeId } } } : {},
-          query
-            ? {
-                OR: [
-                  { answer: { contains: query, mode: "insensitive" } },
-                  { normalizedAnswer: { contains: query, mode: "insensitive" } },
-                ],
-              }
-            : {},
-        ],
-      },
-      select: {
-        id: true,
-        answer: true,
-        status: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            hints: true,
-            hintCandidates: true,
-            themes: true,
-          },
+    prisma.word.count({ where }),
+    prisma.word.count({ where: { ...where, status: "APPROVED" } }),
+    prisma.word.count({ where: { ...where, status: "DRAFT" } }),
+    prisma.word.count({ where: { ...where, hints: { none: {} } } }),
+    prisma.word.count({ where: { ...where, themes: { none: {} } } }),
+    prisma.word.count({ where: { ...where, themes: { some: {} } } }),
+  ]);
+
+  const page = clampAdminPage(pagination.page, total, pagination.pageSize);
+  const skip = (page - 1) * pagination.pageSize;
+
+  const words = await prisma.word.findMany({
+    where,
+    select: {
+      id: true,
+      answer: true,
+      status: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          hints: true,
+          hintCandidates: true,
+          themes: true,
         },
       },
-      orderBy: [{ updatedAt: "desc" }, { answer: "asc" }],
-      take: 100,
-    }),
-  ]);
+    },
+    orderBy: [{ updatedAt: "desc" }, { answer: "asc" }],
+    skip,
+    take: pagination.pageSize,
+  });
+
+  const listQuery = buildWordListQuery(filters);
+  const filtersActive = hasActiveWordListFilters(filters, page);
+  const returnTo = buildAdminListHref("/admin/words", {
+    ...listQuery,
+    page,
+    pageSize: pagination.pageSize,
+  });
 
   return (
     <AdminPage
       title="Ord"
-      description="Sök, granska och redigera ord i ordbanken."
+      description="Sök, filtrera och massredigera ord i ordbanken."
       actions={
         <AdminActionGroup>
           <AdminLinkButton href="/admin/import" variant="secondary">
@@ -108,11 +132,11 @@ export default async function AdminWordsPage({
             <TextInput
               type="search"
               name="q"
-              defaultValue={query}
+              defaultValue={filters.q}
               placeholder="Sök ord"
               className="min-w-48 flex-1"
             />
-            <SelectInput name="status" defaultValue={status ?? ""} className="min-w-40">
+            <SelectInput name="status" defaultValue={filters.status ?? ""} className="min-w-40">
               <option value="">Alla statusar</option>
               {CONTENT_STATUSES.map((value) => (
                 <option key={value} value={value}>
@@ -120,7 +144,7 @@ export default async function AdminWordsPage({
                 </option>
               ))}
             </SelectInput>
-            <SelectInput name="themeId" defaultValue={themeId} className="min-w-40">
+            <SelectInput name="themeId" defaultValue={filters.themeId ?? ""} className="min-w-40">
               <option value="">Alla teman</option>
               {themes.map((theme) => (
                 <option key={theme.id} value={theme.id}>
@@ -128,33 +152,44 @@ export default async function AdminWordsPage({
                 </option>
               ))}
             </SelectInput>
+            <AdminPageSizeSelect defaultValue={pagination.pageSize} className="min-w-36" />
             <SubmitButton variant="secondary">Filtrera</SubmitButton>
+            {filtersActive ? (
+              <AdminLinkButton href="/admin/words" variant="tertiary">
+                Rensa filter
+              </AdminLinkButton>
+            ) : null}
           </AdminFilterToolbar>
         </form>
 
-        <Table headers={["Ord", "Status", "Nycklar", "Förslag", "Teman", "Uppdaterad"]}>
-          {words.map((word) => (
-            <tr key={word.id} className="border-b border-print-ink/10 align-top">
-              <td className="font-medium text-print-ink">
-                <Link href={`/admin/words/${word.id}`} className="underline-offset-2 hover:underline">
-                  {word.answer}
-                </Link>
-              </td>
-              <td>
-                <StatusBadge status={word.status} />
-              </td>
-              <td>{word._count.hints}</td>
-              <td>{word._count.hintCandidates}</td>
-              <td>{word._count.themes}</td>
-              <td className="text-print-muted">
-                {word.updatedAt.toLocaleDateString("sv-SE")}
-              </td>
-            </tr>
-          ))}
-        </Table>
-        {words.length === 0 ? (
-          <p className="mt-3 text-sm text-print-muted">Inga ord matchade filtret.</p>
-        ) : null}
+        <AdminStatGrid
+          items={[
+            { label: "Totalt", value: total },
+            { label: "Godkända", value: approvedCount },
+            { label: "Utkast", value: draftCount },
+            { label: "Saknar nyckel", value: withoutHintCount },
+            { label: "Saknar tema", value: withoutThemeCount },
+            { label: "Med tema", value: withThemeCount },
+          ]}
+        />
+
+        <WordsBulkTable
+          words={words.map((word) => ({
+            id: word.id,
+            answer: word.answer,
+            status: word.status,
+            updatedAt: word.updatedAt.toISOString(),
+            hintCount: word._count.hints,
+            candidateCount: word._count.hintCandidates,
+            themeCount: word._count.themes,
+          }))}
+          themes={themes.map((theme) => ({ id: theme.id, name: theme.name }))}
+          returnTo={returnTo}
+          page={page}
+          pageSize={pagination.pageSize}
+          total={total}
+          listQuery={listQuery}
+        />
       </AdminPanel>
     </AdminPage>
   );

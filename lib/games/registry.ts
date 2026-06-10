@@ -24,6 +24,13 @@ export const games = [
     description: "Förvandla ett ord till ett annat. Ett steg i taget.",
   },
   {
+    id: "ordflata",
+    title: "Ordfläta Alpha",
+    href: "/ordflata",
+    status: "playable",
+    description: "Lös en ordfläta med nycklar. Tidig testversion.",
+  },
+  {
     id: "dagens-ord",
     title: "Dagens Ord",
     href: "/dagens-ord",

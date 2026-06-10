@@ -364,10 +364,12 @@ export function SubmitButton({
   children,
   variant = "primary",
   className: classNameProp,
+  disabled,
 }: {
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "tertiary" | "ghost" | "default" | "outline" | "accent";
   className?: string;
+  disabled?: boolean;
 }) {
   const resolvedVariant =
     variant === "default" || variant === "accent"
@@ -386,7 +388,7 @@ export function SubmitButton({
         : adminButtonTertiaryClass;
 
   return (
-    <button type="submit" className={cn(variantClass, classNameProp)}>
+    <button type="submit" disabled={disabled} className={cn(variantClass, classNameProp)}>
       {children}
     </button>
   );

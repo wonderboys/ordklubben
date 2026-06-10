@@ -37,6 +37,9 @@ type SearchParams = Promise<{
   genLongWords?: string;
   genLongestWord?: string;
   genAvgWordLength?: string;
+  genThemeScore?: string;
+  genThemeHits?: string;
+  genEmergencyWords?: string;
   genBlockRatio?: string;
   genGapsFilled?: string;
   genOpenConnections?: string;
@@ -247,6 +250,9 @@ export default async function PuzzleDetailPage({
           longWordCount={Number(query.genLongWords ?? 0)}
           longestWord={Number(query.genLongestWord ?? 0)}
           averageWordLength={Number(query.genAvgWordLength ?? 0)}
+          themeScore={Number(query.genThemeScore ?? 0)}
+          themeHitCount={Number(query.genThemeHits ?? 0)}
+          emergencyWordCount={Number(query.genEmergencyWords ?? 0)}
           blockRatio={Number(query.genBlockRatio ?? 0)}
           gapsFilled={Number(query.genGapsFilled ?? 0)}
           openConnections={Number(query.genOpenConnections ?? 0)}

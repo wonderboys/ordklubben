@@ -539,11 +539,11 @@ export function scoreBlockPattern(options: {
   }
 
   const longestRun = longestBlockedRun(blockedKeys, width, height);
-  const runPenalty = longestRun >= 3 ? (longestRun - 2) * 65 : 0;
-  const fullLinePenalty = countFullBlockedLines(blockedKeys, width, height) * 180;
+  const runPenalty = longestRun >= 3 ? (longestRun - 2) * 95 : 0;
+  const fullLinePenalty = countFullBlockedLines(blockedKeys, width, height) * 280;
   const largestCluster = largestBlockedClusterSize(blockedKeys, width, height);
   const clusterPenalty =
-    largestCluster > 3 ? (largestCluster - 3) * 28 : 0;
+    largestCluster > 2 ? (largestCluster - 2) * 48 : 0;
   const clusters = countBlockedClusters(blockedKeys, width, height);
   const spreadBonus = clusters > 0 ? Math.min(clusters * 4, 24) : 0;
   const edgeBlocks = countEdgeBlocks(blockedKeys, width, height);

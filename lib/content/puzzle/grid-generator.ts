@@ -16,13 +16,17 @@ import {
   optimizeGridLayout,
 } from "@/lib/content/puzzle/grid-generator-optimize";
 import { scoreGridAttempt, compareGridAttempts } from "@/lib/content/puzzle/grid-generator-result-scoring";
+import { computeThemeMetrics } from "@/lib/content/puzzle/grid-generator-quality";
 import {
   buildCandidatePool,
   buildLetterFrequency,
+  combineWordAndPlacementScore,
   comparePlacements,
   computeWordLengthStats,
   getAnswerLetters,
   getGridSizeProfile,
+  getLengthBucket,
+  isLongPlacementViable,
   scorePlacement,
   scoreWordCandidate,
   type GridSizeProfile,
@@ -37,6 +41,7 @@ import {
 export type GeneratorCandidate = {
   id: string;
   answer: string;
+  hasThemeMatch?: boolean;
   hints: Array<{
     id: string;
     text: string;
@@ -82,6 +87,9 @@ export type GeneratorResult = {
   emptyCellsBlocked: number;
   remainingEmptyCount: number;
   finalValidationOk: boolean;
+  themeScore: number;
+  themeHitCount: number;
+  emergencyWordCount: number;
   summaryNote: string | null;
 };
 
@@ -167,14 +175,14 @@ function crossingCandidateLimit(width: number, height: number) {
   const size = Math.max(width, height);
 
   if (size <= 7) {
-    return 32;
+    return 36;
   }
 
   if (size <= 9) {
-    return 24;
+    return 32;
   }
 
-  return 18;
+  return 22;
 }
 
 function recordRejection(
@@ -246,6 +254,8 @@ function findCrossingPlacements(
   width: number,
   height: number,
   counters: RejectionCounters,
+  themeSelected: boolean,
+  profile: GridSizeProfile,
 ) {
   const candidateLetters = getAnswerLetters(candidate.answer);
   const options: ScoredPlacement[] = [];
@@ -292,7 +302,18 @@ function findCrossingPlacements(
             continue;
           }
 
-          options.push(scorePlacement(placement, existing, width, height, blockedCells));
+          const scored = scorePlacement(placement, existing, width, height, blockedCells, {
+            themeSelected,
+            hasThemeMatch: candidate.hasThemeMatch ?? false,
+            phase: "crossing",
+            profile,
+          });
+
+          if (!isLongPlacementViable(placement, scored, profile)) {
+            continue;
+          }
+
+          options.push(scored);
         }
       }
     }
@@ -308,6 +329,7 @@ function placeAnchorWord(
   height: number,
   counters: RejectionCounters,
   rng: () => number,
+  themeSelected: boolean,
 ) {
   const middleRow = Math.floor(height / 2);
   const rowOptions = [middleRow, middleRow - 1, middleRow + 1].filter(
@@ -328,30 +350,25 @@ function placeAnchorWord(
       continue;
     }
 
-    const ranked = [...pool].sort((left, right) => {
-      const leftLength = getAnswerLength(left.answer);
-      const rightLength = getAnswerLength(right.answer);
-
-      if (leftLength !== rightLength) {
-        return rightLength - leftLength;
-      }
-
-      return scoreWordCandidate({
-        candidate: right,
-        profile,
-        placedLengths: [],
-        letterFrequency: new Map(),
-        hasTheme: false,
-        phase: "anchor",
-      }) - scoreWordCandidate({
-        candidate: left,
-        profile,
-        placedLengths: [],
-        letterFrequency: new Map(),
-        hasTheme: false,
-        phase: "anchor",
-      });
-    });
+    const ranked = [...pool].sort(
+      (left, right) =>
+        scoreWordCandidate({
+          candidate: right,
+          profile,
+          placedLengths: [],
+          letterFrequency: new Map(),
+          themeSelected,
+          phase: "anchor",
+        }) -
+        scoreWordCandidate({
+          candidate: left,
+          profile,
+          placedLengths: [],
+          letterFrequency: new Map(),
+          themeSelected,
+          phase: "anchor",
+        }),
+    );
 
     const shortlist = shuffleWithRng(ranked.slice(0, 10), rng);
 
@@ -404,7 +421,7 @@ function placeCrossingWords(options: {
   height: number;
   wordCount: number;
   allowDraftHints: boolean;
-  hasTheme: boolean;
+  themeSelected: boolean;
   counters: RejectionCounters;
   rng: () => number;
 }) {
@@ -419,7 +436,7 @@ function placeCrossingWords(options: {
     height,
     wordCount,
     allowDraftHints,
-    hasTheme,
+    themeSelected,
     counters,
     rng,
   } = options;
@@ -428,8 +445,18 @@ function placeCrossingWords(options: {
   while (placedEntries.length < wordCount) {
     const blockedCells = constructionBlockedCells(placementInputs, width, height);
     const letterFrequency = buildLetterFrequency(placementInputs);
+    const longCount = placedLengths.filter(
+      (value) => getLengthBucket(value, profile) === "long",
+    ).length;
     const rankedCandidates = pool
       .filter((candidate) => !placedIds.has(candidate.id))
+      .filter((candidate) => {
+        if (longCount < profile.targetLongMax) {
+          return true;
+        }
+
+        return getLengthBucket(getAnswerLength(candidate.answer), profile) !== "long";
+      })
       .map((candidate) => ({
         candidate,
         score: scoreWordCandidate({
@@ -437,7 +464,7 @@ function placeCrossingWords(options: {
           profile,
           placedLengths,
           letterFrequency,
-          hasTheme,
+          themeSelected,
           phase: "crossing",
         }),
       }))
@@ -447,6 +474,7 @@ function placeCrossingWords(options: {
       candidate: GeneratorCandidate;
       placement: PuzzlePlacementInput;
       scored: ScoredPlacement;
+      wordScore: number;
     } | null = null;
 
     const candidateSlice = shuffleWithRng(
@@ -454,7 +482,7 @@ function placeCrossingWords(options: {
       rng,
     );
 
-    for (const { candidate } of candidateSlice) {
+    for (const { candidate, score: wordScore } of candidateSlice) {
       const placementOptions = findCrossingPlacements(
         candidate,
         placementInputs,
@@ -462,6 +490,8 @@ function placeCrossingWords(options: {
         width,
         height,
         counters,
+        themeSelected,
+        profile,
       ).sort((left, right) => comparePlacements(left, right, placementInputs));
 
       const bestPlacement = placementOptions[0];
@@ -470,14 +500,25 @@ function placeCrossingWords(options: {
         continue;
       }
 
+      const combinedScore = combineWordAndPlacementScore(
+        wordScore,
+        bestPlacement.totalScore,
+      );
+      const bestCombinedScore = bestChoice
+        ? combineWordAndPlacementScore(bestChoice.wordScore, bestChoice.scored.totalScore)
+        : Number.NEGATIVE_INFINITY;
+
       if (
         !bestChoice ||
-        comparePlacements(bestPlacement, bestChoice.scored, placementInputs) < 0
+        combinedScore > bestCombinedScore ||
+        (combinedScore === bestCombinedScore &&
+          comparePlacements(bestPlacement, bestChoice.scored, placementInputs) < 0)
       ) {
         bestChoice = {
           candidate,
           placement: bestPlacement.placement,
           scored: bestPlacement,
+          wordScore,
         };
       }
     }
@@ -508,7 +549,7 @@ function runGapFillPass(options: {
   width: number;
   height: number;
   allowDraftHints: boolean;
-  hasTheme: boolean;
+  themeSelected: boolean;
   counters: RejectionCounters;
   rng: () => number;
 }) {
@@ -522,7 +563,7 @@ function runGapFillPass(options: {
     width,
     height,
     allowDraftHints,
-    hasTheme,
+    themeSelected,
     counters,
     rng,
   } = options;
@@ -540,7 +581,7 @@ function runGapFillPass(options: {
         profile,
         placedLengths: placementInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
         letterFrequency: buildLetterFrequency(placementInputs),
-        hasTheme,
+        themeSelected,
         phase: "gap",
         slotLength,
       }),
@@ -575,7 +616,7 @@ function expandGridLayout(options: {
   height: number;
   wordCount: number;
   allowDraftHints: boolean;
-  hasTheme: boolean;
+  themeSelected: boolean;
   counters: RejectionCounters;
   rng: () => number;
 }) {
@@ -588,6 +629,22 @@ function expandGridLayout(options: {
   gapsFilled += runGapFillPass(options);
 
   return { skippedCount, gapsFilled };
+}
+
+function buildThemeMetricsFromPlaced(
+  placed: GeneratorPlacedEntry[],
+  pool: GeneratorCandidate[],
+  themeSelected: boolean,
+) {
+  const poolById = new Map(pool.map((candidate) => [candidate.id, candidate]));
+
+  return computeThemeMetrics({
+    answers: placed.map((entry) => entry.answerSnapshot),
+    themeMatches: placed.map(
+      (entry) => poolById.get(entry.wordId)?.hasThemeMatch ?? false,
+    ),
+    themeSelected,
+  });
 }
 
 function buildSummaryNote(options: {
@@ -613,6 +670,9 @@ function buildSummaryNote(options: {
   rejectedCollisions: number;
   rejectedSideWords: number;
   rejectedBlockPatterns: number;
+  themeHitCount: number;
+  emergencyWordCount: number;
+  themeScore: number;
 }) {
   const utilizationPercent = Math.round(options.utilizationRate * 100);
   const blockPercent = Math.round(options.blockRatio * 100);
@@ -620,6 +680,7 @@ function buildSummaryNote(options: {
   const parts = [
     `${options.placedCount} ord efter ${options.attemptCount} försök (score ${Math.round(options.bestScore)}).`,
     `Längsta ${options.wordLengthStats.longestWord}, snitt ${avgLength} — korta ${options.wordLengthStats.shortCount}, mellan ${options.wordLengthStats.mediumCount}, långa ${options.wordLengthStats.longCount}.`,
+    `Tematräffar ${options.themeHitCount}, temapoäng ${Math.round(options.themeScore)}, nödord ${options.emergencyWordCount}.`,
     `${options.gapsFilled} luckor fyllda, ${blockPercent} % stopprutor, ${utilizationPercent} % bokstäver, ${options.crossingCount} korsningar.`,
     `Öppna anslutningar: ${options.openConnections}, blockkluster: ${options.blockClusters}, isolerade regioner: ${options.isolatedRegions}${options.optimizationImprovements ? `, optimering: ${options.optimizationImprovements}` : ""}.`,
     `Slutvalidering: ${options.finalValidationOk ? "OK" : "FAILED"}${options.remainingEmptyCount > 0 ? ` (${options.remainingEmptyCount} tomrutor i ytterkant)` : ""}.`,
@@ -645,7 +706,7 @@ function runSingleAttempt(options: {
   height: number;
   wordCount: number;
   allowDraftHints: boolean;
-  hasTheme: boolean;
+  themeSelected: boolean;
   seed: number;
 }): SingleAttemptResult | null {
   const {
@@ -655,7 +716,7 @@ function runSingleAttempt(options: {
     height,
     wordCount,
     allowDraftHints,
-    hasTheme,
+    themeSelected,
     seed,
   } = options;
   const rng = createRng(seed);
@@ -670,7 +731,15 @@ function runSingleAttempt(options: {
   const placementInputs: PuzzlePlacementInput[] = [];
   const placedLengths: number[] = [];
 
-  const anchor = placeAnchorWord(shuffledPool, profile, width, height, counters, rng);
+  const anchor = placeAnchorWord(
+    shuffledPool,
+    profile,
+    width,
+    height,
+    counters,
+    rng,
+    themeSelected,
+  );
 
   if (!anchor) {
     return null;
@@ -692,7 +761,7 @@ function runSingleAttempt(options: {
     height,
     wordCount,
     allowDraftHints,
-    hasTheme,
+    themeSelected,
     counters,
     rng,
   });
@@ -713,6 +782,11 @@ function runSingleAttempt(options: {
     height,
   });
 
+  const attemptThemeMetrics = buildThemeMetricsFromPlaced(
+    placedEntries,
+    pool,
+    themeSelected,
+  );
   const score = scoreGridAttempt({
     entries: placementInputs,
     blockedCells: finalized.cells,
@@ -723,6 +797,9 @@ function runSingleAttempt(options: {
     emptyCellsBlocked: finalized.blockedEmptyCount,
     remainingEmptyCount: finalized.remainingEmptyCount,
     finalValidationOk: finalValidation.ok,
+    themeSelected,
+    themeHitCount: attemptThemeMetrics.themeHitCount,
+    emergencyWordCount: attemptThemeMetrics.emergencyWordCount,
   });
 
   if (!finalValidation.ok) {
@@ -776,6 +853,9 @@ function emptyResult(summaryNote: string, candidateCount: number): GeneratorResu
     emptyCellsBlocked: 0,
     remainingEmptyCount: 0,
     finalValidationOk: false,
+    themeScore: 0,
+    themeHitCount: 0,
+    emergencyWordCount: 0,
     summaryNote,
   };
 }
@@ -786,7 +866,7 @@ export function generateGridLayout(options: {
   height: number;
   wordCount: number;
   allowDraftHints: boolean;
-  hasTheme?: boolean;
+  themeSelected?: boolean;
 }): GeneratorResult {
   const {
     candidates,
@@ -794,7 +874,7 @@ export function generateGridLayout(options: {
     height,
     wordCount,
     allowDraftHints,
-    hasTheme = false,
+    themeSelected = false,
   } = options;
   const profile = getGridSizeProfile(width, height);
   const gridLimit = Math.max(width, height);
@@ -826,7 +906,7 @@ export function generateGridLayout(options: {
       height,
       wordCount: targetWordCount,
       allowDraftHints,
-      hasTheme,
+      themeSelected,
       seed: attempt + 1,
     });
     attemptsRun += 1;
@@ -864,7 +944,7 @@ export function generateGridLayout(options: {
     blockedCells: bestAttempt.blockedCells,
     width,
     height,
-    hasTheme,
+    themeSelected,
     placedIds,
     deadlineMs: Date.now() + OPTIMIZATION_TIME_BUDGET_MS,
     maxBlockRemovals: Math.max(6, Math.floor(Math.max(width, height) * 0.8)),
@@ -899,6 +979,11 @@ export function generateGridLayout(options: {
 
   const finalPlacementInputs = optimized.placementInputs;
   const finalBlockedCells = optimized.blockedCells;
+  const finalThemeMetrics = buildThemeMetricsFromPlaced(
+    optimizedPlaced,
+    pool,
+    themeSelected,
+  );
   const finalScore = scoreGridAttempt({
     entries: finalPlacementInputs,
     blockedCells: finalBlockedCells,
@@ -909,6 +994,9 @@ export function generateGridLayout(options: {
     emptyCellsBlocked: bestAttempt.emptyCellsBlocked,
     remainingEmptyCount: bestAttempt.remainingEmptyCount,
     finalValidationOk: optimized.finalValidationOk,
+    themeSelected,
+    themeHitCount: finalThemeMetrics.themeHitCount,
+    emergencyWordCount: finalThemeMetrics.emergencyWordCount,
   });
   const wordLengthStats = computeWordLengthStats(finalPlacementInputs, profile);
   const utilization = computeGridUtilization(finalPlacementInputs, width, height);
@@ -944,6 +1032,9 @@ export function generateGridLayout(options: {
     emptyCellsBlocked: bestAttempt.emptyCellsBlocked,
     remainingEmptyCount: bestAttempt.remainingEmptyCount,
     finalValidationOk: optimized.finalValidationOk,
+    themeScore: finalThemeMetrics.themeScore,
+    themeHitCount: finalThemeMetrics.themeHitCount,
+    emergencyWordCount: finalThemeMetrics.emergencyWordCount,
     summaryNote: buildSummaryNote({
       placedCount: optimizedPlaced.length,
       targetCount: targetWordCount,
@@ -967,6 +1058,9 @@ export function generateGridLayout(options: {
       rejectedCollisions: aggregatedCounters.rejectedCollisions,
       rejectedSideWords: aggregatedCounters.rejectedSideWords,
       rejectedBlockPatterns: aggregatedCounters.rejectedBlockPatterns,
+      themeHitCount: finalThemeMetrics.themeHitCount,
+      emergencyWordCount: finalThemeMetrics.emergencyWordCount,
+      themeScore: finalThemeMetrics.themeScore,
     }),
   };
 }
