@@ -181,6 +181,7 @@ export function optimizeGridLayout(options: {
   hasTheme: boolean;
   placedIds: Set<string>;
   maxBlockRemovals?: number;
+  deadlineMs?: number;
 }): {
   placed: OptimizePlacedEntry[];
   placementInputs: PuzzlePlacementInput[];
@@ -197,7 +198,8 @@ export function optimizeGridLayout(options: {
     height,
     hasTheme,
     placedIds,
-    maxBlockRemovals = 24,
+    maxBlockRemovals = 10,
+    deadlineMs,
   } = options;
   const profile = getGridSizeProfile(width, height);
   const startWordCount = placementInputs.length;
@@ -216,6 +218,10 @@ export function optimizeGridLayout(options: {
   const blocksToTry = removableBlocks.slice(0, maxBlockRemovals);
 
   for (const block of blocksToTry) {
+    if (deadlineMs !== undefined && Date.now() >= deadlineMs) {
+      break;
+    }
+
     const blockKey = cellKey(block.row, block.col);
     const nextBlocks = currentBlocks.filter(
       (cell) => cellKey(cell.row, cell.col) !== blockKey,
@@ -246,7 +252,7 @@ export function optimizeGridLayout(options: {
       width,
       height,
       hasTheme,
-      maxAdds: 6,
+      maxAdds: 3,
     });
 
     for (const add of crossingAdds) {

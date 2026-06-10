@@ -130,22 +130,51 @@ function shuffleWithRng<T>(items: T[], rng: () => number) {
   return copy;
 }
 
-function computeAttemptCount(width: number, height: number) {
+/** Hard upper cap — actual attempts stop earlier on time budget or quality target. */
+function computeMaxAttemptCount(width: number, height: number) {
   const size = Math.max(width, height);
 
   if (size <= 5) {
-    return 300;
+    return 120;
   }
 
   if (size <= 7) {
-    return 500;
+    return 200;
   }
 
   if (size <= 9) {
-    return 1000;
+    return 350;
   }
 
-  return 2000;
+  return 500;
+}
+
+const GENERATION_TIME_BUDGET_MS = 14_000;
+const OPTIMIZATION_TIME_BUDGET_MS = 3_000;
+
+function meetsQualityTarget(
+  result: SingleAttemptResult,
+  profile: GridSizeProfile,
+) {
+  return (
+    result.placed.length >= profile.targetWordMin &&
+    result.score.crossingCount >= profile.targetCrossingMin &&
+    result.score.blockRatio <= profile.blockRatioMax
+  );
+}
+
+function crossingCandidateLimit(width: number, height: number) {
+  const size = Math.max(width, height);
+
+  if (size <= 7) {
+    return 32;
+  }
+
+  if (size <= 9) {
+    return 24;
+  }
+
+  return 18;
 }
 
 function recordRejection(
@@ -420,7 +449,10 @@ function placeCrossingWords(options: {
       scored: ScoredPlacement;
     } | null = null;
 
-    const candidateSlice = shuffleWithRng(rankedCandidates.slice(0, 48), rng);
+    const candidateSlice = shuffleWithRng(
+      rankedCandidates.slice(0, crossingCandidateLimit(width, height)),
+      rng,
+    );
 
     for (const { candidate } of candidateSlice) {
       const placementOptions = findCrossingPlacements(
@@ -768,7 +800,8 @@ export function generateGridLayout(options: {
   const gridLimit = Math.max(width, height);
   const pool = buildCandidatePool(candidates, profile, gridLimit);
   const candidateCount = pool.length;
-  const attemptCount = computeAttemptCount(width, height);
+  const maxAttempts = computeMaxAttemptCount(width, height);
+  const deadline = Date.now() + GENERATION_TIME_BUDGET_MS;
   const targetWordCount = Math.min(wordCount, profile.targetWordMax);
 
   if (candidateCount === 0) {
@@ -779,8 +812,13 @@ export function generateGridLayout(options: {
   }
 
   let bestAttempt: SingleAttemptResult | null = null;
+  let attemptsRun = 0;
 
-  for (let attempt = 0; attempt < attemptCount; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (Date.now() >= deadline) {
+      break;
+    }
+
     const result = runSingleAttempt({
       pool,
       profile,
@@ -791,6 +829,7 @@ export function generateGridLayout(options: {
       hasTheme,
       seed: attempt + 1,
     });
+    attemptsRun += 1;
 
     if (!result) {
       continue;
@@ -803,6 +842,10 @@ export function generateGridLayout(options: {
         result.placed.length > bestAttempt.placed.length)
     ) {
       bestAttempt = result;
+    }
+
+    if (bestAttempt && meetsQualityTarget(bestAttempt, profile)) {
+      break;
     }
   }
 
@@ -823,6 +866,8 @@ export function generateGridLayout(options: {
     height,
     hasTheme,
     placedIds,
+    deadlineMs: Date.now() + OPTIMIZATION_TIME_BUDGET_MS,
+    maxBlockRemovals: Math.max(6, Math.floor(Math.max(width, height) * 0.8)),
   });
 
   const hintByWordId = new Map(bestAttempt.placed.map((entry) => [entry.wordId, entry]));
@@ -883,7 +928,7 @@ export function generateGridLayout(options: {
     letterCellCount: utilization.letterCells,
     utilizationRate: utilization.rate,
     crossingCount,
-    attemptCount,
+    attemptCount: attemptsRun,
     bestScore: finalScore.total,
     shortWordCount: wordLengthStats.shortCount,
     mediumWordCount: wordLengthStats.mediumCount,
@@ -902,7 +947,7 @@ export function generateGridLayout(options: {
     summaryNote: buildSummaryNote({
       placedCount: optimizedPlaced.length,
       targetCount: targetWordCount,
-      attemptCount,
+      attemptCount: attemptsRun,
       bestScore: finalScore.total,
       wordLengthStats,
       blockRatio: finalScore.blockRatio,
