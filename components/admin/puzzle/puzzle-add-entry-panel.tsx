@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentStatus, HintType } from "@prisma/client";
 import { Field, SelectInput, adminButtonPrimaryClass } from "@/components/admin/admin-ui";
 import { WordPicker, type WordPickerOption } from "@/components/admin/word-picker";
 import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
@@ -13,8 +14,8 @@ export type PuzzleWordOption = WordPickerOption & {
   hints: Array<{
     id: string;
     text: string;
-    status: "DRAFT" | "APPROVED" | "REJECTED";
-    type: "DEFINITION" | "SYNONYM" | "ASSOCIATION" | "WORDPLAY" | "THEME" | "OTHER";
+    status: ContentStatus;
+    type: HintType;
     difficulty: number | null;
   }>;
 };

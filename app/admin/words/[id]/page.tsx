@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { HintCandidateStatus } from "@prisma/client";
+import type { HintCandidateStatus, LexicalEntryType } from "@prisma/client";
 import {
   AdminPage,
   DatabaseNotice,
@@ -8,13 +8,14 @@ import {
 import { WordDetailHeader } from "@/components/admin/word-detail/word-detail-header";
 import { WordDetailView } from "@/components/admin/word-detail/word-detail-view";
 import type { WordDetailData } from "@/components/admin/word-detail/types";
-import { HINT_CANDIDATE_STATUSES } from "@/lib/content/constants";
+import { HINT_CANDIDATE_STATUSES, LEXICAL_ENTRY_TYPES } from "@/lib/content/constants";
 import { normalizeWordDetailTab } from "@/lib/content/word-detail-path";
 import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 
 type SearchParams = Promise<{
   tab?: string;
   candidateStatus?: HintCandidateStatus | "";
+  entryType?: LexicalEntryType | "";
   error?: string;
   success?: string;
 }>;
@@ -38,6 +39,10 @@ export default async function WordDetailPage({
     HINT_CANDIDATE_STATUSES.includes(feedback.candidateStatus)
       ? feedback.candidateStatus
       : undefined;
+  const entryType =
+    feedback.entryType && LEXICAL_ENTRY_TYPES.includes(feedback.entryType)
+      ? feedback.entryType
+      : undefined;
 
   if (!isDatabaseConfigured()) {
     return (
@@ -54,6 +59,7 @@ export default async function WordDetailPage({
       include: {
         hints: { orderBy: [{ createdAt: "desc" }] },
         hintCandidates: { orderBy: [{ createdAt: "desc" }] },
+        lexicalEntries: { orderBy: [{ type: "asc" }, { value: "asc" }] },
         themes: {
           include: {
             theme: {
@@ -66,6 +72,15 @@ export default async function WordDetailPage({
             },
           },
           orderBy: { theme: { name: "asc" } },
+        },
+        _count: {
+          select: {
+            hints: true,
+            hintCandidates: true,
+            themes: true,
+            puzzleEntries: true,
+            lexicalEntries: true,
+          },
         },
       },
     }),
@@ -86,6 +101,9 @@ export default async function WordDetailPage({
     length: word.length,
     language: word.language,
     status: word.status,
+    source: word.source,
+    sourceReference: word.sourceReference,
+    partOfSpeech: word.partOfSpeech,
     difficulty: word.difficulty,
     crosswordScore: word.crosswordScore,
     notes: word.notes,
@@ -93,6 +111,7 @@ export default async function WordDetailPage({
     updatedAt: word.updatedAt,
     hints: word.hints,
     hintCandidates: word.hintCandidates,
+    lexicalEntries: word.lexicalEntries,
     themes: word.themes.map(({ theme }) => ({
       theme: {
         id: theme.id,
@@ -101,6 +120,13 @@ export default async function WordDetailPage({
         wordCount: theme._count.words,
       },
     })),
+    relationCounts: {
+      hints: word._count.hints,
+      hintCandidates: word._count.hintCandidates,
+      themes: word._count.themes,
+      puzzleEntries: word._count.puzzleEntries,
+      lexicalEntries: word._count.lexicalEntries,
+    },
   };
 
   return (
@@ -111,6 +137,7 @@ export default async function WordDetailPage({
         availableThemes={availableThemes}
         activeTab={activeTab}
         candidateStatus={candidateStatus}
+        entryType={entryType}
       />
     </AdminPage>
   );

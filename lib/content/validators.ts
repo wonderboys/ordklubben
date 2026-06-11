@@ -2,15 +2,21 @@ import { z } from "zod";
 import type { HintType } from "@prisma/client";
 import {
   CONTENT_STATUSES,
+  DEFAULT_HINT_FORMAT,
   DEFAULT_HINT_TONE,
   DEFAULT_HINT_TYPE,
+  HINT_FORMAT_SELECT_OPTIONS,
+  HINT_FORMATS,
   HINT_TONES,
   HINT_TYPE_SELECT_OPTIONS,
   HINT_TYPES,
   IMPORT_BATCH_TYPES,
+  LEXICAL_ENTRY_TYPES,
+  PART_OF_SPEECH_VALUES,
   PUZZLE_DIRECTIONS,
   PUZZLE_STATUSES,
   PUZZLE_TYPE_SELECT_OPTIONS,
+  WORD_SOURCES,
 } from "@/lib/content/constants";
 
 function emptyToUndefined(value: unknown) {
@@ -53,7 +59,7 @@ function optionalHintDifficultyField() {
 }
 
 function optionalHintTypeField() {
-  const hintTypeValues = [...HINT_TYPE_SELECT_OPTIONS, "THEME"] as [
+  const hintTypeValues = [...HINT_TYPE_SELECT_OPTIONS, "THEME", "OTHER"] as [
     HintType,
     ...HintType[],
   ];
@@ -62,6 +68,13 @@ function optionalHintTypeField() {
     const normalized = emptyToUndefined(value);
     return normalized ?? DEFAULT_HINT_TYPE;
   }, z.enum(hintTypeValues));
+}
+
+function optionalHintFormatField() {
+  return z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? DEFAULT_HINT_FORMAT;
+  }, z.enum(HINT_FORMAT_SELECT_OPTIONS));
 }
 
 function optionalHintToneField() {
@@ -79,6 +92,13 @@ function optionalTextField() {
   return z.preprocess(emptyToUndefined, z.string().optional());
 }
 
+function optionalPartOfSpeechField() {
+  return z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? null;
+  }, z.enum(PART_OF_SPEECH_VALUES).nullable());
+}
+
 function requiredTextField(label: string) {
   return z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
@@ -89,25 +109,68 @@ function requiredTextField(label: string) {
 export const createWordSchema = z.object({
   answer: requiredTextField("Ord"),
   status: z.enum(CONTENT_STATUSES),
-  difficulty: optionalIntegerField("Svårighet"),
   notes: optionalTextField(),
 });
 
 export const updateWordSchema = z.object({
   id: requiredTextField("Ord-ID"),
+  answer: requiredTextField("Ord"),
+  normalizedAnswer: requiredTextField("Normaliserat ord"),
+  normalizeFromAnswer: checkboxField(),
   status: z.enum(CONTENT_STATUSES),
-  difficulty: optionalIntegerField("Svårighet"),
-  crosswordScore: optionalIntegerField("Korsordspoäng"),
+  language: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value.trim() : "sv"),
+    z.string().min(2, "Språk måste anges."),
+  ),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  partOfSpeech: optionalPartOfSpeechField(),
   notes: optionalTextField(),
+});
+
+export const archiveWordSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  confirm: z.literal("yes", { message: "Bekräfta borttagningen." }),
+});
+
+export const createLexicalEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  type: z.enum(LEXICAL_ENTRY_TYPES),
+  value: requiredTextField("Värde"),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  notes: optionalTextField(),
+});
+
+export const updateLexicalEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  entryId: requiredTextField("Post-ID"),
+  type: z.enum(LEXICAL_ENTRY_TYPES),
+  value: requiredTextField("Värde"),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  notes: optionalTextField(),
+});
+
+export const deleteLexicalEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  entryId: requiredTextField("Post-ID"),
 });
 
 export const createHintSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
   text: requiredTextField("Nyckeltext"),
   type: z.enum(HINT_TYPES),
+  format: z.enum(HINT_FORMATS),
   status: z.enum(CONTENT_STATUSES),
-  difficulty: optionalIntegerField("Svårighet"),
-  tone: optionalTextField(),
+  difficulty: optionalHintDifficultyField(),
+  tone: optionalHintToneField(),
   source: optionalTextField(),
   notes: optionalTextField(),
 });
@@ -118,6 +181,17 @@ export const updateHintStatusSchema = z.object({
   status: z.enum(CONTENT_STATUSES),
 });
 
+export const updateHintSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  hintId: requiredTextField("Nyckel-ID"),
+  text: requiredTextField("Nyckeltext"),
+  type: optionalHintTypeField(),
+  format: optionalHintFormatField(),
+  difficulty: optionalHintDifficultyField(),
+  tone: optionalHintToneField(),
+  notes: optionalTextField(),
+});
+
 export const createThemeSchema = z.object({
   name: requiredTextField("Namn"),
   slug: optionalTextField(),
@@ -126,8 +200,8 @@ export const createThemeSchema = z.object({
 
 export const importContentSchema = z.object({
   importType: z.enum(IMPORT_BATCH_TYPES),
-  wordStatus: z.enum(["DRAFT", "APPROVED"]),
-  hintStatus: z.enum(["DRAFT", "APPROVED"]),
+  wordStatus: z.enum(["DRAFT", "APPROVED"]).optional(),
+  hintStatus: z.enum(["DRAFT", "APPROVED"]).optional(),
 });
 
 export const addThemeToWordSchema = z.object({
@@ -144,6 +218,7 @@ export const createHintCandidateSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
   text: requiredTextField("Nyckeltext"),
   type: optionalHintTypeField(),
+  format: optionalHintFormatField(),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
   notes: optionalTextField(),
@@ -159,11 +234,13 @@ export const approveEditedHintCandidateSchema = z.object({
   candidateId: requiredTextField("Kandidat-ID"),
   text: requiredTextField("Nyckeltext"),
   type: optionalHintTypeField(),
+  format: optionalHintFormatField(),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
+  notes: optionalTextField(),
 });
 
-export const generateMockHintCandidatesSchema = z.object({
+export const generateHintCandidatesSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
 });
 

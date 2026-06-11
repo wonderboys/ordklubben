@@ -1,6 +1,6 @@
 "use client";
 
-import type { PuzzleDirection } from "@prisma/client";
+import type { ContentStatus, HintType, PuzzleDirection } from "@prisma/client";
 import { AdminStatusBadge } from "@/components/admin/admin-ui";
 import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
 import { getAnswerLength } from "@/lib/content/puzzle/grid";
@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export type PuzzlePlacedEntryHint = {
   id: string;
   text: string;
-  status: "DRAFT" | "APPROVED" | "REJECTED";
-  type: "DEFINITION" | "SYNONYM" | "ASSOCIATION" | "WORDPLAY" | "THEME" | "OTHER";
+  status: ContentStatus;
+  type: HintType;
   difficulty: number | null;
 };
 
@@ -21,8 +21,8 @@ export type PuzzlePlacedEntry = {
   hintId: string | null;
   hintSnapshot: string | null;
   hintText: string | null;
-  hintType: "DEFINITION" | "SYNONYM" | "ASSOCIATION" | "WORDPLAY" | "THEME" | "OTHER" | null;
-  hintStatus: "DRAFT" | "APPROVED" | "REJECTED" | null;
+  hintType: HintType | null;
+  hintStatus: ContentStatus | null;
   row: number;
   col: number;
   direction: PuzzleDirection;

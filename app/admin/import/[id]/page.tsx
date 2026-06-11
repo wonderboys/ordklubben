@@ -6,6 +6,9 @@ import {
   DatabaseNotice,
   Table,
 } from "@/components/admin/admin-ui";
+import {
+  importErrorTableHeaders,
+} from "@/components/admin/import-result-summary";
 import { IMPORT_BATCH_TYPE_LABELS } from "@/lib/content/constants";
 import {
   parseBatchErrorRows,
@@ -16,6 +19,35 @@ import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 type Params = Promise<{
   id: string;
 }>;
+
+function buildSummaryRows(
+  batchType: import("@prisma/client").ImportBatchType,
+  summary: ReturnType<typeof parseBatchSummary>,
+  errorCount: number,
+) {
+  if (batchType === "LEXICON") {
+    return [
+      ["Rader lästa", String(summary?.totalRows ?? 0)],
+      ["Importerade", String(summary?.createdLexicalEntries ?? 0)],
+      ["Dubbletter", String(summary?.skippedDuplicateLexicalEntries ?? 0)],
+      ["Saknade ord", String(summary?.skippedMissingWords ?? 0)],
+      ["Felrader", String(summary?.failedRows ?? errorCount)],
+    ];
+  }
+
+  return [
+    ["Skapade ord", String(summary?.createdWords ?? 0)],
+    ["Återanvända ord", String(summary?.reusedWords ?? 0)],
+    ["Skippade ord", String(summary?.skippedWords ?? 0)],
+    ["Skapade nycklar", String(summary?.createdHints ?? 0)],
+    ["Skippade nycklar", String(summary?.skippedHints ?? 0)],
+    ["Skapade teman", String(summary?.createdThemes ?? 0)],
+    ["Återanvända teman", String(summary?.reusedThemes ?? 0)],
+    ["Skapade temakopplingar", String(summary?.createdThemeLinks ?? 0)],
+    ["Återanvända temakopplingar", String(summary?.reusedThemeLinks ?? 0)],
+    ["Felrader", String(summary?.failedRows ?? errorCount)],
+  ];
+}
 
 export default async function ImportBatchDetailPage({
   params,
@@ -43,6 +75,7 @@ export default async function ImportBatchDetailPage({
 
   const summary = parseBatchSummary(batch.summary);
   const errorRows = parseBatchErrorRows(batch.errorRows);
+  const errorHeaders = importErrorTableHeaders(batch.type);
 
   return (
     <AdminPage
@@ -78,18 +111,7 @@ export default async function ImportBatchDetailPage({
 
         <AdminPanel title="Sammanfattning">
           <Table headers={["Resultat", "Antal"]}>
-            {[
-              ["Skapade ord", String(summary?.createdWords ?? 0)],
-              ["Återanvända ord", String(summary?.reusedWords ?? 0)],
-              ["Skippade ord", String(summary?.skippedWords ?? 0)],
-              ["Skapade nycklar", String(summary?.createdHints ?? 0)],
-              ["Skippade nycklar", String(summary?.skippedHints ?? 0)],
-              ["Skapade teman", String(summary?.createdThemes ?? 0)],
-              ["Återanvända teman", String(summary?.reusedThemes ?? 0)],
-              ["Skapade temakopplingar", String(summary?.createdThemeLinks ?? 0)],
-              ["Återanvända temakopplingar", String(summary?.reusedThemeLinks ?? 0)],
-              ["Felrader", String(summary?.failedRows ?? errorRows.length)],
-            ].map(([label, value]) => (
+            {buildSummaryRows(batch.type, summary, errorRows.length).map(([label, value]) => (
               <tr key={label} className="border-b border-print-ink/10 align-top">
                 <td>{label}</td>
                 <td>{value}</td>
@@ -99,8 +121,8 @@ export default async function ImportBatchDetailPage({
         </AdminPanel>
       </div>
 
-      <AdminPanel title="Felrader">
-        <Table headers={["Rad", "Orsak", "Ord", "Nyckel"]}>
+      <AdminPanel title="Felrader och hoppade rader">
+        <Table headers={[...errorHeaders]}>
           {errorRows.map((errorRow, index) => (
             <tr key={`${errorRow.rowNumber}-${index}`} className="border-b border-print-ink/10 align-top">
               <td>{errorRow.rowNumber === 0 ? "Allmänt" : errorRow.rowNumber}</td>

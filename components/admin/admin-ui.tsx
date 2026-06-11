@@ -194,30 +194,7 @@ export function AdminSection({
   );
 }
 
-export function FeedbackMessage({
-  error,
-  success,
-}: {
-  error?: string;
-  success?: string;
-}) {
-  if (!error && !success) {
-    return null;
-  }
-
-  return (
-    <div
-      className={cn(
-        "border px-3 py-2 text-sm",
-        error
-          ? "border-print-red/30 bg-print-red-soft text-print-red"
-          : "border-print-green/30 bg-print-green-soft text-print-green",
-      )}
-    >
-      {error ?? success}
-    </div>
-  );
-}
+export { FeedbackMessage } from "@/components/admin/feedback-message";
 
 export function DatabaseNotice() {
   return (
@@ -489,7 +466,13 @@ export function AdminStatusBadge({
 
 export function StatusBadge({ status }: { status: ContentStatus }) {
   const tone: AdminBadgeTone =
-    status === "APPROVED" ? "success" : status === "REJECTED" ? "danger" : "neutral";
+    status === "APPROVED"
+      ? "success"
+      : status === "REJECTED"
+        ? "danger"
+        : status === "ARCHIVED"
+          ? "warning"
+          : "neutral";
 
   return <AdminStatusBadge tone={tone}>{STATUS_LABELS[status]}</AdminStatusBadge>;
 }

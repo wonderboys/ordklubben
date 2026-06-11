@@ -10,6 +10,8 @@
     "lint": "eslint",
     "check:legacy-design": "node scripts/check-legacy-design.mjs",
     "check:stegvis": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-puzzles.ts",
+    "check:stegvis-graph": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-graph.ts",
+    "check:stegvis-generator": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-generator.ts",
     "check:dagens-ord": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-dagens-ord-eval.ts",
     "build:wordlists": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/build-wordlists.ts",
     "import:words": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/import-words.ts",

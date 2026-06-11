@@ -1,19 +1,27 @@
 import type {
   ContentStatus,
+  HintFormat,
   HintType,
   ImportBatchType,
   PrismaClient,
   Prisma,
 } from "@prisma/client";
-import { HINT_TYPES } from "@/lib/content/constants";
+import {
+  normalizeHintSource,
+  parseHintFormatInput,
+  parseHintTypeInput,
+} from "@/lib/content/normalize-hint-metadata";
 import type { BatchSummary } from "@/lib/content/import-batch";
+import { parseCsv, requireCsvHeaders } from "@/lib/content/import-csv";
 import {
   isValidAnswerFormat,
   normalizeAnswer,
   slugifyThemeName,
 } from "@/lib/content/normalize-answer";
-
-type CsvRow = Record<string, string>;
+import {
+  normalizeWordSource,
+  resolveWordSourceReference,
+} from "@/lib/content/normalize-word-source";
 
 export type ImportErrorRow = {
   rowNumber: number;
@@ -41,79 +49,6 @@ type ImportContentOptions = {
   source?: string;
 };
 
-type ParsedCsv = {
-  headers: string[];
-  rows: CsvRow[];
-};
-
-function parseCsvRow(line: string) {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-
-    if (char === '"') {
-      if (inQuotes && line[index + 1] === '"') {
-        current += '"';
-        index += 1;
-        continue;
-      }
-
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (char === "," && !inQuotes) {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  cells.push(current);
-  return cells.map((cell) => cell.trim());
-}
-
-function parseCsv(csvText: string): ParsedCsv {
-  const lines = csvText
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((line) => line.trim().length > 0);
-
-  if (lines.length === 0) {
-    throw new Error("CSV-filen är tom.");
-  }
-
-  const headers = parseCsvRow(lines[0]).map((header) =>
-    header.trim().toLocaleLowerCase("sv-SE"),
-  );
-
-  const rows = lines.slice(1).map((line) => {
-    const values = parseCsvRow(line);
-    const row: CsvRow = {};
-
-    headers.forEach((header, index) => {
-      row[header] = values[index] ?? "";
-    });
-
-    return row;
-  });
-
-  return { headers, rows };
-}
-
-function requireHeaders(headers: string[], requiredHeaders: string[]) {
-  const missing = requiredHeaders.filter((header) => !headers.includes(header));
-
-  if (missing.length > 0) {
-    throw new Error(`CSV-filen saknar kolumn(er): ${missing.join(", ")}.`);
-  }
-}
-
 function parseOptionalInteger(value: string, label: string) {
   const trimmed = value.trim();
 
@@ -134,14 +69,11 @@ function parseOptionalInteger(value: string, label: string) {
 }
 
 function parseHintType(value: string): HintType {
-  const trimmed = value.trim();
+  return parseHintTypeInput(value);
+}
 
-  if (trimmed.length === 0) {
-    return "DEFINITION";
-  }
-
-  const normalized = trimmed.toLocaleUpperCase("sv-SE") as HintType;
-  return HINT_TYPES.includes(normalized) ? normalized : "OTHER";
+function parseHintFormat(value: string): HintFormat {
+  return parseHintFormatInput(value);
 }
 
 function parseContentStatus(
@@ -188,6 +120,9 @@ function buildSummary(summary: ImportSummary): Prisma.InputJsonObject {
     reusedThemes: summary.reusedThemes,
     createdThemeLinks: summary.createdThemeLinks,
     reusedThemeLinks: summary.reusedThemeLinks,
+    createdLexicalEntries: summary.createdLexicalEntries,
+    skippedDuplicateLexicalEntries: summary.skippedDuplicateLexicalEntries,
+    skippedMissingWords: summary.skippedMissingWords,
   };
 }
 
@@ -342,7 +277,7 @@ export async function importContent({
   importType,
   defaultWordStatus,
   defaultHintStatus,
-  source = "admin_csv",
+  source = "import",
 }: ImportContentOptions): Promise<ImportContentResult> {
   const batch = await prisma.importBatch.create({
     data: {
@@ -365,6 +300,9 @@ export async function importContent({
     reusedThemes: 0,
     createdThemeLinks: 0,
     reusedThemeLinks: 0,
+    createdLexicalEntries: 0,
+    skippedDuplicateLexicalEntries: 0,
+    skippedMissingWords: 0,
   };
   const errorRows: ImportErrorRow[] = [];
 
@@ -373,9 +311,9 @@ export async function importContent({
     summary.totalRows = parsedCsv.rows.length;
 
     if (importType === "WORDS") {
-      requireHeaders(parsedCsv.headers, ["answer"]);
+      requireCsvHeaders(parsedCsv.headers, ["answer"]);
     } else {
-      requireHeaders(parsedCsv.headers, ["answer", "hint"]);
+      requireCsvHeaders(parsedCsv.headers, ["answer", "hint"]);
     }
 
     const wordCache = new Map<string, { id: string; existsBefore: boolean }>();
@@ -522,6 +460,15 @@ export async function importContent({
           wordCache.set(normalized.normalizedAnswer, word);
           summary.reusedWords += 1;
         } else {
+          const rawWordSource = row.source?.trim() ?? "";
+          const wordSource = normalizeWordSource(rawWordSource || source || "import");
+          const wordSourceReference = resolveWordSourceReference({
+            source: wordSource,
+            explicitReference: row.sourcereference ?? row.source_reference,
+            rawSourceInput: rawWordSource,
+            importFilename: filename,
+          });
+
           const createdWord = await prisma.word.create({
             data: {
               answer: normalized.answer,
@@ -529,6 +476,8 @@ export async function importContent({
               length: normalized.length,
               language: "sv",
               status: rowWordStatus.value,
+              source: wordSource,
+              sourceReference: wordSourceReference,
               difficulty: rowDifficulty.value,
               crosswordScore: rowCrosswordScore.value,
               notes: row.notes?.trim() || undefined,
@@ -626,10 +575,11 @@ export async function importContent({
           wordId: word.id,
           text: hintText,
           type: parseHintType(row.type ?? ""),
+          format: parseHintFormat(row.format ?? ""),
           status: hintStatusForRow,
           difficulty: rowDifficulty.value,
           tone: row.tone?.trim() || undefined,
-          source: row.source?.trim() || source,
+          source: normalizeHintSource(row.source?.trim() || source, "import"),
           notes: row.notes?.trim() || undefined,
         },
       });

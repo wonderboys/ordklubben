@@ -3,32 +3,51 @@
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { mockGenerateHintCandidates } from "@/lib/content/ai/mock-generate-hint-candidates";
+import { generateHintCandidates } from "@/lib/content/ai/generate-hint-candidates";
+import { partitionDuplicateHintCandidateDrafts } from "@/lib/content/ai/filter-hint-candidate-drafts";
+import { logSkippedHintCandidates } from "@/lib/content/ai/hint-candidate-skip-log";
+import { AiHintGenerationError } from "@/lib/content/ai/parse-hint-candidates-response";
 import { approveCandidateAsHint } from "@/lib/content/hint-candidate";
-import { trimHintText } from "@/lib/content/normalize-hint";
+import { normalizeHintText, trimHintText } from "@/lib/content/normalize-hint";
 import {
   addThemeToWordSchema,
   approveEditedHintCandidateSchema,
+  archiveWordSchema,
   bulkWordActionSchema,
   bulkWordThemeActionSchema,
   createHintCandidateSchema,
   createHintSchema,
+  createLexicalEntrySchema,
   createThemeSchema,
   createWordSchema,
-  generateMockHintCandidatesSchema,
+  deleteLexicalEntrySchema,
+  generateHintCandidatesSchema,
   hintCandidateActionSchema,
   importContentSchema,
   removeThemeFromWordSchema,
+  updateHintSchema,
   updateHintStatusSchema,
+  updateLexicalEntrySchema,
   updateWordSchema,
 } from "@/lib/content/validators";
+import {
+  normalizeApprovedHintMetadata,
+  normalizeHintSource,
+} from "@/lib/content/normalize-hint-metadata";
 import { getPrisma } from "@/lib/db/prisma";
 import {
   isValidAnswerFormat,
+  isValidNormalizedAnswer,
   normalizeAnswer,
+  normalizeNormalizedAnswerInput,
   slugifyThemeName,
 } from "@/lib/content/normalize-answer";
+import {
+  normalizeWordSource,
+  resolveWordSourceReference,
+} from "@/lib/content/normalize-word-source";
 import { importContent } from "@/lib/content/import-content";
+import { importLexicon } from "@/lib/content/import-lexicon";
 import { wordDetailPathFromForm } from "@/lib/content/word-detail-path";
 
 function redirectToWord(
@@ -113,8 +132,9 @@ export async function createWord(formData: FormData) {
         answer: normalized.answer,
         normalizedAnswer: normalized.normalizedAnswer,
         length: normalized.length,
+        language: "sv",
         status: parsed.data.status,
-        difficulty: parsed.data.difficulty,
+        source: "manual",
         notes: parsed.data.notes,
       },
     });
@@ -150,20 +170,211 @@ export async function updateWord(formData: FormData) {
     );
   }
 
+  if (!isValidAnswerFormat(parsed.data.answer)) {
+    redirectToWord(
+      parsed.data.id,
+      formData,
+      "error",
+      "Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.",
+    );
+  }
+
+  const answerNormalized = normalizeAnswer(parsed.data.answer);
+  const normalizedAnswer = parsed.data.normalizeFromAnswer
+    ? answerNormalized.normalizedAnswer
+    : normalizeNormalizedAnswerInput(parsed.data.normalizedAnswer);
+
+  if (!isValidNormalizedAnswer(normalizedAnswer)) {
+    redirectToWord(
+      parsed.data.id,
+      formData,
+      "error",
+      "Normaliserat ord måste bestå av svenska bokstäver utan mellanslag eller skiljetecken.",
+    );
+  }
+
   const prisma = getPrisma();
-  await prisma.word.update({
-    where: { id: parsed.data.id },
-    data: {
-      status: parsed.data.status,
-      difficulty: parsed.data.difficulty,
-      crosswordScore: parsed.data.crosswordScore,
-      notes: parsed.data.notes,
-    },
-  });
+
+  try {
+    await prisma.word.update({
+      where: { id: parsed.data.id },
+      data: {
+        answer: answerNormalized.answer,
+        normalizedAnswer,
+        length: normalizedAnswer.length,
+        status: parsed.data.status,
+        language: parsed.data.language,
+        source: normalizeWordSource(parsed.data.source),
+        partOfSpeech: parsed.data.partOfSpeech,
+        notes: parsed.data.notes,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.id,
+        formData,
+        "error",
+        "Det finns redan ett ord med samma normaliserade form.",
+      );
+    }
+
+    throw error;
+  }
 
   revalidatePath("/admin/words");
   revalidatePath(`/admin/words/${parsed.data.id}`);
   redirectToWord(parsed.data.id, formData, "success", "Ordet uppdaterades.");
+}
+
+export async function archiveWord(formData: FormData) {
+  const parsed = archiveWordSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const word = await prisma.word.findUnique({
+    where: { id: parsed.data.wordId },
+    select: { id: true, status: true },
+  });
+
+  if (!word) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+  }
+
+  if (word.status === "ARCHIVED") {
+    redirectToWord(parsed.data.wordId, formData, "error", "Ordet är redan arkiverat.");
+  }
+
+  await prisma.word.update({
+    where: { id: parsed.data.wordId },
+    data: { status: "ARCHIVED" },
+  });
+
+  revalidatePath("/admin/words");
+  revalidatePath(`/admin/words/${parsed.data.wordId}`);
+  redirectWithMessage("/admin/words", "success", "Ordet arkiverades.");
+}
+
+export async function createLexicalEntry(formData: FormData) {
+  const parsed = createLexicalEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const value = parsed.data.value.trim().replace(/\s+/g, " ");
+  const prisma = getPrisma();
+
+  try {
+    await prisma.wordLexicalEntry.create({
+      data: {
+        wordId: parsed.data.wordId,
+        type: parsed.data.type,
+        value,
+        source: normalizeWordSource(parsed.data.source),
+        notes: parsed.data.notes,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "En lexikal post med samma typ och värde finns redan.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post skapades.");
+}
+
+export async function updateLexicalEntry(formData: FormData) {
+  const parsed = updateLexicalEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const value = parsed.data.value.trim().replace(/\s+/g, " ");
+  const prisma = getPrisma();
+
+  try {
+    await prisma.wordLexicalEntry.update({
+      where: { id: parsed.data.entryId },
+      data: {
+        type: parsed.data.type,
+        value,
+        source: normalizeWordSource(parsed.data.source),
+        notes: parsed.data.notes,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "En lexikal post med samma typ och värde finns redan.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post uppdaterades.");
+}
+
+export async function deleteLexicalEntry(formData: FormData) {
+  const parsed = deleteLexicalEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const entry = await prisma.wordLexicalEntry.findUnique({
+    where: { id: parsed.data.entryId },
+    select: { wordId: true },
+  });
+
+  if (!entry || entry.wordId !== parsed.data.wordId) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Posten kunde inte hittas.");
+  }
+
+  await prisma.wordLexicalEntry.delete({
+    where: { id: parsed.data.entryId },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post togs bort.");
 }
 
 export async function createHint(formData: FormData) {
@@ -179,15 +390,23 @@ export async function createHint(formData: FormData) {
   }
 
   const prisma = getPrisma();
+  const metadata = normalizeApprovedHintMetadata({
+    type: parsed.data.type,
+    format: parsed.data.format,
+    difficulty: parsed.data.difficulty,
+    tone: parsed.data.tone,
+  });
+
   await prisma.hint.create({
     data: {
       wordId: parsed.data.wordId,
       text: parsed.data.text,
-      type: parsed.data.type,
+      type: metadata.type,
+      format: metadata.format,
       status: parsed.data.status,
-      difficulty: parsed.data.difficulty,
-      tone: parsed.data.tone,
-      source: parsed.data.source,
+      difficulty: metadata.difficulty,
+      tone: metadata.tone,
+      source: normalizeHintSource(parsed.data.source, "manual"),
       notes: parsed.data.notes,
     },
   });
@@ -220,6 +439,43 @@ export async function updateHintStatus(formData: FormData) {
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
   revalidatePath("/admin/words");
   redirectToWord(parsed.data.wordId, formData, "success", "Nyckelstatus uppdaterades.");
+}
+
+export async function updateHint(formData: FormData) {
+  const parsed = updateHintSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const metadata = normalizeApprovedHintMetadata({
+    type: parsed.data.type,
+    format: parsed.data.format,
+    difficulty: parsed.data.difficulty,
+    tone: parsed.data.tone,
+  });
+
+  const prisma = getPrisma();
+  await prisma.hint.update({
+    where: { id: parsed.data.hintId },
+    data: {
+      text: trimHintText(parsed.data.text),
+      type: metadata.type,
+      format: metadata.format,
+      difficulty: metadata.difficulty,
+      tone: metadata.tone,
+      notes: parsed.data.notes,
+    },
+  });
+
+  revalidatePath(`/admin/words/${parsed.data.wordId}`);
+  revalidatePath("/admin/words");
+  redirectToWord(parsed.data.wordId, formData, "success", "Nyckeln uppdaterades.");
 }
 
 export async function createTheme(formData: FormData) {
@@ -279,14 +535,22 @@ export async function importContentAction(formData: FormData) {
 
   const csvText = await file.text();
   const prisma = getPrisma();
-  const result = await importContent({
-    prisma,
-    csvText,
-    filename: file.name,
-    importType: parsed.data.importType,
-    defaultWordStatus: parsed.data.wordStatus,
-    defaultHintStatus: parsed.data.hintStatus,
-  });
+
+  const result =
+    parsed.data.importType === "LEXICON"
+      ? await importLexicon({
+          prisma,
+          csvText,
+          filename: file.name,
+        })
+      : await importContent({
+          prisma,
+          csvText,
+          filename: file.name,
+          importType: parsed.data.importType,
+          defaultWordStatus: parsed.data.wordStatus ?? "DRAFT",
+          defaultHintStatus: parsed.data.hintStatus ?? "DRAFT",
+        });
 
   revalidatePath("/admin/import");
   revalidatePath("/admin/words");
@@ -430,15 +694,23 @@ export async function createHintCandidate(formData: FormData) {
   }
 
   const prisma = getPrisma();
+  const metadata = normalizeApprovedHintMetadata({
+    type: parsed.data.type,
+    format: parsed.data.format,
+    difficulty: parsed.data.difficulty,
+    tone: parsed.data.tone,
+  });
+
   await prisma.hintCandidate.create({
     data: {
       wordId: parsed.data.wordId,
       text: trimHintText(parsed.data.text),
-      type: parsed.data.type,
-      difficulty: parsed.data.difficulty,
-      tone: parsed.data.tone,
+      type: metadata.type,
+      format: metadata.format,
+      difficulty: metadata.difficulty,
+      tone: metadata.tone,
       notes: parsed.data.notes,
-      source: "manual_candidate",
+      source: "manual",
     },
   });
 
@@ -467,9 +739,11 @@ export async function approveHintCandidate(formData: FormData) {
     select: {
       text: true,
       type: true,
+      format: true,
       difficulty: true,
       tone: true,
       source: true,
+      notes: true,
     },
   });
 
@@ -482,9 +756,11 @@ export async function approveHintCandidate(formData: FormData) {
     candidateId: parsed.data.candidateId,
     text: candidate.text,
     type: candidate.type,
+    format: candidate.format,
     difficulty: candidate.difficulty ?? undefined,
     tone: candidate.tone ?? undefined,
     source: candidate.source,
+    notes: candidate.notes,
   });
 
   if (!result.ok) {
@@ -513,7 +789,7 @@ export async function approveEditedHintCandidate(formData: FormData) {
       id: parsed.data.candidateId,
       wordId: parsed.data.wordId,
     },
-    select: { source: true },
+    select: { source: true, notes: true },
   });
 
   if (!candidate) {
@@ -525,9 +801,11 @@ export async function approveEditedHintCandidate(formData: FormData) {
     candidateId: parsed.data.candidateId,
     text: parsed.data.text,
     type: parsed.data.type,
+    format: parsed.data.format,
     difficulty: parsed.data.difficulty,
     tone: parsed.data.tone,
     source: candidate.source,
+    notes: parsed.data.notes ?? candidate.notes,
   });
 
   if (!result.ok) {
@@ -621,8 +899,42 @@ export async function deleteHintCandidate(formData: FormData) {
   redirectToWord(parsed.data.wordId, formData, "success", "Förslaget togs bort.");
 }
 
-export async function generateMockHintCandidates(formData: FormData) {
-  const parsed = generateMockHintCandidatesSchema.safeParse(getFormValues(formData));
+async function loadExistingHintTextKeys(wordId: string) {
+  const prisma = getPrisma();
+  const [hints, pendingCandidates] = await Promise.all([
+    prisma.hint.findMany({
+      where: { wordId },
+      select: { text: true },
+    }),
+    prisma.hintCandidate.findMany({
+      where: { wordId, status: "PENDING" },
+      select: { text: true },
+    }),
+  ]);
+
+  return [
+    ...hints.map((hint) => normalizeHintText(hint.text)),
+    ...pendingCandidates.map((candidate) => normalizeHintText(candidate.text)),
+  ];
+}
+
+function buildHintGenerationSuccessMessage(
+  createdCount: number,
+  skippedCount: number,
+) {
+  const countLabel = createdCount === 1 ? "förslag" : "förslag";
+  let message = `${createdCount} ${countLabel} skapades.`;
+
+  if (skippedCount > 0) {
+    const skippedLabel = skippedCount === 1 ? "förslag" : "förslag";
+    message += ` ${skippedCount} ${skippedLabel} hoppades över eftersom de var ogiltiga eller dubbletter.`;
+  }
+
+  return message;
+}
+
+export async function generateHintCandidatesAction(formData: FormData) {
+  const parsed = generateHintCandidatesSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
     redirectToWord(
@@ -648,18 +960,57 @@ export async function generateMockHintCandidates(formData: FormData) {
     redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
   }
 
-  const generated = mockGenerateHintCandidates({
-    wordId: word.id,
-    answer: word.answer,
-    normalizedAnswer: word.normalizedAnswer,
-    language: word.language,
-  });
+  let generated;
+
+  try {
+    generated = await generateHintCandidates({
+      wordId: word.id,
+      answer: word.answer,
+      normalizedAnswer: word.normalizedAnswer,
+      language: word.language,
+    });
+  } catch (error) {
+    const message =
+      error instanceof AiHintGenerationError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "AI-generering misslyckades. Inga förslag skapades.";
+
+    redirectToWord(parsed.data.wordId, formData, "error", message);
+  }
+
+  const existingTexts = await loadExistingHintTextKeys(word.id);
+  const { accepted: uniqueCandidates, skipped: skippedDuplicates } =
+    partitionDuplicateHintCandidateDrafts(generated.candidates, existingTexts);
+
+  logSkippedHintCandidates(
+    "Filtrerade befintliga dubbletter",
+    word.answer,
+    skippedDuplicates,
+  );
+
+  const skippedDuplicate = skippedDuplicates.length;
+  const skippedInvalid = generated.stats?.skippedInvalid ?? 0;
+  const skippedTotal = skippedInvalid + skippedDuplicate;
+
+  if (uniqueCandidates.length === 0) {
+    redirectToWord(
+      parsed.data.wordId,
+      formData,
+      "error",
+      skippedTotal > 0
+        ? "AI-generering gav inga nya förslag. Alla ledtrådar var ogiltiga eller fanns redan."
+        : "AI skapade inga nya förslag.",
+    );
+  }
 
   await prisma.hintCandidate.createMany({
-    data: generated.candidates.map((candidate) => ({
+    data: uniqueCandidates.map((candidate) => ({
       wordId: word.id,
       text: trimHintText(candidate.text),
       type: candidate.type,
+      format: candidate.format ?? "TEXT",
       difficulty: candidate.difficulty,
       tone: candidate.tone,
       source: candidate.source,
@@ -674,7 +1025,7 @@ export async function generateMockHintCandidates(formData: FormData) {
     parsed.data.wordId,
     formData,
     "success",
-    `${generated.candidates.length} testförslag skapades.`,
+    buildHintGenerationSuccessMessage(uniqueCandidates.length, skippedTotal),
   );
 }
 

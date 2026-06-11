@@ -30,6 +30,21 @@ export function isValidAnswerFormat(input: string) {
   );
 }
 
+const NORMALIZED_ANSWER_PATTERN = /^[A-ZÅÄÖ]+$/u;
+
+export function normalizeNormalizedAnswerInput(input: string) {
+  return input
+    .trim()
+    .normalize("NFC")
+    .toLocaleUpperCase("sv-SE")
+    .replace(REMOVABLE_CHARS_PATTERN, "");
+}
+
+export function isValidNormalizedAnswer(input: string) {
+  const normalized = normalizeNormalizedAnswerInput(input);
+  return normalized.length > 0 && NORMALIZED_ANSWER_PATTERN.test(normalized);
+}
+
 export function slugifyThemeName(input: string) {
   return input
     .trim()

@@ -12,6 +12,9 @@ export type BatchSummary = {
   reusedThemes: number;
   createdThemeLinks: number;
   reusedThemeLinks: number;
+  createdLexicalEntries: number;
+  skippedDuplicateLexicalEntries: number;
+  skippedMissingWords: number;
 };
 
 export type BatchErrorRow = {
@@ -40,7 +43,18 @@ export function parseBatchSummary(value: Prisma.JsonValue | null): BatchSummary 
     reusedThemes: Number(record.reusedThemes ?? 0),
     createdThemeLinks: Number(record.createdThemeLinks ?? 0),
     reusedThemeLinks: Number(record.reusedThemeLinks ?? 0),
+    createdLexicalEntries: Number(record.createdLexicalEntries ?? 0),
+    skippedDuplicateLexicalEntries: Number(record.skippedDuplicateLexicalEntries ?? 0),
+    skippedMissingWords: Number(record.skippedMissingWords ?? 0),
   };
+}
+
+export function isLexiconBatchSummary(summary: BatchSummary) {
+  return (
+    summary.createdLexicalEntries > 0 ||
+    summary.skippedDuplicateLexicalEntries > 0 ||
+    summary.skippedMissingWords > 0
+  );
 }
 
 export function parseBatchErrorRows(value: Prisma.JsonValue | null): BatchErrorRow[] {

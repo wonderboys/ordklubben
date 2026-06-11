@@ -1,24 +1,26 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { LetterTile } from "@/components/games/letter-tile";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { BodyText, MonoLabel } from "@/components/ui/typography";
-import { stegvisPuzzles } from "@/data/stegvis/puzzles";
+import { motion } from "framer-motion";
+import { CircleDot, Flag } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  createStegvisRound,
-  getStegvisStepFeedback,
-  getStegvisStepOptions,
-  getStegvisTargetProximityHint,
-  isStegvisSolved,
-  normalizeStegvisWord,
-  pickDailyPuzzle,
-  pickRandomPuzzle,
-  validateStegvisStep,
-  type StegvisRound,
-} from "@/lib/game/stegvis";
+  StegvisResultModal,
+  type StegvisResultData,
+} from "@/components/games/stegvis/stegvis-result-modal";
+import {
+  type WordTileRowCell,
+  WordTileRow,
+} from "@/components/games/word-tiles";
+import { Card, CardContent } from "@/components/ui/card";
+import { MonoLabel } from "@/components/ui/typography";
+import type { StegvisChainStep, StegvisPuzzleBundle } from "@/lib/content/stegvis";
+import type { StegvisPlaySession } from "@/lib/content/stegvis/load-play-session";
+import {
+  chainMeetsPlayRequirement,
+  STEGVIS_MIDDLE_STEP_COUNT,
+} from "@/lib/content/stegvis/play-chain";
+import { validateStegvisChainStep } from "@/lib/game/stegvis-chain-validation";
+import { normalizeStegvisWord, pickRandomPuzzle } from "@/lib/game/stegvis";
 import {
   loadStegvisStats,
   saveStegvisStats,
@@ -26,170 +28,340 @@ import {
 } from "@/lib/storage/stegvis-stats";
 import { cn } from "@/lib/utils";
 
-const GAME_INSTRUCTION =
-  "Välj nästa ord och ändra en bokstav i taget tills du når målordet. Varje steg måste vara ett riktigt svenskt ord.";
+const TIMELINE_WIDTH_CLASS = "w-11 shrink-0 sm:w-12";
 
-function WordTilesRow({
-  word,
-  tileState = "idle",
-  className,
+function buildTileCells(options: {
+  length: number;
+  word?: string;
+  isPassive: boolean;
+  isSolved: boolean;
+  isActive: boolean;
+}): WordTileRowCell[] {
+  const { length, word, isPassive, isSolved, isActive } = options;
+  const letters = word?.split("") ?? [];
+
+  const filledCount = letters.filter((letter) => letter && letter !== "-").length;
+
+  return Array.from({ length }, (_, index) => {
+    const raw = letters[index];
+    const letter =
+      raw && raw !== "-" ? raw.toLocaleUpperCase("sv-SE") : undefined;
+
+    if (!letter) {
+      return {
+        emptyActive: isActive && index === filledCount,
+      };
+    }
+
+    return {
+      letter,
+      state: isPassive || !isSolved ? "idle" : "used",
+    };
+  });
+}
+
+function StepClueBlock({
+  text,
+  active = false,
 }: {
-  word: string;
-  tileState?: "idle" | "active" | "success" | "used";
-  className?: string;
+  text: string;
+  active?: boolean;
 }) {
   return (
-    <div className={cn("flex gap-1.5 sm:gap-2", className)}>
-      {word.split("").map((letter, index) => (
-        <LetterTile
-          key={`${word}-${index}`}
-          letter={letter.toLocaleUpperCase("sv-SE")}
-          size="xs"
-          state={tileState}
-          className="!size-auto aspect-[5/6] min-w-0 flex-1 max-w-[2.75rem] text-xl leading-none sm:max-w-[3rem] sm:text-[1.65rem]"
-        />
-      ))}
+    <div className="flex min-w-0 flex-col justify-center gap-1 pr-1">
+      <MonoLabel
+        className={cn(
+          "text-[10px] uppercase tracking-[0.14em]",
+          active ? "text-print-green" : "text-print-muted",
+        )}
+      >
+        Ledtråd
+      </MonoLabel>
+      <p className="text-base font-semibold leading-snug text-print-ink">
+        {text}
+      </p>
     </div>
   );
 }
 
-function ChainArrow() {
-  return (
-    <p
-      aria-hidden
-      className="py-0.5 pl-1 text-lg leading-none text-print-muted print-mono"
-    >
-      ↓
-    </p>
-  );
-}
-
-function PuzzleEndpoint({
+function TimelineMarker({
   label,
-  word,
-  tileState,
+  active = false,
+  variant,
 }: {
   label: string;
-  word: string;
-  tileState: "idle" | "active";
+  active?: boolean;
+  variant: "start" | "middle" | "goal";
 }) {
-  return (
-    <div className="min-w-0 flex-1 space-y-1.5">
-      <MonoLabel muted className="text-[11px] uppercase tracking-wide">
-        {label}
-      </MonoLabel>
-      <WordTilesRow word={word} tileState={tileState} />
-    </div>
+  const endpointIconClass = cn(
+    "size-5 sm:size-[22px]",
+    active ? "text-print-green" : "text-print-muted",
   );
-}
-
-function WordChain({
-  words,
-  currentIndex,
-}: {
-  words: string[];
-  currentIndex: number;
-}) {
-  return (
-    <div className="space-y-1">
-      {words.map((word, index) => {
-        const isStart = index === 0;
-        const isCurrent = index === currentIndex;
-
-        return (
-          <div key={`${word}-${index}`}>
-            {index > 0 ? <ChainArrow /> : null}
-            <div
-              className={cn(
-                "rounded-none border px-3 py-2.5 sm:px-4 sm:py-3",
-                isCurrent
-                  ? "border-print-green bg-print-green-soft"
-                  : "border-transparent bg-transparent",
-              )}
-            >
-              <div className="mb-2 flex min-h-[1.125rem] items-center gap-2">
-                {isStart ? (
-                  <MonoLabel muted className="text-[10px] uppercase tracking-wide">
-                    Start
-                  </MonoLabel>
-                ) : null}
-                {isCurrent ? (
-                  <Badge variant="eyebrow" className="px-1.5 py-0.5 text-[10px]">
-                    Aktuellt
-                  </Badge>
-                ) : null}
-              </div>
-              <WordTilesRow
-                word={word}
-                tileState={isCurrent ? "active" : isStart ? "idle" : "used"}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function StepOptionButton({
-  word,
-  onSelect,
-}: {
-  word: string;
-  onSelect: (word: string) => void;
-}) {
-  const label = word.toLocaleUpperCase("sv-SE");
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(word)}
-      className="print-pill w-full cursor-pointer px-4 py-3 text-base font-black shadow-none transition-[filter,transform] hover:brightness-95 active:translate-x-px active:translate-y-px"
+    <div
+      className={cn(
+        TIMELINE_WIDTH_CLASS,
+        "flex shrink-0 items-center justify-center self-center pt-1",
+      )}
+      aria-label={
+        variant === "start"
+          ? "Start"
+          : variant === "goal"
+            ? "Mål"
+            : `Steg ${label}`
+      }
+      title={
+        variant === "start" ? "Start" : variant === "goal" ? "Mål" : undefined
+      }
     >
-      {label}
-    </button>
+      {variant === "start" ? (
+        <CircleDot className={endpointIconClass} strokeWidth={2} aria-hidden />
+      ) : variant === "goal" ? (
+        <Flag className={endpointIconClass} strokeWidth={2} aria-hidden />
+      ) : (
+        <span
+          className={cn(
+            "print-mono block text-xl font-medium leading-none",
+            active ? "text-print-green" : "text-print-ink",
+          )}
+        >
+          {label}
+        </span>
+      )}
+    </div>
   );
 }
 
-function createInitialRound() {
-  return createStegvisRound(pickDailyPuzzle(stegvisPuzzles));
+function TimelineArrow() {
+  return (
+    <div className="flex py-2 sm:py-2.5">
+      <div
+        className={cn(
+          TIMELINE_WIDTH_CLASS,
+          "print-mono flex justify-center text-lg leading-none text-print-ink",
+        )}
+        aria-hidden
+      >
+        ↓
+      </div>
+    </div>
+  );
 }
 
-export function StegvisGame() {
-  const [round, setRound] = useState<StegvisRound>(createInitialRound);
-  const [feedback, setFeedback] = useState("");
-  const [solved, setSolved] = useState(false);
-  const [statsSaved, setStatsSaved] = useState(false);
+type ChainStepCardProps = {
+  step: StegvisChainStep;
+  variant: "start" | "middle" | "goal";
+  stepNumber?: number;
+  solvedWord?: string;
+  isActive?: boolean;
+  justSolved?: boolean;
+  shake?: boolean;
+  draft?: string;
+  onDraftChange?: (value: string) => void;
+  onSubmit?: () => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+};
 
-  const stepsTaken = round.chain.length - 1;
-  const currentIndex = round.chain.length - 1;
+function ChainStepCard({
+  step,
+  variant,
+  stepNumber,
+  solvedWord,
+  isActive = false,
+  justSolved = false,
+  shake = false,
+  draft,
+  onDraftChange,
+  onSubmit,
+  inputRef,
+}: ChainStepCardProps) {
+  const isPassive = variant === "start" || variant === "goal";
+  const isSolved = Boolean(solvedWord);
+  const normalized = normalizeStegvisWord(draft ?? "").slice(0, step.answer.length);
+  const displayWord = isPassive
+    ? step.displayAnswer
+    : isSolved
+      ? solvedWord
+      : isActive
+        ? normalized +
+          "-".repeat(Math.max(0, step.answer.length - normalized.length))
+        : undefined;
 
-  const chainWords = useMemo(
-    () => round.chain.map((word) => word.toLocaleUpperCase("sv-SE")),
-    [round.chain],
+  return (
+    <motion.div
+      animate={
+        shake
+          ? { x: [0, -8, 8, -6, 6, -3, 3, 0] }
+          : justSolved
+            ? {
+                backgroundColor: [
+                  "rgba(34, 85, 68, 0.05)",
+                  isPassive ? "rgba(250, 248, 245, 0.95)" : "rgba(255,255,255,1)",
+                ],
+              }
+            : { x: 0 }
+      }
+      transition={{ duration: shake ? 0.45 : 0.2 }}
+      onClick={() => {
+        if (isActive) {
+          inputRef?.current?.focus();
+        }
+      }}
+      className={cn(
+        "min-w-0 flex-1 rounded-lg px-4 py-4 sm:px-5 sm:py-4",
+        isPassive && "border border-print-ink/12 bg-print-bg/80",
+        !isPassive &&
+          isActive &&
+          "cursor-text border-2 border-print-green bg-white",
+        !isPassive &&
+          !isActive &&
+          "border border-print-ink/12 bg-white",
+      )}
+    >
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1 self-stretch">
+          <StepClueBlock text={step.clueText} active={isActive} />
+        </div>
+
+        <div className="relative shrink-0">
+          <WordTileRow
+            length={step.answer.length}
+            cells={buildTileCells({
+              length: step.answer.length,
+              word: displayWord,
+              isPassive,
+              isSolved,
+              isActive,
+            })}
+          />
+          {isActive && inputRef && onDraftChange && onSubmit ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft ?? ""}
+              onChange={(event) => onDraftChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  onSubmit();
+                }
+              }}
+              autoCapitalize="characters"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={step.answer.length}
+              aria-label={`Steg ${stepNumber}: ${step.clueText}`}
+              className="absolute inset-0 cursor-text opacity-0 outline-none [caret-color:transparent]"
+            />
+          ) : null}
+        </div>
+      </div>
+    </motion.div>
   );
+}
 
-  const startWord = normalizeStegvisWord(round.puzzle.start).toLocaleUpperCase(
-    "sv-SE",
-  );
-  const targetWord = normalizeStegvisWord(round.puzzle.target).toLocaleUpperCase(
-    "sv-SE",
-  );
+function findPuzzleBundle(
+  bundles: StegvisPuzzleBundle[],
+  puzzleId: string,
+): StegvisPuzzleBundle {
+  return bundles.find((bundle) => bundle.puzzle.id === puzzleId) ?? bundles[0];
+}
 
-  const stepOptions = useMemo(
+function getFirstMiddleIndex(chain: StegvisChainStep[]) {
+  return chain.findIndex((step) => step.role === "middle");
+}
+
+function getMiddleStepIndices(chain: StegvisChainStep[]) {
+  return chain
+    .map((step, index) => (step.role === "middle" ? index : -1))
+    .filter((index) => index >= 0);
+}
+
+function getPlayReadyBundles(bundles: StegvisPuzzleBundle[]) {
+  return bundles.filter((bundle) => chainMeetsPlayRequirement(bundle.chain));
+}
+
+type StegvisGameProps = {
+  session: StegvisPlaySession;
+};
+
+export function StegvisGame({ session }: StegvisGameProps) {
+  const { initialBundle, fallbackBundles, allowedWords } = session;
+
+  const playReadyInitial = chainMeetsPlayRequirement(initialBundle.chain)
+    ? initialBundle
+    : getPlayReadyBundles([initialBundle, ...fallbackBundles])[0] ?? initialBundle;
+
+  const [activeBundle, setActiveBundle] = useState(playReadyInitial);
+  const playReadyBundles = useMemo(
+    () => getPlayReadyBundles([initialBundle, ...fallbackBundles]),
+    [initialBundle, fallbackBundles],
+  );
+  const puzzleBundles = useMemo(
     () =>
-      getStegvisStepOptions(
-        round.currentWord,
-        round.chain,
-        round.puzzle.target,
-      ).map((word) => word.toLocaleUpperCase("sv-SE")),
-    [round.chain, round.currentWord, round.puzzle.target],
+      playReadyBundles.length > 0 ? playReadyBundles : [activeBundle],
+    [activeBundle, playReadyBundles],
   );
 
-  const proximityHint = useMemo(
-    () => getStegvisTargetProximityHint(round.currentWord, round.puzzle.target),
-    [round.currentWord, round.puzzle.target],
+  const allowedWordSet = useMemo(() => {
+    if (!allowedWords || allowedWords.length === 0) {
+      return undefined;
+    }
+
+    return new Set(allowedWords.map((word) => normalizeStegvisWord(word)));
+  }, [allowedWords]);
+
+  const chain = activeBundle.chain;
+  const startStep = chain[0];
+  const targetStep = chain[chain.length - 1];
+  const middleSteps = useMemo(
+    () =>
+      chain
+        .map((step, index) => ({ step, index }))
+        .filter(({ step }) => step.role === "middle"),
+    [chain],
   );
+  const middleIndices = useMemo(() => getMiddleStepIndices(chain), [chain]);
+
+  const [activeStepIndex, setActiveStepIndex] = useState(() =>
+    getFirstMiddleIndex(playReadyInitial.chain),
+  );
+  const [solvedByIndex, setSolvedByIndex] = useState<Record<number, string>>(
+    {},
+  );
+  const [draft, setDraft] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [shakeStepIndex, setShakeStepIndex] = useState<number | null>(null);
+  const [justSolvedIndex, setJustSolvedIndex] = useState<number | null>(null);
+  const [won, setWon] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [statsSaved, setStatsSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const resetForBundle = useCallback((bundle: StegvisPuzzleBundle) => {
+    const ready = chainMeetsPlayRequirement(bundle.chain)
+      ? bundle
+      : getPlayReadyBundles([bundle])[0] ?? bundle;
+
+    setActiveBundle(ready);
+    setActiveStepIndex(getFirstMiddleIndex(ready.chain));
+    setSolvedByIndex({});
+    setDraft("");
+    setFeedback("");
+    setShakeStepIndex(null);
+    setJustSolvedIndex(null);
+    setWon(false);
+    setResultModalOpen(false);
+    setStatsSaved(false);
+  }, []);
+
+  useEffect(() => {
+    if (!won && activeStepIndex >= 0) {
+      inputRef.current?.focus();
+    }
+  }, [activeStepIndex, won]);
 
   const persistSolve = useCallback(
     (steps: number) => {
@@ -204,227 +376,209 @@ export function StegvisGame() {
     [statsSaved],
   );
 
-  const chooseStep = useCallback(
-    (nextWord: string) => {
-      if (solved) {
-        return;
-      }
+  const submitActiveStep = useCallback(() => {
+    if (won || activeStepIndex < 0) {
+      return;
+    }
 
-      const result = validateStegvisStep(
-        round.currentWord,
-        nextWord,
-        round.chain,
-      );
+    const step = chain[activeStepIndex];
+    const previousIndex = activeStepIndex - 1;
+    const previousWord =
+      solvedByIndex[previousIndex] ?? chain[previousIndex]?.answer ?? "";
 
-      if (!result.valid) {
-        return;
-      }
+    const chainSoFar = chain
+      .slice(0, activeStepIndex)
+      .map((chainStep, index) => solvedByIndex[index] ?? chainStep.answer);
 
-      const previousWord = round.currentWord;
-      const nextChain = [...round.chain, result.normalizedWord];
-      const nextRound: StegvisRound = {
-        ...round,
-        chain: nextChain,
-        currentWord: result.normalizedWord,
-      };
+    const result = validateStegvisChainStep(
+      draft,
+      previousWord,
+      step.answer,
+      chainSoFar,
+      allowedWordSet,
+    );
 
-      setRound(nextRound);
+    if (!result.valid) {
+      setFeedback(result.message);
+      setShakeStepIndex(activeStepIndex);
+      window.setTimeout(() => setShakeStepIndex(null), 450);
+      return;
+    }
 
-      if (isStegvisSolved(result.normalizedWord, round.puzzle.target)) {
-        setSolved(true);
-        setFeedback("");
-        persistSolve(nextChain.length - 1);
-        return;
-      }
-
-      setFeedback(
-        getStegvisStepFeedback(
-          previousWord,
-          result.normalizedWord,
-          round.puzzle.target,
-        ),
-      );
-    },
-    [persistSolve, round, solved],
-  );
-
-  const startRound = useCallback((nextRound: StegvisRound) => {
-    setRound(nextRound);
-    setSolved(false);
-    setStatsSaved(false);
     setFeedback("");
-  }, []);
+    setDraft("");
+    setSolvedByIndex((current) => ({
+      ...current,
+      [activeStepIndex]: result.normalizedWord,
+    }));
+    setJustSolvedIndex(activeStepIndex);
+    window.setTimeout(() => setJustSolvedIndex(null), 220);
+
+    const remainingMiddle = middleIndices.filter(
+      (index) => index > activeStepIndex,
+    );
+
+    if (remainingMiddle.length === 0) {
+      window.setTimeout(() => {
+        setWon(true);
+        setActiveStepIndex(-1);
+        setResultModalOpen(true);
+        persistSolve(STEGVIS_MIDDLE_STEP_COUNT);
+      }, 180);
+      return;
+    }
+
+    window.setTimeout(() => {
+      setActiveStepIndex(remainingMiddle[0]);
+    }, 180);
+  }, [
+    activeStepIndex,
+    allowedWordSet,
+    chain,
+    draft,
+    middleIndices,
+    persistSolve,
+    solvedByIndex,
+    won,
+  ]);
 
   const playAgain = () => {
-    startRound(createStegvisRound(round.puzzle));
+    resetForBundle(activeBundle);
   };
 
   const newPuzzle = () => {
-    const puzzle = pickRandomPuzzle(stegvisPuzzles, round.puzzle.id);
-    startRound(createStegvisRound(puzzle));
+    const pool =
+      puzzleBundles.length > 1
+        ? puzzleBundles
+        : getPlayReadyBundles(fallbackBundles);
+
+    const puzzle = pickRandomPuzzle(
+      pool.map((bundle) => bundle.puzzle),
+      activeBundle.puzzle.id,
+    );
+    resetForBundle(findPuzzleBundle(pool, puzzle.id));
   };
 
-  if (solved) {
-    return (
-      <ResultView
-        round={round}
-        stepsTaken={stepsTaken}
-        startWord={startWord}
-        targetWord={targetWord}
-        chainWords={chainWords}
-        onPlayAgain={playAgain}
-        onNewPuzzle={newPuzzle}
-      />
-    );
+  const resultData = useMemo((): StegvisResultData | null => {
+    if (!won || !startStep || !targetStep) {
+      return null;
+    }
+
+    return {
+      startWord: startStep.displayAnswer,
+      targetWord: targetStep.displayAnswer,
+    };
+  }, [startStep, targetStep, won]);
+
+  const solvedCount = middleIndices.filter((index) => solvedByIndex[index]).length;
+
+  const chainNodes = useMemo(() => {
+    if (!startStep || !targetStep) {
+      return [];
+    }
+
+    return [
+      {
+        key: `start-${startStep.answer}`,
+        variant: "start" as const,
+        step: startStep,
+        index: 0,
+        marker: "Start",
+      },
+      ...middleSteps.map(({ step, index }, stepIndex) => ({
+        key: `middle-${step.answer}-${index}`,
+        variant: "middle" as const,
+        step,
+        index,
+        marker: String(stepIndex + 1),
+        stepNumber: stepIndex + 1,
+      })),
+      {
+        key: `goal-${targetStep.answer}`,
+        variant: "goal" as const,
+        step: targetStep,
+        index: chain.length - 1,
+        marker: "Mål",
+      },
+    ];
+  }, [chain.length, middleSteps, startStep, targetStep]);
+
+  if (
+    !startStep ||
+    !targetStep ||
+    middleSteps.length !== STEGVIS_MIDDLE_STEP_COUNT
+  ) {
+    return null;
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <BodyText className="text-print-muted">{GAME_INSTRUCTION}</BodyText>
-
+    <>
       <Card>
-        <CardContent className="space-y-5">
-          <div className="flex gap-4 border-b border-print-ink/10 pb-5 sm:gap-6">
-            <PuzzleEndpoint label="Start" word={startWord} tileState="idle" />
-            <PuzzleEndpoint label="Mål" word={targetWord} tileState="active" />
+        <CardContent className="space-y-5 pt-5">
+          <div className="flex items-baseline justify-between gap-3 border-b border-print-ink/10 pb-3">
+            <MonoLabel muted>Ordkedja</MonoLabel>
+            <p className="print-mono text-xs text-print-muted">
+              {won
+                ? `${STEGVIS_MIDDLE_STEP_COUNT} steg`
+                : `${solvedCount} av ${STEGVIS_MIDDLE_STEP_COUNT} lösta`}
+            </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <MonoLabel muted>Ordkedja</MonoLabel>
-              <p className="print-mono text-xs text-print-muted">
-                {stepsTaken} {stepsTaken === 1 ? "steg taget" : "steg tagna"}
-              </p>
-            </div>
+          <div>
+            {chainNodes.map((node, nodeIndex) => {
+              const isMiddle = node.variant === "middle";
+              const isActive =
+                isMiddle && !won && node.index === activeStepIndex;
 
-            <WordChain words={chainWords} currentIndex={currentIndex} />
-          </div>
-
-          <div className="space-y-3 border-t border-print-ink/10 pt-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <MonoLabel muted className="text-[11px] uppercase tracking-wide">
-                Nästa steg
-              </MonoLabel>
-              {proximityHint ? (
-                <p className="print-mono text-xs text-print-muted">{proximityHint}</p>
-              ) : null}
-            </div>
-
-            {stepOptions.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
-                {stepOptions.map((word) => (
-                  <StepOptionButton
-                    key={word}
-                    word={word}
-                    onSelect={chooseStep}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-none border border-print-ink/20 bg-print-bg px-4 py-4">
-                <p className="text-sm text-print-ink">
-                  Inga fler steg från här. Välj ett nytt pussel eller börja om.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    variant="accent"
-                    className="w-full sm:w-auto"
-                    onClick={playAgain}
-                  >
-                    Börja om
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full bg-print-bg sm:w-auto"
-                    onClick={newPuzzle}
-                  >
-                    Nytt pussel
-                  </Button>
+              return (
+                <div key={node.key}>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <TimelineMarker
+                      label={node.marker}
+                      active={isActive}
+                      variant={node.variant}
+                    />
+                    <ChainStepCard
+                      step={node.step}
+                      variant={node.variant}
+                      stepNumber={
+                        "stepNumber" in node ? node.stepNumber : undefined
+                      }
+                      solvedWord={
+                        isMiddle ? solvedByIndex[node.index] : undefined
+                      }
+                      isActive={isActive}
+                      justSolved={
+                        isMiddle && justSolvedIndex === node.index
+                      }
+                      shake={isMiddle && shakeStepIndex === node.index}
+                      draft={isActive ? draft : undefined}
+                      onDraftChange={isActive ? setDraft : undefined}
+                      onSubmit={isActive ? submitActiveStep : undefined}
+                      inputRef={isActive ? inputRef : undefined}
+                    />
+                  </div>
+                  {nodeIndex < chainNodes.length - 1 ? <TimelineArrow /> : null}
                 </div>
-              </div>
-            )}
-
-            {feedback ? (
-              <p className="print-mono text-sm text-print-green">{feedback}</p>
-            ) : null}
+              );
+            })}
           </div>
+
+          {feedback ? (
+            <p className="print-mono text-sm text-print-ink">{feedback}</p>
+          ) : null}
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-type ResultViewProps = {
-  round: StegvisRound;
-  stepsTaken: number;
-  startWord: string;
-  targetWord: string;
-  chainWords: string[];
-  onPlayAgain: () => void;
-  onNewPuzzle: () => void;
-};
-
-function ResultView({
-  round,
-  stepsTaken,
-  startWord,
-  targetWord,
-  chainWords,
-  onPlayAgain,
-  onNewPuzzle,
-}: ResultViewProps) {
-  const minimumSteps = round.puzzle.minimumSteps;
-
-  return (
-    <Card>
-      <CardContent className="space-y-5">
-        <div className="space-y-2">
-          <p className="text-2xl font-black uppercase text-print-ink sm:text-3xl">
-            Klart.
-          </p>
-          <p className="text-sm text-print-ink sm:text-base">
-            Du tog dig från{" "}
-            <span className="font-black uppercase">{startWord}</span> till{" "}
-            <span className="font-black uppercase">{targetWord}</span> på{" "}
-            {stepsTaken} {stepsTaken === 1 ? "steg" : "steg"}.
-          </p>
-          {minimumSteps !== undefined ? (
-            <p className="print-mono text-sm text-print-muted">
-              Perfekt lösning: {minimumSteps}{" "}
-              {minimumSteps === 1 ? "steg" : "steg"}
-              {stepsTaken === minimumSteps ? "" : ` · Din lösning: ${stepsTaken} steg`}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2 border-t border-print-ink/10 pt-4">
-          <MonoLabel muted>Kedja</MonoLabel>
-          <div className="space-y-1">
-            {chainWords.map((word, index) => (
-              <div key={`${word}-${index}`}>
-                {index > 0 ? <ChainArrow /> : null}
-                <WordTilesRow
-                  word={word}
-                  tileState={index === chainWords.length - 1 ? "success" : "used"}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-print-ink/10 pt-4 sm:flex-row">
-          <Button variant="accent" className="w-full sm:w-auto" onClick={onPlayAgain}>
-            Spela igen
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full bg-print-bg sm:w-auto"
-            onClick={onNewPuzzle}
-          >
-            Nytt pussel
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {resultData ? (
+        <StegvisResultModal
+          open={resultModalOpen}
+          result={resultData}
+          onPlayAgain={playAgain}
+          onNewPuzzle={newPuzzle}
+          onClose={() => setResultModalOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }

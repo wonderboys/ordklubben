@@ -3,6 +3,7 @@ import {
   StatusBadge,
 } from "@/components/admin/admin-ui";
 import type { WordDetailData } from "@/components/admin/word-detail/types";
+import { formatPartOfSpeech, formatWordSource } from "@/lib/content/constants";
 
 function formatCount(count: number, singular: string, plural: string) {
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
@@ -14,6 +15,9 @@ export function WordDetailHeader({ word }: { word: WordDetailData }) {
   ).length;
 
   const summaryParts = [
+    formatWordSource(word.source),
+    word.partOfSpeech ? formatPartOfSpeech(word.partOfSpeech) : null,
+    formatCount(word.lexicalEntries.length, "lexikal post", "lexikala poster"),
     formatCount(word.hints.length, "nyckel", "nycklar"),
     pendingCount > 0
       ? `${formatCount(word.hintCandidates.length, "förslag", "förslag")} (${pendingCount} väntar)`
@@ -36,7 +40,9 @@ export function WordDetailHeader({ word }: { word: WordDetailData }) {
           </h1>
           <StatusBadge status={word.status} />
         </div>
-        <p className="text-sm text-print-muted">{summaryParts.join(" · ")}</p>
+        <p className="text-sm text-print-muted">
+          {summaryParts.filter(Boolean).join(" · ")}
+        </p>
       </div>
     </header>
   );

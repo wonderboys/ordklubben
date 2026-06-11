@@ -72,6 +72,24 @@ export function WordOverviewSection({ word }: { word: WordDetailData }) {
         )}
       </AdminPanel>
 
+      <AdminPanel
+        title="Lexikon"
+        footer={
+          <AdminLinkButton href={wordDetailHref(word.id, "lexicon")} variant="secondary">
+            Hantera lexikon
+          </AdminLinkButton>
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p className="text-print-ink">
+            {formatCount(word.lexicalEntries.length, "lexikal post", "lexikala poster")}
+          </p>
+          <p className="text-print-muted">
+            Lexikala relationer — inte spelnycklar. Kan användas som underlag för AI senare.
+          </p>
+        </div>
+      </AdminPanel>
+
       <WordMetadataOverviewCard word={word} />
     </div>
   );

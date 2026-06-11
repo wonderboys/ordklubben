@@ -1,8 +1,9 @@
-import type { HintType } from "@prisma/client";
+import type { HintFormat, HintType } from "@prisma/client";
 
 export type HintCandidateDraft = {
   text: string;
   type: HintType;
+  format?: HintFormat;
   difficulty?: number;
   tone?: string;
   source: string;
@@ -22,4 +23,9 @@ export type GenerateHintCandidatesResult = {
   candidates: HintCandidateDraft[];
   model?: string;
   promptVersion?: string;
+  stats?: {
+    rawFromAi: number;
+    accepted: number;
+    skippedInvalid: number;
+  };
 };

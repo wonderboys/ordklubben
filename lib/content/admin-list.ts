@@ -85,7 +85,9 @@ export function buildWordListWhere(filters: WordListFilters): Prisma.WordWhereIn
 
   return {
     AND: [
-      filters.status ? { status: filters.status } : {},
+      filters.status
+        ? { status: filters.status }
+        : { status: { not: "ARCHIVED" } },
       filters.themeId ? { themes: { some: { themeId: filters.themeId } } } : {},
       filters.withoutHint ? { hints: { none: {} } } : {},
       filters.withoutTheme ? { themes: { none: {} } } : {},

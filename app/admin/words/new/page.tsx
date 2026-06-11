@@ -42,24 +42,23 @@ export default async function NewWordPage({
             <TextInput id="answer" name="answer" required />
           </Field>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Svårighet" htmlFor="difficulty">
-              <TextInput id="difficulty" name="difficulty" type="number" min="0" />
-            </Field>
-            <Field label="Status" htmlFor="status">
-              <SelectInput id="status" name="status" defaultValue="DRAFT">
-                {CONTENT_STATUSES.map((value) => (
-                  <option key={value} value={value}>
-                    {STATUS_LABELS[value]}
-                  </option>
-                ))}
-              </SelectInput>
-            </Field>
-          </div>
+          <Field label="Status" htmlFor="status">
+            <SelectInput id="status" name="status" defaultValue="DRAFT">
+              {CONTENT_STATUSES.filter((value) => value !== "ARCHIVED").map((value) => (
+                <option key={value} value={value}>
+                  {STATUS_LABELS[value]}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
 
           <Field label="Anteckningar" htmlFor="notes">
             <TextArea id="notes" name="notes" className="min-h-20" />
           </Field>
+
+          <p className="text-xs text-print-muted">
+            Källa sätts automatiskt till manuell. Språk default är svenska.
+          </p>
 
           <div>
             <SubmitButton variant="primary">Spara ord</SubmitButton>

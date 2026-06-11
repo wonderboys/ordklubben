@@ -1,6 +1,7 @@
-import type { HintCandidateStatus } from "@prisma/client";
+import type { HintCandidateStatus, LexicalEntryType } from "@prisma/client";
 import {
   WordKeysSection,
+  WordLexiconPanel,
   WordOverviewSection,
   WordPlaceholderSection,
   WordThemesSection,
@@ -14,11 +15,13 @@ export function WordDetailView({
   availableThemes,
   activeTab,
   candidateStatus,
+  entryType,
 }: {
   word: WordDetailData;
   availableThemes: AvailableTheme[];
   activeTab: WordDetailTab;
   candidateStatus?: HintCandidateStatus;
+  entryType?: LexicalEntryType;
 }) {
   return (
     <div>
@@ -26,6 +29,9 @@ export function WordDetailView({
 
       <div className="pt-8">
         {activeTab === "overview" ? <WordOverviewSection word={word} /> : null}
+        {activeTab === "lexicon" ? (
+          <WordLexiconPanel word={word} entryType={entryType} />
+        ) : null}
         {activeTab === "keys" ? (
           <WordKeysSection word={word} candidateStatus={candidateStatus} />
         ) : null}

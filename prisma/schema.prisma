@@ -10,15 +10,46 @@ enum ContentStatus {
   DRAFT
   APPROVED
   REJECTED
+  ARCHIVED
+}
+
+enum PartOfSpeech {
+  SUBSTANTIV
+  VERB
+  ADJEKTIV
+  ADVERB
+  PRONOMEN
+  RAKNEORD
+  INTERJEKTION
+  FORKORTNING
+  OVRIGT
+}
+
+enum LexicalEntryType {
+  DEFINITION
+  SYNONYM
+  ANTONYM
+  EXPRESSION
+  RELATED
 }
 
 enum HintType {
   DEFINITION
-  SYNONYM
+  PARAPHRASE
   ASSOCIATION
+  SYNONYM
   WORDPLAY
+  EXAMPLE
   THEME
   OTHER
+}
+
+enum HintFormat {
+  TEXT
+  IMAGE
+  AUDIO
+  EMOJI
+  HYBRID
 }
 
 enum ImportBatchStatus {
@@ -31,6 +62,7 @@ enum ImportBatchType {
   WORDS
   HINTS
   WORDS_AND_HINTS
+  LEXICON
 }
 
 enum HintCandidateStatus {
@@ -59,25 +91,53 @@ enum PuzzleDirection {
 }
 
 model Word {
-  id               String         @id @default(cuid())
+  id               String              @id @default(cuid())
   answer           String
-  normalizedAnswer String         @unique
+  normalizedAnswer String              @unique
   length           Int
-  language         String         @default("sv")
-  status           ContentStatus  @default(DRAFT)
+  language         String              @default("sv")
+  status           ContentStatus       @default(DRAFT)
+  source           String              @default("manual")
+  sourceReference  String?
+  partOfSpeech     PartOfSpeech?
   difficulty       Int?
   frequency        Int?
   crosswordScore   Int?
-  notes            String?        @db.Text
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  notes            String?             @db.Text
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
   hints            Hint[]
   hintCandidates   HintCandidate[]
   themes           WordTheme[]
   puzzleEntries    PuzzleEntry[]
+  lexicalEntries         WordLexicalEntry[]
+  linkedLexicalEntries   WordLexicalEntry[] @relation("LexicalLinkedWord")
 
   @@index([answer])
   @@index([status])
+  @@index([source])
+}
+
+/// Lexical data describes meaning and relations — not playable hints.
+/// `linkedWordId` prepares future links to other Word rows (e.g. synonym → GÅNGART).
+model WordLexicalEntry {
+  id              String           @id @default(cuid())
+  wordId          String
+  word            Word             @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  type            LexicalEntryType
+  value           String
+  source          String           @default("manual")
+  sourceReference String?
+  linkedWordId    String?
+  linkedWord      Word?            @relation("LexicalLinkedWord", fields: [linkedWordId], references: [id], onDelete: SetNull)
+  notes           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([wordId, type, value])
+  @@index([wordId])
+  @@index([type])
+  @@index([linkedWordId])
 }
 
 model Hint {
@@ -86,6 +146,7 @@ model Hint {
   word       Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
   text       String
   type       HintType      @default(DEFINITION)
+  format     HintFormat    @default(TEXT)
   status     ContentStatus @default(DRAFT)
   difficulty Int?
   tone       String?
@@ -107,10 +168,11 @@ model HintCandidate {
   word           Word                @relation(fields: [wordId], references: [id], onDelete: Cascade)
   text           String
   type           HintType            @default(DEFINITION)
+  format         HintFormat          @default(TEXT)
   status         HintCandidateStatus @default(PENDING)
   difficulty     Int?
   tone           String?
-  source         String              @default("manual_candidate")
+  source         String              @default("manual")
   model          String?
   promptVersion  String?
   notes          String?             @db.Text

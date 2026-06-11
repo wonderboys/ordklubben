@@ -1,9 +1,12 @@
 import type {
   ContentStatus,
   HintCandidateStatus,
+  HintFormat,
   HintType,
   ImportBatchStatus,
   ImportBatchType,
+  LexicalEntryType,
+  PartOfSpeech,
   PuzzleDirection,
   PuzzleStatus,
   PuzzleType,
@@ -13,7 +16,109 @@ export const CONTENT_STATUSES: ContentStatus[] = [
   "DRAFT",
   "APPROVED",
   "REJECTED",
+  "ARCHIVED",
 ];
+
+/** Generic provenance for Word and WordLexicalEntry. Use sourceReference for import file names. */
+export const WORD_SOURCES = [
+  "manual",
+  "import",
+  "ai",
+  "saol",
+  "saldo",
+  "synlex",
+  "system",
+] as const;
+
+export type WordSource = (typeof WORD_SOURCES)[number];
+
+export const WORD_SOURCE_LABELS: Record<WordSource, string> = {
+  manual: "Manuell",
+  import: "Import",
+  ai: "AI",
+  saol: "SAOL",
+  saldo: "SALDO",
+  synlex: "SYNLEX",
+  system: "System",
+};
+
+export function formatWordSource(source: string | null | undefined) {
+  if (!source) {
+    return WORD_SOURCE_LABELS.manual;
+  }
+
+  if (source in WORD_SOURCE_LABELS) {
+    return WORD_SOURCE_LABELS[source as WordSource];
+  }
+
+  return source;
+}
+
+export function formatWordSourceWithReference(
+  source: string | null | undefined,
+  sourceReference?: string | null,
+) {
+  const label = formatWordSource(source);
+
+  if (sourceReference?.trim()) {
+    return `${label} · ${sourceReference.trim()}`;
+  }
+
+  return label;
+}
+
+export const PART_OF_SPEECH_VALUES: PartOfSpeech[] = [
+  "SUBSTANTIV",
+  "VERB",
+  "ADJEKTIV",
+  "ADVERB",
+  "PRONOMEN",
+  "RAKNEORD",
+  "INTERJEKTION",
+  "FORKORTNING",
+  "OVRIGT",
+];
+
+export const PART_OF_SPEECH_LABELS: Record<PartOfSpeech, string> = {
+  SUBSTANTIV: "Substantiv",
+  VERB: "Verb",
+  ADJEKTIV: "Adjektiv",
+  ADVERB: "Adverb",
+  PRONOMEN: "Pronomen",
+  RAKNEORD: "Räkneord",
+  INTERJEKTION: "Interjektion",
+  FORKORTNING: "Förkortning",
+  OVRIGT: "Övrigt",
+};
+
+export function formatPartOfSpeech(value: PartOfSpeech | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  return PART_OF_SPEECH_LABELS[value];
+}
+
+/** Lexical entry types — meaning and relations, not playable hints. */
+export const LEXICAL_ENTRY_TYPES: LexicalEntryType[] = [
+  "DEFINITION",
+  "SYNONYM",
+  "ANTONYM",
+  "EXPRESSION",
+  "RELATED",
+];
+
+export const LEXICAL_ENTRY_TYPE_LABELS: Record<LexicalEntryType, string> = {
+  DEFINITION: "Definition",
+  SYNONYM: "Synonym",
+  ANTONYM: "Antonym",
+  EXPRESSION: "Uttryck",
+  RELATED: "Relaterat",
+};
+
+export function formatLexicalEntryType(type: LexicalEntryType) {
+  return LEXICAL_ENTRY_TYPE_LABELS[type];
+}
 
 export const HINT_CANDIDATE_STATUSES: HintCandidateStatus[] = [
   "PENDING",
@@ -21,25 +126,105 @@ export const HINT_CANDIDATE_STATUSES: HintCandidateStatus[] = [
   "REJECTED",
 ];
 
+/** All values stored in the database (includes legacy THEME and OTHER). */
 export const HINT_TYPES: HintType[] = [
   "DEFINITION",
-  "SYNONYM",
+  "PARAPHRASE",
   "ASSOCIATION",
+  "SYNONYM",
   "WORDPLAY",
+  "EXAMPLE",
   "THEME",
   "OTHER",
 ];
 
-/** Types shown in admin dropdowns (legacy THEME values still display via labels). */
+/** Types shown in admin dropdowns. */
 export const HINT_TYPE_SELECT_OPTIONS = [
   "DEFINITION",
+  "PARAPHRASE",
   "ASSOCIATION",
   "SYNONYM",
   "WORDPLAY",
-  "OTHER",
+  "EXAMPLE",
 ] as const satisfies readonly HintType[];
 
-export const DEFAULT_HINT_TYPE: HintType = "OTHER";
+export const DEFAULT_HINT_TYPE: HintType = "DEFINITION";
+
+export const HINT_FORMATS: HintFormat[] = [
+  "TEXT",
+  "IMAGE",
+  "AUDIO",
+  "EMOJI",
+  "HYBRID",
+];
+
+export const HINT_FORMAT_SELECT_OPTIONS = [
+  "TEXT",
+  "IMAGE",
+  "AUDIO",
+  "EMOJI",
+  "HYBRID",
+] as const satisfies readonly HintFormat[];
+
+export const DEFAULT_HINT_FORMAT: HintFormat = "TEXT";
+
+export const HINT_FORMAT_LABELS: Record<HintFormat, string> = {
+  TEXT: "Text",
+  IMAGE: "Bild",
+  AUDIO: "Ljud",
+  EMOJI: "Emoji",
+  HYBRID: "Hybrid",
+};
+
+export function formatHintFormat(format: HintFormat) {
+  return HINT_FORMAT_LABELS[format];
+}
+
+export function isSelectableHintType(
+  type: HintType,
+): type is (typeof HINT_TYPE_SELECT_OPTIONS)[number] {
+  return (HINT_TYPE_SELECT_OPTIONS as readonly string[]).includes(type);
+}
+
+export const HINT_SOURCES = [
+  "manual",
+  "ai",
+  "import",
+  "mock_generator",
+  "community",
+  "system",
+] as const;
+
+export type HintSource = (typeof HINT_SOURCES)[number];
+
+export const HINT_SOURCE_LABELS: Record<HintSource, string> = {
+  manual: "Manuell",
+  ai: "AI",
+  import: "Import",
+  mock_generator: "Mock-generator",
+  community: "Community",
+  system: "System",
+};
+
+export function formatHintSource(source: string | null | undefined) {
+  if (!source) {
+    return HINT_SOURCE_LABELS.manual;
+  }
+
+  if (source in HINT_SOURCE_LABELS) {
+    return HINT_SOURCE_LABELS[source as HintSource];
+  }
+
+  if (source === "manual_candidate") {
+    return HINT_SOURCE_LABELS.manual;
+  }
+
+  if (source === "admin_csv") {
+    return HINT_SOURCE_LABELS.import;
+  }
+
+  return source;
+}
 
 export const HINT_DIFFICULTY_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
   1: "Enkel",
@@ -114,12 +299,14 @@ export const IMPORT_BATCH_TYPES: ImportBatchType[] = [
   "WORDS",
   "HINTS",
   "WORDS_AND_HINTS",
+  "LEXICON",
 ];
 
 export const STATUS_LABELS: Record<ContentStatus, string> = {
   DRAFT: "Utkast",
   APPROVED: "Godkänd",
   REJECTED: "Avvisad",
+  ARCHIVED: "Arkiverad",
 };
 
 export const HINT_CANDIDATE_STATUS_LABELS: Record<HintCandidateStatus, string> = {
@@ -130,17 +317,24 @@ export const HINT_CANDIDATE_STATUS_LABELS: Record<HintCandidateStatus, string> =
 
 export const HINT_TYPE_LABELS: Record<HintType, string> = {
   DEFINITION: "Definition",
-  SYNONYM: "Synonym",
+  PARAPHRASE: "Omskrivning",
   ASSOCIATION: "Association",
+  SYNONYM: "Synonym",
   WORDPLAY: "Ordlek",
+  EXAMPLE: "Exempel",
   THEME: "Tema",
   OTHER: "Övrigt",
 };
+
+export function formatHintType(type: HintType) {
+  return HINT_TYPE_LABELS[type];
+}
 
 export const IMPORT_BATCH_TYPE_LABELS: Record<ImportBatchType, string> = {
   WORDS: "Ord",
   HINTS: "Nycklar",
   WORDS_AND_HINTS: "Ord + nycklar",
+  LEXICON: "Lexikon",
 };
 
 export const PUZZLE_TYPES: PuzzleType[] = [

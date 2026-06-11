@@ -17,6 +17,7 @@ export function mockGenerateHintCandidates(
     {
       text: `${word} i kort ledtråd`,
       type: "DEFINITION",
+      format: "TEXT",
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
@@ -24,13 +25,15 @@ export function mockGenerateHintCandidates(
     {
       text: `Kan förknippas med ${word}`,
       type: "ASSOCIATION",
+      format: "TEXT",
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
     },
     {
-      text: `En möjlig nyckel för ${word}`,
-      type: "OTHER",
+      text: `Exempel på användning av ${word}`,
+      type: "EXAMPLE",
+      format: "TEXT",
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
@@ -38,6 +41,7 @@ export function mockGenerateHintCandidates(
     {
       text: `Ordlek kring ${word}`,
       type: "WORDPLAY",
+      format: "TEXT",
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
@@ -45,6 +49,7 @@ export function mockGenerateHintCandidates(
     {
       text: `Synonym eller nära betydelse till ${word}`,
       type: "SYNONYM",
+      format: "TEXT",
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,

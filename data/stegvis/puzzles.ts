@@ -5,6 +5,10 @@ export type StegvisPuzzle = {
   title: string;
   minimumSteps?: number;
   sampleSolution?: string[];
+  /** Optional ordbanks-id för startordet. */
+  startWordId?: string;
+  /** Optional ordbanks-id för målordet. */
+  targetWordId?: string;
 };
 
 export const stegvisPuzzles: StegvisPuzzle[] = [

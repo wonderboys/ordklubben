@@ -2,8 +2,6 @@ import type { PuzzleDirection } from "@prisma/client";
 import { getAnswerLength } from "@/lib/content/puzzle/grid";
 import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 
-export const ORDFLATA_ALPHA_PUZZLE_ID = "cmq8l05wz01fv0ps7keqoy3vq";
-
 export type OrdflataPlayerEntry = {
   id: string;
   row: number;
@@ -30,14 +28,54 @@ function normalizeAnswer(answerSnapshot: string) {
     .replace(/[\s'’\-‐‑‒–—]+/g, "");
 }
 
+const playableWordGridWhere = {
+  type: "WORD_GRID" as const,
+  entries: { some: {} },
+};
+
+async function findOrdflataPuzzleId() {
+  const prisma = getPrisma();
+
+  const published = await prisma.puzzle.findFirst({
+    where: {
+      ...playableWordGridWhere,
+      status: "PUBLISHED",
+    },
+    orderBy: [{ publishDate: "desc" }, { updatedAt: "desc" }],
+    select: { id: true },
+  });
+
+  if (published) {
+    return published.id;
+  }
+
+  // Alpha/dev: visa senaste spelbara utkast om inget är publicerat ännu.
+  const fallback = await prisma.puzzle.findFirst({
+    where: {
+      ...playableWordGridWhere,
+      status: { in: ["DRAFT", "REVIEW"] },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true },
+  });
+
+  return fallback?.id ?? null;
+}
+
 export async function loadOrdflataAlphaPuzzle(): Promise<OrdflataPlayerPuzzle | null> {
   if (!isDatabaseConfigured()) {
     return null;
   }
 
   const prisma = getPrisma();
+  const puzzleId = await findOrdflataPuzzleId();
+
+  if (!puzzleId) {
+    return null;
+  }
+
   const puzzle = await prisma.puzzle.findUnique({
-    where: { id: ORDFLATA_ALPHA_PUZZLE_ID },
+    where: { id: puzzleId },
     include: {
       entries: {
         include: {

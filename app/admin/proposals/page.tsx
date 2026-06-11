@@ -15,7 +15,11 @@ import {
 import {
   HINT_CANDIDATE_STATUSES,
   HINT_CANDIDATE_STATUS_LABELS,
-  HINT_TYPE_LABELS,
+  formatHintDifficulty,
+  formatHintFormat,
+  formatHintSource,
+  formatHintTone,
+  formatHintType,
 } from "@/lib/content/constants";
 import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
 
@@ -102,7 +106,19 @@ export default async function AdminProposalsPage({
           </AdminFilterToolbar>
         </form>
 
-        <Table headers={["Förslag", "Status", "Ord", "Typ", "Källa", "Skapad"]}>
+        <Table
+          headers={[
+            "Förslag",
+            "Status",
+            "Ord",
+            "Typ",
+            "Format",
+            "Svårighet",
+            "Ton",
+            "Källa",
+            "Skapad",
+          ]}
+        >
           {proposals.map((proposal) => (
             <tr key={proposal.id} className="border-b border-print-ink/10 align-top">
               <td className="max-w-sm text-print-ink">{proposal.text}</td>
@@ -117,8 +133,13 @@ export default async function AdminProposalsPage({
                   {proposal.word.answer}
                 </Link>
               </td>
-              <td className="text-print-muted">{HINT_TYPE_LABELS[proposal.type]}</td>
-              <td className="font-mono text-xs text-print-muted">{proposal.source}</td>
+              <td className="text-print-muted">{formatHintType(proposal.type)}</td>
+              <td className="text-print-muted">{formatHintFormat(proposal.format)}</td>
+              <td className="text-print-muted">
+                {formatHintDifficulty(proposal.difficulty)}
+              </td>
+              <td className="text-print-muted">{formatHintTone(proposal.tone)}</td>
+              <td className="text-print-muted">{formatHintSource(proposal.source)}</td>
               <td className="text-print-muted">
                 {proposal.createdAt.toLocaleDateString("sv-SE")}
               </td>

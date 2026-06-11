@@ -38,8 +38,8 @@ export default async function OrdflataPage() {
         <GameShell
           eyebrow="Alpha"
           title={puzzle.title}
-          description="Lös ordflätan med hjälp av nycklarna. Tidig testversion — ett fast pussel."
-          mobileDescription="Lös flätan med nycklarna."
+          description="Lös ordflätan med hjälp av nycklarna. Tidig testversion — senaste publicerade flätan."
+          mobileDescription="Lös den senaste flätan med nycklarna."
           compactMobile
           hideEyebrowOnMobile
           headerClassName="md:max-w-none"

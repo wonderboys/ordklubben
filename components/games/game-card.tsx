@@ -3,21 +3,18 @@ import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BodyText, PageTitle } from "@/components/ui/typography";
-import {
-  getGameStatusLabel,
-  type GameStatus,
-} from "@/lib/games/registry";
+import type { GameStatus } from "@/lib/games/registry";
 
 type GameCardProps = {
   href: string;
   title: string;
   description: string;
   status: GameStatus;
+  badgeLabel: string;
 };
 
-export function GameCard({ href, title, description, status }: GameCardProps) {
+export function GameCard({ href, title, description, status, badgeLabel }: GameCardProps) {
   const isPlayable = status === "playable";
-  const statusLabel = getGameStatusLabel(status);
 
   return (
     <Link href={href} className="group">
@@ -29,7 +26,7 @@ export function GameCard({ href, title, description, status }: GameCardProps) {
               <BodyText variant="card">{description}</BodyText>
             </div>
             <Badge variant={isPlayable ? "green" : "default"} className="shrink-0">
-              {statusLabel}
+              {badgeLabel}
             </Badge>
           </div>
           <div className="mt-auto flex items-center gap-2 text-sm font-black uppercase text-print-green">
