@@ -61,7 +61,6 @@ import {
 } from "@/lib/content/normalize-answer";
 import {
   normalizeWordSource,
-  resolveWordSourceReference,
 } from "@/lib/content/normalize-word-source";
 import { importContent } from "@/lib/content/import-content";
 import { importLexicon } from "@/lib/content/import-lexicon";

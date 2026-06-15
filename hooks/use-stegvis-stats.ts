@@ -1,17 +1,13 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import {
-  defaultStegvisStats,
-  loadStegvisStats,
-  subscribeToStegvisStats,
-  type StegvisStats,
-} from "@/lib/storage/stegvis-stats";
+import * as stegvisStatsStore from "@/lib/storage/stegvis-stats";
+import { useBrowserStore } from "@/hooks/use-browser-store";
+import { type StegvisStats } from "@/lib/storage/stegvis-stats";
 
 export function useStegvisStats(): StegvisStats {
-  return useSyncExternalStore(
-    subscribeToStegvisStats,
-    loadStegvisStats,
-    () => defaultStegvisStats,
-  );
+  return useBrowserStore({
+    defaultValue: stegvisStatsStore.defaultStegvisStats,
+    load: stegvisStatsStore.loadStegvisStats,
+    subscribe: stegvisStatsStore.subscribeToStegvisStats,
+  });
 }

@@ -1,17 +1,13 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { type OrdstormStats } from "@/lib/game/ordstorm";
-import {
-  defaultStats,
-  loadStats,
-  subscribeToStats,
-} from "@/lib/storage/ordstorm-stats";
+import * as ordstormStatsStore from "@/lib/storage/ordstorm-stats";
+import { useBrowserStore } from "@/hooks/use-browser-store";
 
 export function useOrdstormStats(): OrdstormStats {
-  return useSyncExternalStore(
-    subscribeToStats,
-    loadStats,
-    () => defaultStats,
-  );
+  return useBrowserStore({
+    defaultValue: ordstormStatsStore.defaultStats,
+    load: ordstormStatsStore.loadStats,
+    subscribe: ordstormStatsStore.subscribeToStats,
+  });
 }

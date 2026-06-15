@@ -1,4 +1,5 @@
 export type GameStatus = "playable" | "coming-soon";
+export type GameLibrarySection = "library" | "test";
 
 export type GameDefinition = {
   id: string;
@@ -10,6 +11,9 @@ export type GameDefinition = {
   description: string;
   /** Short line for library tiles; falls back to description. */
   libraryDescription?: string;
+  showOnHome?: boolean;
+  librarySection?: GameLibrarySection;
+  highlightOnHome?: boolean;
 };
 
 export const games = [
@@ -20,6 +24,9 @@ export const games = [
     status: "playable",
     badgeLabel: "Dagligt",
     description: "Gissa dagens ord på fem bokstäver. Sex försök.",
+    showOnHome: true,
+    librarySection: "library",
+    highlightOnHome: false,
   },
   {
     id: "ordstorm",
@@ -28,6 +35,9 @@ export const games = [
     status: "playable",
     badgeLabel: "Fritt",
     description: "Sex bokstäver. En minut. Hitta så många ord du kan.",
+    showOnHome: true,
+    librarySection: "library",
+    highlightOnHome: false,
   },
   {
     id: "stegvis",
@@ -36,6 +46,9 @@ export const games = [
     status: "playable",
     badgeLabel: "Dagligt",
     description: "Förvandla ett ord till ett annat. Ett steg i taget.",
+    showOnHome: true,
+    librarySection: "library",
+    highlightOnHome: false,
   },
   {
     id: "emojirebus",
@@ -45,6 +58,9 @@ export const games = [
     badgeLabel: "Test",
     description: "Gissa ordet utifrån emojis. Tidig test av en ny spelidé.",
     libraryDescription: "Gissa ordet utifrån emojis.",
+    showOnHome: false,
+    librarySection: "test",
+    highlightOnHome: false,
   },
   {
     id: "kastet",
@@ -54,6 +70,9 @@ export const games = [
     badgeLabel: "Test",
     description: "Skaka bokstavstärningarna och bygg ord av det du får.",
     libraryDescription: "Kasta tärningar och bygg ord.",
+    showOnHome: false,
+    librarySection: "test",
+    highlightOnHome: false,
   },
   {
     id: "skrapet",
@@ -63,6 +82,9 @@ export const games = [
     badgeLabel: "Test",
     description: "Skrapa fram ledtrådar och gissa ordet innan du avslöjar för mycket.",
     libraryDescription: "Skrapa ledtrådar och gissa ordet.",
+    showOnHome: false,
+    librarySection: "test",
+    highlightOnHome: false,
   },
   {
     id: "bildjakten",
@@ -72,6 +94,9 @@ export const games = [
     badgeLabel: "Test",
     description: "Gissa ordet utifrån bilden. Tidig test av en ny spelidé.",
     libraryDescription: "Gissa ordet utifrån bilden.",
+    showOnHome: false,
+    librarySection: "test",
+    highlightOnHome: false,
   },
   {
     id: "ordflata",
@@ -82,31 +107,28 @@ export const games = [
     secondaryBadgeLabel: "Dagligt",
     description: "Lös ordflätan med hjälp av nycklarna. Ett tidigt test av ett nytt dagligt pussel.",
     libraryDescription: "Lös flätan med nycklarna. Tidigt test.",
+    showOnHome: false,
+    librarySection: "library",
+    highlightOnHome: true,
   },
 ] as const satisfies readonly GameDefinition[];
 
 export const testGames = games.filter(
-  (game): game is (typeof games)[number] =>
-    game.id === "emojirebus" ||
-    game.id === "kastet" ||
-    game.id === "skrapet" ||
-    game.id === "bildjakten",
+  (game): game is (typeof games)[number] => game.librarySection === "test",
 );
 
 export const libraryGames = games.filter(
-  (game): game is (typeof games)[number] =>
-    game.id !== "emojirebus" &&
-    game.id !== "kastet" &&
-    game.id !== "skrapet" &&
-    game.id !== "bildjakten",
+  (game): game is (typeof games)[number] => game.librarySection === "library",
 );
 
 export const homeGames = games.filter(
-  (game): game is (typeof games)[number] =>
-    game.id === "dagens-ord" || game.id === "ordstorm" || game.id === "stegvis",
+  (game): game is (typeof games)[number] => game.showOnHome === true,
 );
 
-export const ordflataBetaGame = games.find((game) => game.id === "ordflata")!;
+export const ordflataBetaGame = games.find(
+  (game): game is Extract<(typeof games)[number], { id: "ordflata" }> =>
+    game.highlightOnHome === true,
+)!;
 
 export type GameId = (typeof games)[number]["id"];
 

@@ -1,67 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { PanelLeftClose, PanelRightOpen } from "lucide-react";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
+import { useBrowserStore } from "@/hooks/use-browser-store";
+import { createLocalStorageStore } from "@/lib/storage/create-local-storage-store";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "adminSidebarCollapsed";
+const adminSidebarCollapsedStore = createLocalStorageStore<boolean>({
+  storageKey: "adminSidebarCollapsed",
+  changeEvent: "admin-sidebar-collapse",
+  defaultValue: false,
+});
 
 const BRAND_CLASSNAME =
   "font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink";
 
-function readCollapsed() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function subscribeCollapsed(onStoreChange: () => void) {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) {
-      onStoreChange();
-    }
-  };
-
-  window.addEventListener("storage", onStorage);
-  window.addEventListener("admin-sidebar-collapse", onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStorage);
-    window.removeEventListener("admin-sidebar-collapse", onStoreChange);
-  };
-}
-
-function setCollapsedStorage(collapsed: boolean) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, String(collapsed));
-  } catch {
-    // localStorage may be unavailable
-  }
-
-  window.dispatchEvent(new Event("admin-sidebar-collapse"));
-}
-
 export function AdminSidebar() {
-  const collapsed = useSyncExternalStore(
-    subscribeCollapsed,
-    readCollapsed,
-    () => false,
-  );
+  const collapsed = useBrowserStore(adminSidebarCollapsedStore);
 
   const toggleCollapsed = () => {
-    setCollapsedStorage(!collapsed);
+    adminSidebarCollapsedStore.save(!collapsed);
   };
 
   return (

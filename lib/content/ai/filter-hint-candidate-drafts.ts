@@ -1,4 +1,3 @@
-import type { HintType } from "@prisma/client";
 import type {
   HintCandidateSkipReason,
   SkippedHintCandidate,

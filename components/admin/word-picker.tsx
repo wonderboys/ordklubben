@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ContentStatus } from "@prisma/client";
 import { STATUS_LABELS } from "@/lib/content/constants";
 import { cn } from "@/lib/utils";
@@ -90,13 +90,13 @@ export function WordPicker({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = openProp ?? internalOpen;
 
-  function setOpen(nextOpen: boolean) {
+  const setOpen = useCallback((nextOpen: boolean) => {
     if (openProp == null) {
       setInternalOpen(nextOpen);
     }
 
     onOpenChange?.(nextOpen);
-  }
+  }, [openProp, onOpenChange]);
 
   const [query, setQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -120,7 +120,7 @@ export function WordPicker({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [autoFocus, focusKey, value, openProp]);
+  }, [autoFocus, focusKey, value, openProp, setOpen]);
 
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
@@ -136,7 +136,7 @@ export function WordPicker({
     document.addEventListener("pointerdown", onPointerDown);
 
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [selected]);
+  }, [selected, setOpen]);
 
   useEffect(() => {
     if (!open) {
@@ -158,7 +158,7 @@ export function WordPicker({
     window.addEventListener("keydown", onKeyDown, true);
 
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [open]);
+  }, [open, setOpen]);
 
   function selectOption(option: WordPickerOption) {
     onChange(option.id);

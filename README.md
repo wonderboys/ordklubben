@@ -1,12 +1,18 @@
 # Ordklubben
 
-Ordklubben är en liten webbaserad svensk spelplattform byggd för flera framtida ordspel, med första fokus på `Ordstorm`, ett snabbt anagramliknande spel inspirerat av Anagram Race.
+Ordklubben är en svensk ordspelsplattform byggd som en fokuserad, mobil-först webbapp. Projektet började med `Ordstorm`, men innehåller nu flera spelbara prototyper, dagliga format och ett växande content/admin-flöde för att kurera ord, teman, pussel och ledtrådar lokalt.
 
 Målet med projektet:
 
 - kännas snabbt, intelligent och polerat
 - vara mobil-först
-- vara enkelt att expandera med fler spel utan tung state management eller backend
+- vara enkelt att expandera med fler spel utan att göra kärnan tung eller rörig
+
+Nuvarande fokus:
+
+- stark svensk språkkvalitet i ordlistor, ledtrådar och pussel
+- snabb, tydlig mobilupplevelse
+- återanvändbara spelmönster för fler små spel utan att låsa arkitekturen för tidigt
 
 ## Stack
 
@@ -16,18 +22,40 @@ Målet med projektet:
 - shadcn/ui-grundstruktur
 - Framer Motion
 
-## Spelstruktur
+## Nuvarande spel
+
+Produktionsnära eller spelbara just nu:
+
+- `Dagens Ord`: dagligt fem-bokstavsspel med sex försök
+- `Ordstorm`: snabbt anagramspel med sex bokstäver och en minut per runda
+- `Stegvis`: dagligt ordkedjespel där ett ord förvandlas till ett annat
+- `Ordfläta`: dagligt betatest med nycklar och flätad ordstruktur
+
+Tidiga testspel och koncept i repo:t:
+
+- `Emojirebus`
+- `Kastet`
+- `Skrapet`
+- `Bildjakten`
+
+## Projektstruktur
 
 ```text
 app/
   (games)/
-    connections/
-    daily/
-    ladder/
+    dagens-ord/
+    emojirebus/
+    kastet/
+    ordflata/
     ordstorm/
+    skrapet/
+    stegvis/
+    test/bildjakten/
+  admin/
   profile/
   stats/
 components/
+  admin/
   games/
   layout/
   ui/
@@ -45,11 +73,26 @@ data/
     seed-words-sv.ts
 hooks/
   use-ordstorm-stats.ts
+  use-stegvis-stats.ts
 lib/
+  content/
+  db/
   dictionary/
   game/
   storage/
+prisma/
+scripts/
 ```
+
+Arkitektur i korthet:
+
+- `app/` innehåller routes och sidkomposition
+- `components/games/` samlar återanvändbara spellayouter, HUD-delar och spelspecifika UI-komponenter
+- `lib/game/` innehåller regler, scoring och ren spelogik
+- `lib/dictionary/` innehåller svensk normalisering, ordregler och ordlisteverktyg
+- `lib/content/` innehåller contentmodell, import, pusselgeneratorer och adminlogik
+- `lib/storage/` innehåller defensiv browser storage utan backendkrav
+- `data/` innehåller manuella ordlistor, rådata och genererade listor
 
 ## Ordstorm
 
@@ -172,6 +215,19 @@ npm run dev
 
 Öppna sedan [http://localhost:3000](http://localhost:3000).
 
+Vanliga verifieringar:
+
+```bash
+npm run lint
+npm run build
+```
+
+När du arbetar med orddata:
+
+```bash
+npm run build:wordlists
+```
+
 ## Contentdatabas
 
 Första versionen av contentdatabasen använder Prisma + Postgres och innehåller:
@@ -236,11 +292,16 @@ Valfri källa kan skickas som andra argument:
 npm run import:words -- ./path/to/words.csv kelly
 ```
 
-Adminvyer:
+Adminvyer som finns i nuläget:
 
 - `/admin/words`
 - `/admin/words/new`
 - `/admin/words/[id]`
+- `/admin/review`
+- `/admin/proposals`
+- `/admin/puzzles`
+- `/admin/puzzles/new`
+- `/admin/puzzles/[id]`
 - `/admin/themes`
 - `/admin/themes/[slug]`
 - `/admin/import`

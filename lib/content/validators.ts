@@ -28,21 +28,6 @@ function emptyToUndefined(value: unknown) {
   return trimmed === "" ? undefined : trimmed;
 }
 
-function optionalIntegerField(label: string) {
-  return z.preprocess((value) => {
-    const normalized = emptyToUndefined(value);
-    if (normalized === undefined) {
-      return undefined;
-    }
-
-    if (typeof normalized === "number") {
-      return normalized;
-    }
-
-    return Number.parseInt(String(normalized), 10);
-  }, z.number().int(`${label} måste vara ett heltal.`).min(0, `${label} kan inte vara negativt.`).optional());
-}
-
 function optionalHintDifficultyField() {
   return z.preprocess((value) => {
     const normalized = emptyToUndefined(value);

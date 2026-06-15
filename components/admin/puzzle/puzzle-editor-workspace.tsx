@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminPanel } from "@/components/admin/admin-ui";
 import { PuzzleAddEntryPanel, type PuzzleWordOption } from "@/components/admin/puzzle/puzzle-add-entry-panel";
 import {
@@ -110,27 +110,27 @@ export function PuzzleEditorWorkspace({
     height,
   ]);
 
-  function clearActiveEntry() {
+  const clearActiveEntry = useCallback(() => {
     setActiveEntryId(null);
     setIsEditingEntry(false);
     lastActiveEntryClickRef.current = null;
-  }
+  }, []);
 
-  function clearPlacementDraft() {
+  const clearPlacementDraft = useCallback(() => {
     setPlacementDraft(EMPTY_PLACEMENT_DRAFT);
     setPlacementFocusKey(null);
     setWordPickerOpen(false);
-  }
+  }, []);
 
-  function clearBlockedSelection() {
+  const clearBlockedSelection = useCallback(() => {
     setSelectedBlockedCell(null);
-  }
+  }, []);
 
-  function clearAllSelection() {
+  const clearAllSelection = useCallback(() => {
     clearActiveEntry();
     clearPlacementDraft();
     clearBlockedSelection();
-  }
+  }, [clearActiveEntry, clearPlacementDraft, clearBlockedSelection]);
 
   function enableBlockMode() {
     clearActiveEntry();
@@ -303,6 +303,9 @@ export function PuzzleEditorWorkspace({
     activeEntryId,
     placementDraft,
     selectedBlockedCell,
+    clearActiveEntry,
+    clearPlacementDraft,
+    clearBlockedSelection,
   ]);
 
   useEffect(() => {
@@ -327,7 +330,7 @@ export function PuzzleEditorWorkspace({
     document.addEventListener("pointerdown", onPointerDown);
 
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
+  }, [clearAllSelection]);
 
   const placementCell = placementDraft.mode ? placementDraft.cell : null;
 
