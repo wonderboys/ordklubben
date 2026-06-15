@@ -1,5 +1,5 @@
 // Node-runnable mirror of lib/content/stegvis/word-graph (relative imports, no @/ alias).
-import { normalizeAnswer } from "../lib/content/normalize-answer.ts";
+import { normalizeAnswer } from '../lib/content/normalize-answer.ts';
 
 export type WordGraph = Map<string, Set<string>>;
 
@@ -60,7 +60,7 @@ export function groupWordsByLength(words: string[]): Map<number, string[]> {
   }
 
   for (const bucket of groups.values()) {
-    bucket.sort((left, right) => left.localeCompare(right, "sv"));
+    bucket.sort((left, right) => left.localeCompare(right, 'sv'));
   }
 
   return groups;
@@ -78,10 +78,7 @@ export function getNeighbors(word: string, words: string[]): string[] {
   for (const candidate of words) {
     const normalizedCandidate = normalizeGraphWord(candidate);
 
-    if (
-      normalizedCandidate.length !== normalized.length ||
-      normalizedCandidate === normalized
-    ) {
+    if (normalizedCandidate.length !== normalized.length || normalizedCandidate === normalized) {
       continue;
     }
 
@@ -90,7 +87,7 @@ export function getNeighbors(word: string, words: string[]): string[] {
     }
   }
 
-  return neighbors.sort((left, right) => left.localeCompare(right, "sv"));
+  return neighbors.sort((left, right) => left.localeCompare(right, 'sv'));
 }
 
 export function buildWordGraph(words: string[]): WordGraph {
@@ -105,11 +102,7 @@ export function buildWordGraph(words: string[]): WordGraph {
     }
 
     for (let leftIndex = 0; leftIndex < lengthWords.length; leftIndex += 1) {
-      for (
-        let rightIndex = leftIndex + 1;
-        rightIndex < lengthWords.length;
-        rightIndex += 1
-      ) {
+      for (let rightIndex = leftIndex + 1; rightIndex < lengthWords.length; rightIndex += 1) {
         const left = lengthWords[leftIndex];
         const right = lengthWords[rightIndex];
 
@@ -126,11 +119,7 @@ export function buildWordGraph(words: string[]): WordGraph {
   return graph;
 }
 
-export function findShortestPath(
-  start: string,
-  target: string,
-  graph: WordGraph,
-): string[] | null {
+export function findShortestPath(start: string, target: string, graph: WordGraph): string[] | null {
   const startWord = normalizeGraphWord(start);
   const targetWord = normalizeGraphWord(target);
 

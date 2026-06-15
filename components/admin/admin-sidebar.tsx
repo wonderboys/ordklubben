@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { PanelLeftClose, PanelRightOpen } from "lucide-react";
-import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
-import { useBrowserStore } from "@/hooks/use-browser-store";
-import { createLocalStorageStore } from "@/lib/storage/create-local-storage-store";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { PanelLeftClose, PanelRightOpen } from 'lucide-react';
+import { AdminSidebarNav } from '@/components/admin/admin-sidebar-nav';
+import { useBrowserStore } from '@/hooks/use-browser-store';
+import { createLocalStorageStore } from '@/lib/storage/create-local-storage-store';
+import { cn } from '@/lib/utils';
 
 const adminSidebarCollapsedStore = createLocalStorageStore<boolean>({
-  storageKey: "adminSidebarCollapsed",
-  changeEvent: "admin-sidebar-collapse",
+  storageKey: 'adminSidebarCollapsed',
+  changeEvent: 'admin-sidebar-collapse',
   defaultValue: false,
 });
 
 const BRAND_CLASSNAME =
-  "font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink";
+  'font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink';
 
 export function AdminSidebar() {
   const collapsed = useBrowserStore(adminSidebarCollapsedStore);
@@ -26,15 +26,15 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        "admin-sidebar relative z-30 flex w-full shrink-0 flex-col overflow-visible border-b border-print-ink/10 bg-print-surface transition-[width] duration-150 md:w-[var(--admin-sidebar-width)] md:border-b-0 md:border-r",
+        'admin-sidebar relative z-30 flex w-full shrink-0 flex-col overflow-visible border-b border-print-ink/10 bg-print-surface transition-[width] duration-150 md:w-[var(--admin-sidebar-width)] md:border-b-0 md:border-r',
       )}
-      data-collapsed={collapsed ? "true" : "false"}
+      data-collapsed={collapsed ? 'true' : 'false'}
     >
       <div className="admin-sidebar__header overflow-visible border-b border-print-ink/10">
         <Link
           href="/"
           className={cn(
-            "admin-sidebar__brand-mobile block px-2.5 py-2 no-underline hover:opacity-80 md:hidden",
+            'admin-sidebar__brand-mobile block px-2.5 py-2 no-underline hover:opacity-80 md:hidden',
             BRAND_CLASSNAME,
           )}
         >
@@ -66,7 +66,7 @@ export function AdminSidebar() {
                 className="admin-sidebar__header-brand min-w-0 flex-1 border-0 bg-transparent p-0 text-left transition-opacity hover:opacity-80"
                 aria-label="Fäll ihop sidopanel"
               >
-                <span className={cn("block truncate", BRAND_CLASSNAME)}>Ordklubben</span>
+                <span className={cn('block truncate', BRAND_CLASSNAME)}>Ordklubben</span>
               </button>
 
               <button

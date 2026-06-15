@@ -1,24 +1,19 @@
-import { dagensOrdSolutionWords } from "../data/dagens-ord/solution-words.ts";
-import { allowedSvGeneratedWords } from "../data/generated/allowed-sv.generated.ts";
-import { allowedSvWords as allowedSvWordsManual } from "../data/words/allowed-sv.ts";
-import {
-  hasOnlySwedishLetters,
-  normalizeSwedish,
-} from "../lib/dictionary/normalize-swedish.ts";
+import { dagensOrdSolutionWords } from '../data/dagens-ord/solution-words.ts';
+import { allowedSvGeneratedWords } from '../data/generated/allowed-sv.generated.ts';
+import { allowedSvWords as allowedSvWordsManual } from '../data/words/allowed-sv.ts';
+import { hasOnlySwedishLetters, normalizeSwedish } from '../lib/dictionary/normalize-swedish.ts';
 
-type LetterFeedback = "correct" | "present" | "absent";
+type LetterFeedback = 'correct' | 'present' | 'absent';
 
 const allowedSvWords =
-  allowedSvGeneratedWords.length > 0
-    ? allowedSvGeneratedWords
-    : allowedSvWordsManual;
+  allowedSvGeneratedWords.length > 0 ? allowedSvGeneratedWords : allowedSvWordsManual;
 
 const allowedSet = new Set(allowedSvWords.map((word) => normalizeSwedish(word)));
 
 function evaluateGuess(guess: string, target: string): LetterFeedback[] {
   const normalizedGuess = normalizeSwedish(guess);
   const normalizedTarget = normalizeSwedish(target);
-  const feedback = Array<LetterFeedback>(normalizedGuess.length).fill("absent");
+  const feedback = Array<LetterFeedback>(normalizedGuess.length).fill('absent');
   const remainingLetters = new Map<string, number>();
 
   for (const letter of normalizedTarget) {
@@ -30,13 +25,13 @@ function evaluateGuess(guess: string, target: string): LetterFeedback[] {
       continue;
     }
 
-    feedback[index] = "correct";
+    feedback[index] = 'correct';
     const letter = normalizedGuess[index];
     remainingLetters.set(letter, (remainingLetters.get(letter) ?? 0) - 1);
   }
 
   for (let index = 0; index < normalizedGuess.length; index += 1) {
-    if (feedback[index] === "correct") {
+    if (feedback[index] === 'correct') {
       continue;
     }
 
@@ -44,7 +39,7 @@ function evaluateGuess(guess: string, target: string): LetterFeedback[] {
     const remaining = remainingLetters.get(letter) ?? 0;
 
     if (remaining > 0) {
-      feedback[index] = "present";
+      feedback[index] = 'present';
       remainingLetters.set(letter, remaining - 1);
     }
   }
@@ -52,13 +47,9 @@ function evaluateGuess(guess: string, target: string): LetterFeedback[] {
   return feedback;
 }
 
-function assertEqual(
-  label: string,
-  actual: LetterFeedback[],
-  expected: LetterFeedback[],
-) {
-  const actualLabel = actual.join(",");
-  const expectedLabel = expected.join(",");
+function assertEqual(label: string, actual: LetterFeedback[], expected: LetterFeedback[]) {
+  const actualLabel = actual.join(',');
+  const expectedLabel = expected.join(',');
 
   if (actualLabel !== expectedLabel) {
     console.error(`✗ ${label}`);
@@ -91,32 +82,40 @@ if (!solutionErrors) {
   console.log(`✓ ${dagensOrdSolutionWords.length} solution words validated`);
 }
 
-assertEqual(
-  "mamma vs momma",
-  evaluateGuess("momma", "mamma"),
-  ["correct", "absent", "correct", "correct", "correct"],
-);
+assertEqual('mamma vs momma', evaluateGuess('momma', 'mamma'), [
+  'correct',
+  'absent',
+  'correct',
+  'correct',
+  'correct',
+]);
 
-assertEqual(
-  "mamma vs ammma",
-  evaluateGuess("ammma", "mamma"),
-  ["present", "present", "correct", "correct", "correct"],
-);
+assertEqual('mamma vs ammma', evaluateGuess('ammma', 'mamma'), [
+  'present',
+  'present',
+  'correct',
+  'correct',
+  'correct',
+]);
 
-assertEqual(
-  "krets vs press",
-  evaluateGuess("press", "krets"),
-  ["absent", "correct", "correct", "absent", "correct"],
-);
+assertEqual('krets vs press', evaluateGuess('press', 'krets'), [
+  'absent',
+  'correct',
+  'correct',
+  'absent',
+  'correct',
+]);
 
-assertEqual(
-  "exact match",
-  evaluateGuess("storm", "storm"),
-  ["correct", "correct", "correct", "correct", "correct"],
-);
+assertEqual('exact match', evaluateGuess('storm', 'storm'), [
+  'correct',
+  'correct',
+  'correct',
+  'correct',
+  'correct',
+]);
 
 if (process.exitCode) {
   process.exit(1);
 }
 
-console.log("\nDagens Ord evaluateGuess checks passed.");
+console.log('\nDagens Ord evaluateGuess checks passed.');

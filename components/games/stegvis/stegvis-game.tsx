@@ -1,34 +1,31 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import { CircleDot, Flag } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from 'framer-motion';
+import { CircleDot, Flag } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StegvisResultModal,
   type StegvisResultData,
-} from "@/components/games/stegvis/stegvis-result-modal";
-import {
-  type WordTileRowCell,
-  WordTileRow,
-} from "@/components/games/word-tiles";
-import { Card, CardContent } from "@/components/ui/card";
-import { MonoLabel } from "@/components/ui/typography";
-import type { StegvisChainStep, StegvisPuzzleBundle } from "@/lib/content/stegvis";
-import type { StegvisPlaySession } from "@/lib/content/stegvis/load-play-session";
+} from '@/components/games/stegvis/stegvis-result-modal';
+import { type WordTileRowCell, WordTileRow } from '@/components/games/word-tiles';
+import { Card, CardContent } from '@/components/ui/card';
+import { MonoLabel } from '@/components/ui/typography';
+import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis';
+import type { StegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
 import {
   chainMeetsPlayRequirement,
   STEGVIS_MIDDLE_STEP_COUNT,
-} from "@/lib/content/stegvis/play-chain";
-import { validateStegvisChainStep } from "@/lib/game/stegvis-chain-validation";
-import { normalizeStegvisWord, pickRandomPuzzle } from "@/lib/game/stegvis";
+} from '@/lib/content/stegvis/play-chain';
+import { validateStegvisChainStep } from '@/lib/game/stegvis-chain-validation';
+import { normalizeStegvisWord, pickRandomPuzzle } from '@/lib/game/stegvis';
 import {
   loadStegvisStats,
   saveStegvisStats,
   updateStegvisStatsAfterSolve,
-} from "@/lib/storage/stegvis-stats";
-import { cn } from "@/lib/utils";
+} from '@/lib/storage/stegvis-stats';
+import { cn } from '@/lib/utils';
 
-const TIMELINE_WIDTH_CLASS = "w-11 shrink-0 sm:w-12";
+const TIMELINE_WIDTH_CLASS = 'w-11 shrink-0 sm:w-12';
 
 function buildTileCells(options: {
   length: number;
@@ -38,14 +35,13 @@ function buildTileCells(options: {
   isActive: boolean;
 }): WordTileRowCell[] {
   const { length, word, isPassive, isSolved, isActive } = options;
-  const letters = word?.split("") ?? [];
+  const letters = word?.split('') ?? [];
 
-  const filledCount = letters.filter((letter) => letter && letter !== "-").length;
+  const filledCount = letters.filter((letter) => letter && letter !== '-').length;
 
   return Array.from({ length }, (_, index) => {
     const raw = letters[index];
-    const letter =
-      raw && raw !== "-" ? raw.toLocaleUpperCase("sv-SE") : undefined;
+    const letter = raw && raw !== '-' ? raw.toLocaleUpperCase('sv-SE') : undefined;
 
     if (!letter) {
       return {
@@ -55,31 +51,23 @@ function buildTileCells(options: {
 
     return {
       letter,
-      state: isPassive || !isSolved ? "idle" : "used",
+      state: isPassive || !isSolved ? 'idle' : 'used',
     };
   });
 }
 
-function StepClueBlock({
-  text,
-  active = false,
-}: {
-  text: string;
-  active?: boolean;
-}) {
+function StepClueBlock({ text, active = false }: { text: string; active?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col justify-center gap-1 pr-1">
       <MonoLabel
         className={cn(
-          "text-[10px] uppercase tracking-[0.14em]",
-          active ? "text-print-green" : "text-print-muted",
+          'text-[10px] uppercase tracking-[0.14em]',
+          active ? 'text-print-green' : 'text-print-muted',
         )}
       >
         Ledtråd
       </MonoLabel>
-      <p className="text-base font-semibold leading-snug text-print-ink">
-        {text}
-      </p>
+      <p className="text-base font-semibold leading-snug text-print-ink">{text}</p>
     </div>
   );
 }
@@ -91,39 +79,31 @@ function TimelineMarker({
 }: {
   label: string;
   active?: boolean;
-  variant: "start" | "middle" | "goal";
+  variant: 'start' | 'middle' | 'goal';
 }) {
   const endpointIconClass = cn(
-    "size-5 sm:size-[22px]",
-    active ? "text-print-green" : "text-print-muted",
+    'size-5 sm:size-[22px]',
+    active ? 'text-print-green' : 'text-print-muted',
   );
 
   return (
     <div
       className={cn(
         TIMELINE_WIDTH_CLASS,
-        "flex shrink-0 items-center justify-center self-center pt-1",
+        'flex shrink-0 items-center justify-center self-center pt-1',
       )}
-      aria-label={
-        variant === "start"
-          ? "Start"
-          : variant === "goal"
-            ? "Mål"
-            : `Steg ${label}`
-      }
-      title={
-        variant === "start" ? "Start" : variant === "goal" ? "Mål" : undefined
-      }
+      aria-label={variant === 'start' ? 'Start' : variant === 'goal' ? 'Mål' : `Steg ${label}`}
+      title={variant === 'start' ? 'Start' : variant === 'goal' ? 'Mål' : undefined}
     >
-      {variant === "start" ? (
+      {variant === 'start' ? (
         <CircleDot className={endpointIconClass} strokeWidth={2} aria-hidden />
-      ) : variant === "goal" ? (
+      ) : variant === 'goal' ? (
         <Flag className={endpointIconClass} strokeWidth={2} aria-hidden />
       ) : (
         <span
           className={cn(
-            "print-mono block text-xl font-medium leading-none",
-            active ? "text-print-green" : "text-print-ink",
+            'print-mono block text-xl font-medium leading-none',
+            active ? 'text-print-green' : 'text-print-ink',
           )}
         >
           {label}
@@ -139,7 +119,7 @@ function TimelineArrow() {
       <div
         className={cn(
           TIMELINE_WIDTH_CLASS,
-          "print-mono flex justify-center text-lg leading-none text-print-ink",
+          'print-mono flex justify-center text-lg leading-none text-print-ink',
         )}
         aria-hidden
       >
@@ -151,7 +131,7 @@ function TimelineArrow() {
 
 type ChainStepCardProps = {
   step: StegvisChainStep;
-  variant: "start" | "middle" | "goal";
+  variant: 'start' | 'middle' | 'goal';
   stepNumber?: number;
   solvedWord?: string;
   isActive?: boolean;
@@ -176,16 +156,15 @@ function ChainStepCard({
   onSubmit,
   inputRef,
 }: ChainStepCardProps) {
-  const isPassive = variant === "start" || variant === "goal";
+  const isPassive = variant === 'start' || variant === 'goal';
   const isSolved = Boolean(solvedWord);
-  const normalized = normalizeStegvisWord(draft ?? "").slice(0, step.answer.length);
+  const normalized = normalizeStegvisWord(draft ?? '').slice(0, step.answer.length);
   const displayWord = isPassive
     ? step.displayAnswer
     : isSolved
       ? solvedWord
       : isActive
-        ? normalized +
-          "-".repeat(Math.max(0, step.answer.length - normalized.length))
+        ? normalized + '-'.repeat(Math.max(0, step.answer.length - normalized.length))
         : undefined;
 
   return (
@@ -196,8 +175,8 @@ function ChainStepCard({
           : justSolved
             ? {
                 backgroundColor: [
-                  "rgba(34, 85, 68, 0.05)",
-                  isPassive ? "rgba(250, 248, 245, 0.95)" : "rgba(255,255,255,1)",
+                  'rgba(34, 85, 68, 0.05)',
+                  isPassive ? 'rgba(250, 248, 245, 0.95)' : 'rgba(255,255,255,1)',
                 ],
               }
             : { x: 0 }
@@ -209,14 +188,10 @@ function ChainStepCard({
         }
       }}
       className={cn(
-        "min-w-0 flex-1 rounded-lg px-4 py-4 sm:px-5 sm:py-4",
-        isPassive && "border border-print-ink/12 bg-print-bg/80",
-        !isPassive &&
-          isActive &&
-          "cursor-text border-2 border-print-green bg-white",
-        !isPassive &&
-          !isActive &&
-          "border border-print-ink/12 bg-white",
+        'min-w-0 flex-1 rounded-lg px-4 py-4 sm:px-5 sm:py-4',
+        isPassive && 'border border-print-ink/12 bg-print-bg/80',
+        !isPassive && isActive && 'cursor-text border-2 border-print-green bg-white',
+        !isPassive && !isActive && 'border border-print-ink/12 bg-white',
       )}
     >
       <div className="flex items-center gap-3 sm:gap-4">
@@ -239,10 +214,10 @@ function ChainStepCard({
             <input
               ref={inputRef}
               type="text"
-              value={draft ?? ""}
+              value={draft ?? ''}
               onChange={(event) => onDraftChange(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === 'Enter') {
                   event.preventDefault();
                   onSubmit();
                 }
@@ -262,20 +237,17 @@ function ChainStepCard({
   );
 }
 
-function findPuzzleBundle(
-  bundles: StegvisPuzzleBundle[],
-  puzzleId: string,
-): StegvisPuzzleBundle {
+function findPuzzleBundle(bundles: StegvisPuzzleBundle[], puzzleId: string): StegvisPuzzleBundle {
   return bundles.find((bundle) => bundle.puzzle.id === puzzleId) ?? bundles[0];
 }
 
 function getFirstMiddleIndex(chain: StegvisChainStep[]) {
-  return chain.findIndex((step) => step.role === "middle");
+  return chain.findIndex((step) => step.role === 'middle');
 }
 
 function getMiddleStepIndices(chain: StegvisChainStep[]) {
   return chain
-    .map((step, index) => (step.role === "middle" ? index : -1))
+    .map((step, index) => (step.role === 'middle' ? index : -1))
     .filter((index) => index >= 0);
 }
 
@@ -292,7 +264,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
 
   const playReadyInitial = chainMeetsPlayRequirement(initialBundle.chain)
     ? initialBundle
-    : getPlayReadyBundles([initialBundle, ...fallbackBundles])[0] ?? initialBundle;
+    : (getPlayReadyBundles([initialBundle, ...fallbackBundles])[0] ?? initialBundle);
 
   const [activeBundle, setActiveBundle] = useState(playReadyInitial);
   const playReadyBundles = useMemo(
@@ -300,8 +272,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
     [initialBundle, fallbackBundles],
   );
   const puzzleBundles = useMemo(
-    () =>
-      playReadyBundles.length > 0 ? playReadyBundles : [activeBundle],
+    () => (playReadyBundles.length > 0 ? playReadyBundles : [activeBundle]),
     [activeBundle, playReadyBundles],
   );
 
@@ -318,9 +289,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const targetStep = chain[chain.length - 1];
   const middleSteps = useMemo(
     () =>
-      chain
-        .map((step, index) => ({ step, index }))
-        .filter(({ step }) => step.role === "middle"),
+      chain.map((step, index) => ({ step, index })).filter(({ step }) => step.role === 'middle'),
     [chain],
   );
   const middleIndices = useMemo(() => getMiddleStepIndices(chain), [chain]);
@@ -328,11 +297,9 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const [activeStepIndex, setActiveStepIndex] = useState(() =>
     getFirstMiddleIndex(playReadyInitial.chain),
   );
-  const [solvedByIndex, setSolvedByIndex] = useState<Record<number, string>>(
-    {},
-  );
-  const [draft, setDraft] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [solvedByIndex, setSolvedByIndex] = useState<Record<number, string>>({});
+  const [draft, setDraft] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [shakeStepIndex, setShakeStepIndex] = useState<number | null>(null);
   const [justSolvedIndex, setJustSolvedIndex] = useState<number | null>(null);
   const [won, setWon] = useState(false);
@@ -343,13 +310,13 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const resetForBundle = useCallback((bundle: StegvisPuzzleBundle) => {
     const ready = chainMeetsPlayRequirement(bundle.chain)
       ? bundle
-      : getPlayReadyBundles([bundle])[0] ?? bundle;
+      : (getPlayReadyBundles([bundle])[0] ?? bundle);
 
     setActiveBundle(ready);
     setActiveStepIndex(getFirstMiddleIndex(ready.chain));
     setSolvedByIndex({});
-    setDraft("");
-    setFeedback("");
+    setDraft('');
+    setFeedback('');
     setShakeStepIndex(null);
     setJustSolvedIndex(null);
     setWon(false);
@@ -383,8 +350,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
 
     const step = chain[activeStepIndex];
     const previousIndex = activeStepIndex - 1;
-    const previousWord =
-      solvedByIndex[previousIndex] ?? chain[previousIndex]?.answer ?? "";
+    const previousWord = solvedByIndex[previousIndex] ?? chain[previousIndex]?.answer ?? '';
 
     const chainSoFar = chain
       .slice(0, activeStepIndex)
@@ -405,8 +371,8 @@ export function StegvisGame({ session }: StegvisGameProps) {
       return;
     }
 
-    setFeedback("");
-    setDraft("");
+    setFeedback('');
+    setDraft('');
     setSolvedByIndex((current) => ({
       ...current,
       [activeStepIndex]: result.normalizedWord,
@@ -414,9 +380,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
     setJustSolvedIndex(activeStepIndex);
     window.setTimeout(() => setJustSolvedIndex(null), 220);
 
-    const remainingMiddle = middleIndices.filter(
-      (index) => index > activeStepIndex,
-    );
+    const remainingMiddle = middleIndices.filter((index) => index > activeStepIndex);
 
     if (remainingMiddle.length === 0) {
       window.setTimeout(() => {
@@ -447,10 +411,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
   };
 
   const newPuzzle = () => {
-    const pool =
-      puzzleBundles.length > 1
-        ? puzzleBundles
-        : getPlayReadyBundles(fallbackBundles);
+    const pool = puzzleBundles.length > 1 ? puzzleBundles : getPlayReadyBundles(fallbackBundles);
 
     const puzzle = pickRandomPuzzle(
       pool.map((bundle) => bundle.puzzle),
@@ -480,14 +441,14 @@ export function StegvisGame({ session }: StegvisGameProps) {
     return [
       {
         key: `start-${startStep.answer}`,
-        variant: "start" as const,
+        variant: 'start' as const,
         step: startStep,
         index: 0,
-        marker: "Start",
+        marker: 'Start',
       },
       ...middleSteps.map(({ step, index }, stepIndex) => ({
         key: `middle-${step.answer}-${index}`,
-        variant: "middle" as const,
+        variant: 'middle' as const,
         step,
         index,
         marker: String(stepIndex + 1),
@@ -495,19 +456,15 @@ export function StegvisGame({ session }: StegvisGameProps) {
       })),
       {
         key: `goal-${targetStep.answer}`,
-        variant: "goal" as const,
+        variant: 'goal' as const,
         step: targetStep,
         index: chain.length - 1,
-        marker: "Mål",
+        marker: 'Mål',
       },
     ];
   }, [chain.length, middleSteps, startStep, targetStep]);
 
-  if (
-    !startStep ||
-    !targetStep ||
-    middleSteps.length !== STEGVIS_MIDDLE_STEP_COUNT
-  ) {
+  if (!startStep || !targetStep || middleSteps.length !== STEGVIS_MIDDLE_STEP_COUNT) {
     return null;
   }
 
@@ -526,31 +483,20 @@ export function StegvisGame({ session }: StegvisGameProps) {
 
           <div>
             {chainNodes.map((node, nodeIndex) => {
-              const isMiddle = node.variant === "middle";
-              const isActive =
-                isMiddle && !won && node.index === activeStepIndex;
+              const isMiddle = node.variant === 'middle';
+              const isActive = isMiddle && !won && node.index === activeStepIndex;
 
               return (
                 <div key={node.key}>
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <TimelineMarker
-                      label={node.marker}
-                      active={isActive}
-                      variant={node.variant}
-                    />
+                    <TimelineMarker label={node.marker} active={isActive} variant={node.variant} />
                     <ChainStepCard
                       step={node.step}
                       variant={node.variant}
-                      stepNumber={
-                        "stepNumber" in node ? node.stepNumber : undefined
-                      }
-                      solvedWord={
-                        isMiddle ? solvedByIndex[node.index] : undefined
-                      }
+                      stepNumber={'stepNumber' in node ? node.stepNumber : undefined}
+                      solvedWord={isMiddle ? solvedByIndex[node.index] : undefined}
                       isActive={isActive}
-                      justSolved={
-                        isMiddle && justSolvedIndex === node.index
-                      }
+                      justSolved={isMiddle && justSolvedIndex === node.index}
                       shake={isMiddle && shakeStepIndex === node.index}
                       draft={isActive ? draft : undefined}
                       onDraftChange={isActive ? setDraft : undefined}
@@ -564,9 +510,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
             })}
           </div>
 
-          {feedback ? (
-            <p className="print-mono text-sm text-print-ink">{feedback}</p>
-          ) : null}
+          {feedback ? <p className="print-mono text-sm text-print-ink">{feedback}</p> : null}
         </CardContent>
       </Card>
 

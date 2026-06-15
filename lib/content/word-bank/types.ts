@@ -1,10 +1,10 @@
-import type { ContentStatus, HintType } from "@prisma/client";
+import type { ContentStatus, HintType } from '@prisma/client';
 
 /** Approved words in Ordklubben's ordbank are considered active for gameplay. */
-export const ACTIVE_WORD_STATUS = "APPROVED" as const satisfies ContentStatus;
+export const ACTIVE_WORD_STATUS = 'APPROVED' as const satisfies ContentStatus;
 
 /** Hints/nycklar exposed to players must be approved. */
-export const ACTIVE_CLUE_STATUS = "APPROVED" as const satisfies ContentStatus;
+export const ACTIVE_CLUE_STATUS = 'APPROVED' as const satisfies ContentStatus;
 
 export type WordBankThemeRef = {
   id: string;

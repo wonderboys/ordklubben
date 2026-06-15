@@ -1,4 +1,4 @@
-import { AdminPanel } from "@/components/admin/admin-ui";
+import { AdminPanel } from '@/components/admin/admin-ui';
 
 export function WordPlaceholderSection({ message }: { message: string }) {
   return (

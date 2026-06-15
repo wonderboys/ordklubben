@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 export type StegvisResultData = {
   startWord: string;
@@ -26,8 +26,8 @@ export function StegvisResultModal({
     return null;
   }
 
-  const startWord = result.startWord.toLocaleUpperCase("sv-SE");
-  const targetWord = result.targetWord.toLocaleUpperCase("sv-SE");
+  const startWord = result.startWord.toLocaleUpperCase('sv-SE');
+  const targetWord = result.targetWord.toLocaleUpperCase('sv-SE');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -52,8 +52,7 @@ export function StegvisResultModal({
               Klart.
             </p>
             <p className="text-sm text-print-ink sm:text-base">
-              Du löste kedjan från{" "}
-              <span className="font-black uppercase">{startWord}</span> till{" "}
+              Du löste kedjan från <span className="font-black uppercase">{startWord}</span> till{' '}
               <span className="font-black uppercase">{targetWord}</span>.
             </p>
           </div>

@@ -1,12 +1,12 @@
-import Link from "next/link";
+import Link from 'next/link';
 import {
   AdminPanel,
   AdminPanelEmpty,
   SelectInput,
   SubmitButton,
-} from "@/components/admin/admin-ui";
-import { addThemeToWord, removeThemeFromWord } from "@/lib/content/actions";
-import type { AvailableTheme, WordDetailData } from "@/components/admin/word-detail/types";
+} from '@/components/admin/admin-ui';
+import { addThemeToWord, removeThemeFromWord } from '@/lib/content/actions';
+import type { AvailableTheme, WordDetailData } from '@/components/admin/word-detail/types';
 
 function AddThemeForm({
   wordId,

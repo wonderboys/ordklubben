@@ -1,9 +1,9 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { BodyText, PageTitle } from "@/components/ui/typography";
-import type { GameStatus } from "@/lib/games/registry";
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { BodyText, PageTitle } from '@/components/ui/typography';
+import type { GameStatus } from '@/lib/games/registry';
 
 type GameCardProps = {
   href: string;
@@ -14,7 +14,7 @@ type GameCardProps = {
 };
 
 export function GameCard({ href, title, description, status, badgeLabel }: GameCardProps) {
-  const isPlayable = status === "playable";
+  const isPlayable = status === 'playable';
 
   return (
     <Link href={href} className="group">
@@ -25,7 +25,7 @@ export function GameCard({ href, title, description, status, badgeLabel }: GameC
               <PageTitle variant="card">{title}</PageTitle>
               <BodyText variant="card">{description}</BodyText>
             </div>
-            <Badge variant={isPlayable ? "green" : "default"} className="shrink-0">
+            <Badge variant={isPlayable ? 'green' : 'default'} className="shrink-0">
               {badgeLabel}
             </Badge>
           </div>

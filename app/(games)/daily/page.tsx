@@ -1,5 +1,5 @@
-import { ComingSoonGame } from "@/components/games/coming-soon-game";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
+import { ComingSoonGame } from '@/components/games/coming-soon-game';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 
 export default function DailyPage() {
   return (

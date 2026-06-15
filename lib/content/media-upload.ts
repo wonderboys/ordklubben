@@ -1,24 +1,24 @@
-import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { randomUUID } from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-export const MEDIA_UPLOAD_WEB_PREFIX = "/uploads/media";
-export const MEDIA_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "media");
+export const MEDIA_UPLOAD_WEB_PREFIX = '/uploads/media';
+export const MEDIA_UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'media');
 export const MEDIA_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 
-const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
 const EXTENSION_BY_MIME: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
 };
 
 const MIME_BY_EXTENSION: Record<string, string> = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
 };
 
 function inferExtension(file: File): string | null {
@@ -31,18 +31,18 @@ function inferExtension(file: File): string | null {
   const extension = path.extname(file.name).toLowerCase();
 
   if (ALLOWED_EXTENSIONS.has(extension)) {
-    return extension === ".jpeg" ? ".jpg" : extension;
+    return extension === '.jpeg' ? '.jpg' : extension;
   }
 
   return null;
 }
 
 function hasAllowedImageSignature(buffer: Buffer, mime: string): boolean {
-  if (mime === "image/jpeg") {
+  if (mime === 'image/jpeg') {
     return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
   }
 
-  if (mime === "image/png") {
+  if (mime === 'image/png') {
     return (
       buffer[0] === 0x89 &&
       buffer[1] === 0x50 &&
@@ -55,11 +55,11 @@ function hasAllowedImageSignature(buffer: Buffer, mime: string): boolean {
     );
   }
 
-  if (mime === "image/webp") {
+  if (mime === 'image/webp') {
     return (
       buffer.length >= 12 &&
-      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
-      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+      buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+      buffer.subarray(8, 12).toString('ascii') === 'WEBP'
     );
   }
 
@@ -76,20 +76,20 @@ export function isAllowedMediaImageFile(file: File): boolean {
 
 export async function saveMediaImageUpload(file: File): Promise<string> {
   if (!isAllowedMediaImageFile(file)) {
-    throw new Error("Ogiltig bildfil. Använd JPG, PNG eller WebP (max 5 MB).");
+    throw new Error('Ogiltig bildfil. Använd JPG, PNG eller WebP (max 5 MB).');
   }
 
   const extension = inferExtension(file);
 
   if (!extension) {
-    throw new Error("Ogiltig bildfil. Använd JPG, PNG eller WebP (max 5 MB).");
+    throw new Error('Ogiltig bildfil. Använd JPG, PNG eller WebP (max 5 MB).');
   }
 
-  const mime = file.type.toLowerCase() || MIME_BY_EXTENSION[extension] || "image/jpeg";
+  const mime = file.type.toLowerCase() || MIME_BY_EXTENSION[extension] || 'image/jpeg';
   const buffer = Buffer.from(await file.arrayBuffer());
 
   if (!hasAllowedImageSignature(buffer, mime)) {
-    throw new Error("Filen verkar inte vara en giltig bild.");
+    throw new Error('Filen verkar inte vara en giltig bild.');
   }
 
   const date = new Date().toISOString().slice(0, 10);
@@ -106,7 +106,7 @@ export async function deleteMediaImageFile(filePath: string | null | undefined):
     return;
   }
 
-  const absolutePath = path.join(process.cwd(), "public", filePath);
+  const absolutePath = path.join(process.cwd(), 'public', filePath);
 
   try {
     await fs.unlink(absolutePath);

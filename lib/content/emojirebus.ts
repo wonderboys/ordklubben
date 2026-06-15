@@ -1,4 +1,4 @@
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 export type EmojirebusPuzzle = {
   wordId: string;
@@ -18,20 +18,20 @@ export async function loadEmojirebusPuzzle(): Promise<EmojirebusPuzzle | null> {
     where: {
       rebusEntries: {
         some: {
-          status: "APPROVED",
+          status: 'APPROVED',
         },
       },
     },
-    orderBy: { answer: "asc" },
+    orderBy: { answer: 'asc' },
     select: {
       id: true,
       length: true,
       normalizedAnswer: true,
       rebusEntries: {
         where: {
-          status: "APPROVED",
+          status: 'APPROVED',
         },
-        orderBy: [{ updatedAt: "desc" }],
+        orderBy: [{ updatedAt: 'desc' }],
         take: 1,
         select: {
           value: true,

@@ -1,27 +1,27 @@
-import { WORD_SOURCES, type WordSource } from "@/lib/content/constants";
+import { WORD_SOURCES, type WordSource } from '@/lib/content/constants';
 
-const LEGACY_IMPORT_SOURCES = new Set(["stegvis_seed", "fotboll_seed"]);
+const LEGACY_IMPORT_SOURCES = new Set(['stegvis_seed', 'fotboll_seed']);
 
 export function normalizeWordSource(value: string | null | undefined): WordSource {
   const trimmed = value?.trim().toLowerCase();
 
   if (!trimmed) {
-    return "manual";
+    return 'manual';
   }
 
   if (LEGACY_IMPORT_SOURCES.has(trimmed)) {
-    return "import";
+    return 'import';
   }
 
   if ((WORD_SOURCES as readonly string[]).includes(trimmed)) {
     return trimmed as WordSource;
   }
 
-  if (trimmed === "admin_csv" || trimmed === "csv") {
-    return "import";
+  if (trimmed === 'admin_csv' || trimmed === 'csv') {
+    return 'import';
   }
 
-  return "manual";
+  return 'manual';
 }
 
 /** Resolves optional import provenance separate from generic `source`. */
@@ -41,7 +41,7 @@ export function resolveWordSourceReference(options: {
     return raw;
   }
 
-  if (options.source === "import" && options.importFilename?.trim()) {
+  if (options.source === 'import' && options.importFilename?.trim()) {
     return options.importFilename.trim();
   }
 

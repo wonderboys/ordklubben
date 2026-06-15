@@ -1,23 +1,20 @@
-import Link from "next/link";
+import Link from 'next/link';
 import {
   AdminPage,
   AdminPanel,
   DatabaseNotice,
   FeedbackMessage,
   Table,
-} from "@/components/admin/admin-ui";
-import { AdminImportForm } from "@/components/admin/import-form";
+} from '@/components/admin/admin-ui';
+import { AdminImportForm } from '@/components/admin/import-form';
 import {
   ImportResultStatGrid,
   importBatchHistoryLabel,
   importErrorTableHeaders,
-} from "@/components/admin/import-result-summary";
-import { IMPORT_BATCH_TYPE_LABELS } from "@/lib/content/constants";
-import {
-  parseBatchErrorRows,
-  parseBatchSummary,
-} from "@/lib/content/import-batch";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/import-result-summary';
+import { IMPORT_BATCH_TYPE_LABELS } from '@/lib/content/constants';
+import { parseBatchErrorRows, parseBatchSummary } from '@/lib/content/import-batch';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   batchId?: string;
@@ -25,11 +22,7 @@ type SearchParams = Promise<{
   success?: string;
 }>;
 
-export default async function AdminImportPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function AdminImportPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   if (!isDatabaseConfigured()) {
@@ -48,7 +41,7 @@ export default async function AdminImportPage({
         })
       : null,
     prisma.importBatch.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 10,
     }),
   ]);
@@ -57,10 +50,7 @@ export default async function AdminImportPage({
   const selectedErrors = parseBatchErrorRows(selectedBatch?.errorRows ?? null);
 
   return (
-    <AdminPage
-      title="Import"
-      description="Importera ord, nycklar eller lexikondata från CSV."
-    >
+    <AdminPage title="Import" description="Importera ord, nycklar eller lexikondata från CSV.">
       <FeedbackMessage error={params.error} success={params.success} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -81,13 +71,16 @@ export default async function AdminImportPage({
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Nycklar</p>
               <p>
-                `answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`,
-                `theme`, `wordStatus`, `hintStatus` (valfria utom answer och hint)
+                `answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`, `theme`,
+                `wordStatus`, `hintStatus` (valfria utom answer och hint)
               </p>
             </div>
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Ord + nycklar</p>
-              <p>Samma kolumner som för nycklar. En rad skapar eller återanvänder ordet och lägger till en nyckel.</p>
+              <p>
+                Samma kolumner som för nycklar. En rad skapar eller återanvänder ordet och lägger
+                till en nyckel.
+              </p>
             </div>
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Lexikon</p>
@@ -100,10 +93,9 @@ export default async function AdminImportPage({
               <p className="font-bold uppercase tracking-[0.04em]">Regler</p>
               <p>
                 `answer` krävs alltid. `hint` krävs för nyckelimport. Tom `type` blir `DEFINITION`.
-                Okända värden mappas till säkra standarder. `theme` kopplar ordet
-                till tema. `wordStatus` och `hintStatus` kan
-                vara `DRAFT` eller `APPROVED` och override:ar default per rad. Befintliga ord och nycklar
-                ändras inte.
+                Okända värden mappas till säkra standarder. `theme` kopplar ordet till tema.
+                `wordStatus` och `hintStatus` kan vara `DRAFT` eller `APPROVED` och override:ar
+                default per rad. Befintliga ord och nycklar ändras inte.
               </p>
             </div>
             <div>
@@ -111,7 +103,8 @@ export default async function AdminImportPage({
               <p className="font-mono text-xs leading-relaxed text-print-muted">
                 answer,hint,theme,source,sourceReference,wordStatus,hintStatus
                 <br />
-                MÅL,Det man vill göra i fotboll,Fotboll,import,fotboll_ordlista_v2.csv,APPROVED,APPROVED
+                MÅL,Det man vill göra i
+                fotboll,Fotboll,import,fotboll_ordlista_v2.csv,APPROVED,APPROVED
                 <br />
                 <br />
                 word,type,value,source,sourceReference,notes
@@ -136,7 +129,7 @@ export default async function AdminImportPage({
             />
 
             <div className="text-sm text-print-muted">
-              Fil: {selectedBatch.filename ?? "okänd"} · Typ:{" "}
+              Fil: {selectedBatch.filename ?? 'okänd'} · Typ:{' '}
               {IMPORT_BATCH_TYPE_LABELS[selectedBatch.type]} · Status: {selectedBatch.status}
             </div>
 
@@ -151,17 +144,16 @@ export default async function AdminImportPage({
 
             <Table headers={[...importErrorTableHeaders(selectedBatch.type)]}>
               {selectedErrors.map((errorRow, index) => (
-                <tr key={`${errorRow.rowNumber}-${index}`} className="border-b border-print-ink/10 align-top">
+                <tr
+                  key={`${errorRow.rowNumber}-${index}`}
+                  className="border-b border-print-ink/10 align-top"
+                >
                   <td className="px-3 py-3 text-print-ink">
-                    {errorRow.rowNumber === 0 ? "Allmänt" : errorRow.rowNumber}
+                    {errorRow.rowNumber === 0 ? 'Allmänt' : errorRow.rowNumber}
                   </td>
                   <td className="px-3 py-3 text-print-ink">{errorRow.reason}</td>
-                  <td className="px-3 py-3 text-print-muted">
-                    {errorRow.answer || "—"}
-                  </td>
-                  <td className="px-3 py-3 text-print-muted">
-                    {errorRow.hint || "—"}
-                  </td>
+                  <td className="px-3 py-3 text-print-muted">{errorRow.answer || '—'}</td>
+                  <td className="px-3 py-3 text-print-muted">{errorRow.hint || '—'}</td>
                 </tr>
               ))}
             </Table>
@@ -173,28 +165,21 @@ export default async function AdminImportPage({
       ) : null}
 
       <AdminPanel title="Importhistorik">
-        <Table headers={["Tid", "Typ", "Fil", "Status", "Rader", "Detaljer"]}>
+        <Table headers={['Tid', 'Typ', 'Fil', 'Status', 'Rader', 'Detaljer']}>
           {recentBatches.map((batch) => {
             const summary = parseBatchSummary(batch.summary);
 
             return (
               <tr key={batch.id} className="border-b border-print-ink/10 align-top">
                 <td className="px-3 py-3 text-print-ink">
-                  {batch.createdAt.toLocaleString("sv-SE")}
+                  {batch.createdAt.toLocaleString('sv-SE')}
                 </td>
-                <td className="px-3 py-3 text-print-ink">
-                  {IMPORT_BATCH_TYPE_LABELS[batch.type]}
-                </td>
-                <td className="px-3 py-3 text-print-muted">
-                  {batch.filename ?? "—"}
-                </td>
+                <td className="px-3 py-3 text-print-ink">{IMPORT_BATCH_TYPE_LABELS[batch.type]}</td>
+                <td className="px-3 py-3 text-print-muted">{batch.filename ?? '—'}</td>
                 <td className="px-3 py-3 text-print-ink">{batch.status}</td>
                 <td className="px-3 py-3 text-print-ink">{batch.totalRows}</td>
                 <td className="px-3 py-3 text-print-muted">
-                  <Link
-                    href={`/admin/import/${batch.id}`}
-                    className="underline underline-offset-2"
-                  >
+                  <Link href={`/admin/import/${batch.id}`} className="underline underline-offset-2">
                     {importBatchHistoryLabel(batch.type, summary)}
                   </Link>
                 </td>

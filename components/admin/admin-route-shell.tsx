@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { usePathname } from "next/navigation";
-import { MainNav } from "@/components/layout/main-nav";
+import { usePathname } from 'next/navigation';
+import { MainNav } from '@/components/layout/main-nav';
 
 export function AdminRouteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith('/admin');
 
   if (isAdminRoute) {
     return <>{children}</>;

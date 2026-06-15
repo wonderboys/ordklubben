@@ -1,9 +1,9 @@
 import type {
   HintCandidateSkipReason,
   SkippedHintCandidate,
-} from "@/lib/content/ai/hint-candidate-skip-log";
-import type { HintCandidateDraft } from "@/lib/content/ai/types";
-import { normalizeHintText } from "@/lib/content/normalize-hint";
+} from '@/lib/content/ai/hint-candidate-skip-log';
+import type { HintCandidateDraft } from '@/lib/content/ai/types';
+import { normalizeHintText } from '@/lib/content/normalize-hint';
 
 const MAX_CLUE_WORDS = 8;
 
@@ -41,7 +41,7 @@ export function isSentenceLikeClueText(text: string): boolean {
     return true;
   }
 
-  if (trimmed.includes(",") && countWords(trimmed) > 5) {
+  if (trimmed.includes(',') && countWords(trimmed) > 5) {
     return true;
   }
 
@@ -59,17 +59,17 @@ export function isBlockedClueText(text: string): boolean {
 export function isGenericClueText(text: string, answer: string): boolean {
   const normalizedAnswer = answer
     .trim()
-    .normalize("NFC")
-    .replace(/[\s'’\-‐‑‒–—]+/g, "")
-    .toLocaleLowerCase("sv-SE");
+    .normalize('NFC')
+    .replace(/[\s'’\-‐‑‒–—]+/g, '')
+    .toLocaleLowerCase('sv-SE');
 
   if (GENERIC_CLUE_PATTERNS.some((pattern) => pattern.test(text))) {
     return true;
   }
 
   if (normalizedAnswer.length > 0) {
-    const answerUpper = normalizedAnswer.toLocaleUpperCase("sv-SE");
-    if (text.toLocaleUpperCase("sv-SE").includes(answerUpper)) {
+    const answerUpper = normalizedAnswer.toLocaleUpperCase('sv-SE');
+    if (text.toLocaleUpperCase('sv-SE').includes(answerUpper)) {
       return true;
     }
   }
@@ -82,27 +82,27 @@ export function getClueTextSkipReason(
   answer: string,
 ): HintCandidateSkipReason | null {
   if (text.length < 3) {
-    return "text_too_short";
+    return 'text_too_short';
   }
 
   if (clueRevealsAnswer(text, answer)) {
-    return "reveals_answer";
+    return 'reveals_answer';
   }
 
   if (isGenericClueText(text, answer)) {
-    return "generic_clue";
+    return 'generic_clue';
   }
 
   if (isBlockedClueText(text)) {
-    return "blocked_pattern";
+    return 'blocked_pattern';
   }
 
   if (isTooLongClueText(text)) {
-    return "too_long";
+    return 'too_long';
   }
 
   if (isSentenceLikeClueText(text)) {
-    return "sentence_like";
+    return 'sentence_like';
   }
 
   return null;
@@ -126,7 +126,7 @@ export function partitionDuplicateHintCandidateDrafts(
       skipped.push({
         text: candidate.text,
         type: candidate.type,
-        reason: "duplicate_existing",
+        reason: 'duplicate_existing',
       });
       continue;
     }
@@ -142,17 +142,16 @@ export function filterDuplicateHintCandidateDrafts(
   candidates: HintCandidateDraft[],
   existingNormalizedTexts: Iterable<string>,
 ): HintCandidateDraft[] {
-  return partitionDuplicateHintCandidateDrafts(candidates, existingNormalizedTexts)
-    .accepted;
+  return partitionDuplicateHintCandidateDrafts(candidates, existingNormalizedTexts).accepted;
 }
 
 export function clueRevealsAnswer(clueText: string, answer: string): boolean {
   const normalizedClue = normalizeHintText(clueText);
   const normalizedAnswer = answer
     .trim()
-    .normalize("NFC")
-    .replace(/[\s'’\-‐‑‒–—]+/g, "")
-    .toLocaleLowerCase("sv-SE");
+    .normalize('NFC')
+    .replace(/[\s'’\-‐‑‒–—]+/g, '')
+    .toLocaleLowerCase('sv-SE');
 
   if (normalizedAnswer.length === 0) {
     return false;

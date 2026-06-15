@@ -1,6 +1,6 @@
-import type { PuzzleDirection } from "@prisma/client";
-import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
-import { getAnswerLength } from "@/lib/content/puzzle/grid";
+import type { PuzzleDirection } from '@prisma/client';
+import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
+import { getAnswerLength } from '@/lib/content/puzzle/grid';
 
 export type PuzzleClueEntry = {
   id: string;
@@ -20,17 +20,11 @@ function sortEntries(entries: PuzzleClueEntry[]) {
       return leftNumber - rightNumber;
     }
 
-    return left.answerSnapshot.localeCompare(right.answerSnapshot, "sv-SE");
+    return left.answerSnapshot.localeCompare(right.answerSnapshot, 'sv-SE');
   });
 }
 
-function ClueSection({
-  title,
-  entries,
-}: {
-  title: string;
-  entries: PuzzleClueEntry[];
-}) {
+function ClueSection({ title, entries }: { title: string; entries: PuzzleClueEntry[] }) {
   return (
     <section>
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-print-muted">
@@ -41,13 +35,13 @@ function ClueSection({
       ) : (
         <ol className="space-y-2 text-sm">
           {entries.map((entry) => {
-            const clue = entry.hintSnapshot ?? entry.hintText ?? "Ingen nyckel vald";
+            const clue = entry.hintSnapshot ?? entry.hintText ?? 'Ingen nyckel vald';
             const length = getAnswerLength(entry.answerSnapshot);
 
             return (
               <li key={entry.id} className="border-b border-print-ink/10 pb-2 last:border-b-0">
                 <span className="font-medium text-print-ink">
-                  {entry.number ?? "–"}. {clue}
+                  {entry.number ?? '–'}. {clue}
                 </span>
                 <span className="ml-2 text-print-muted">({length})</span>
               </li>
@@ -60,8 +54,8 @@ function ClueSection({
 }
 
 export function PuzzleCluePanel({ entries }: { entries: PuzzleClueEntry[] }) {
-  const across = sortEntries(entries.filter((entry) => entry.direction === "ACROSS"));
-  const down = sortEntries(entries.filter((entry) => entry.direction === "DOWN"));
+  const across = sortEntries(entries.filter((entry) => entry.direction === 'ACROSS'));
+  const down = sortEntries(entries.filter((entry) => entry.direction === 'DOWN'));
 
   return (
     <div className="space-y-5">

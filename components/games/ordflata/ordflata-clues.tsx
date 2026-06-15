@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, type RefObject } from "react";
-import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
-import type { OrdflataPlayerEntry } from "@/lib/content/ordflata-alpha";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, type RefObject } from 'react';
+import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
+import type { OrdflataPlayerEntry } from '@/lib/content/ordflata-alpha';
+import { cn } from '@/lib/utils';
 
 function sortEntries(entries: OrdflataPlayerEntry[]) {
   return [...entries].sort((left, right) => {
@@ -14,7 +14,7 @@ function sortEntries(entries: OrdflataPlayerEntry[]) {
       return leftNumber - rightNumber;
     }
 
-    return left.clue.localeCompare(right.clue, "sv-SE");
+    return left.clue.localeCompare(right.clue, 'sv-SE');
   });
 }
 
@@ -50,16 +50,14 @@ function ClueSection({
                   type="button"
                   onClick={() => onSelectEntry(entry.id)}
                   className={cn(
-                    "w-full border-l-2 py-2 pl-2.5 pr-0 text-left text-sm leading-snug transition-colors",
+                    'w-full border-l-2 py-2 pl-2.5 pr-0 text-left text-sm leading-snug transition-colors',
                     isActive
-                      ? "border-l-print-ink bg-print-bg text-print-ink"
-                      : "border-l-transparent text-print-ink hover:bg-print-ink/[0.02]",
+                      ? 'border-l-print-ink bg-print-bg text-print-ink'
+                      : 'border-l-transparent text-print-ink hover:bg-print-ink/[0.02]',
                   )}
                 >
-                  <span className={cn("font-medium", isActive && "font-semibold")}>
-                    <span className={cn(isActive && "font-bold")}>
-                      {entry.number ?? "–"}.
-                    </span>{" "}
+                  <span className={cn('font-medium', isActive && 'font-semibold')}>
+                    <span className={cn(isActive && 'font-bold')}>{entry.number ?? '–'}.</span>{' '}
                     {entry.clue}
                   </span>
                   <span className="ml-1.5 text-print-muted">({entry.length})</span>
@@ -87,8 +85,8 @@ export function OrdflataClues({
   className,
 }: OrdflataCluesProps) {
   const activeClueRef = useRef<HTMLButtonElement>(null);
-  const across = sortEntries(entries.filter((entry) => entry.direction === "ACROSS"));
-  const down = sortEntries(entries.filter((entry) => entry.direction === "DOWN"));
+  const across = sortEntries(entries.filter((entry) => entry.direction === 'ACROSS'));
+  const down = sortEntries(entries.filter((entry) => entry.direction === 'DOWN'));
 
   useEffect(() => {
     if (!activeEntryId) {
@@ -96,16 +94,16 @@ export function OrdflataClues({
     }
 
     activeClueRef.current?.scrollIntoView({
-      block: "nearest",
-      behavior: "smooth",
+      block: 'nearest',
+      behavior: 'smooth',
     });
   }, [activeEntryId]);
 
   return (
     <aside
       className={cn(
-        "ordflata-clues-panel border border-print-ink bg-print-surface p-4 shadow-none",
-        "md:max-h-[calc(100dvh-7rem)] md:overflow-y-scroll md:overscroll-contain",
+        'ordflata-clues-panel border border-print-ink bg-print-surface p-4 shadow-none',
+        'md:max-h-[calc(100dvh-7rem)] md:overflow-y-scroll md:overscroll-contain',
         className,
       )}
     >

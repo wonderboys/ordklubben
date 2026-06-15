@@ -1,19 +1,19 @@
-import type { LexicalEntryType, Prisma, PrismaClient } from "@prisma/client";
-import type { BatchSummary } from "@/lib/content/import-batch";
-import { parseCsv, requireCsvHeaders } from "@/lib/content/import-csv";
-import type { ImportErrorRow } from "@/lib/content/import-content";
-import { parseLexicalEntryTypeInput } from "@/lib/content/lexicon/parse-lexical-entry-type";
-import { isValidAnswerFormat, normalizeAnswer } from "@/lib/content/normalize-answer";
+import type { LexicalEntryType, Prisma, PrismaClient } from '@prisma/client';
+import type { BatchSummary } from '@/lib/content/import-batch';
+import { parseCsv, requireCsvHeaders } from '@/lib/content/import-csv';
+import type { ImportErrorRow } from '@/lib/content/import-content';
+import { parseLexicalEntryTypeInput } from '@/lib/content/lexicon/parse-lexical-entry-type';
+import { isValidAnswerFormat, normalizeAnswer } from '@/lib/content/normalize-answer';
 import {
   normalizeWordSource,
   resolveWordSourceReference,
-} from "@/lib/content/normalize-word-source";
+} from '@/lib/content/normalize-word-source';
 
 export type ImportLexiconResult = {
   batchId: string;
   summary: BatchSummary;
   errorRows: ImportErrorRow[];
-  status: "COMPLETED" | "FAILED";
+  status: 'COMPLETED' | 'FAILED';
 };
 
 type ImportLexiconOptions = {
@@ -23,11 +23,11 @@ type ImportLexiconOptions = {
 };
 
 function normalizeLexicalValue(value: string) {
-  return value.trim().replace(/\s+/g, " ");
+  return value.trim().replace(/\s+/g, ' ');
 }
 
 function lexicalEntryKey(wordId: string, type: LexicalEntryType, value: string) {
-  return `${wordId}:${type}:${value.toLocaleLowerCase("sv-SE")}`;
+  return `${wordId}:${type}:${value.toLocaleLowerCase('sv-SE')}`;
 }
 
 function buildSummary(summary: BatchSummary): Prisma.InputJsonObject {
@@ -60,10 +60,10 @@ function buildErrorRowsJson(errorRows: ImportErrorRow[]): Prisma.InputJsonArray 
 
 function isUniqueConstraintError(error: unknown) {
   return (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error !== null &&
-    "code" in error &&
-    (error as { code: string }).code === "P2002"
+    'code' in error &&
+    (error as { code: string }).code === 'P2002'
   );
 }
 
@@ -93,10 +93,10 @@ export async function importLexicon({
 }: ImportLexiconOptions): Promise<ImportLexiconResult> {
   const batch = await prisma.importBatch.create({
     data: {
-      type: "LEXICON",
+      type: 'LEXICON',
       filename,
-      source: "import",
-      status: "PENDING",
+      source: 'import',
+      status: 'PENDING',
     },
   });
 
@@ -107,22 +107,22 @@ export async function importLexicon({
     const parsedCsv = parseCsv(csvText);
     summary.totalRows = parsedCsv.rows.length;
 
-    requireCsvHeaders(parsedCsv.headers, ["word", "type", "value"]);
+    requireCsvHeaders(parsedCsv.headers, ['word', 'type', 'value']);
 
     const wordCache = new Map<string, string | null>();
     const batchSeen = new Set<string>();
 
     for (const [index, row] of parsedCsv.rows.entries()) {
       const rowNumber = index + 2;
-      const rawWord = row.word ?? "";
-      const rawType = row.type ?? "";
-      const rawValue = row.value ?? "";
+      const rawWord = row.word ?? '';
+      const rawType = row.type ?? '';
+      const rawValue = row.value ?? '';
 
       if (rawWord.trim().length === 0) {
         summary.failedRows += 1;
         errorRows.push({
           rowNumber,
-          reason: "word får inte vara tomt.",
+          reason: 'word får inte vara tomt.',
           answer: rawWord,
           hint: rawValue || undefined,
         });
@@ -133,7 +133,7 @@ export async function importLexicon({
         summary.failedRows += 1;
         errorRows.push({
           rowNumber,
-          reason: "Ogiltigt ordformat.",
+          reason: 'Ogiltigt ordformat.',
           answer: rawWord,
           hint: rawValue || undefined,
         });
@@ -146,7 +146,7 @@ export async function importLexicon({
         summary.failedRows += 1;
         errorRows.push({
           rowNumber,
-          reason: "type måste vara DEFINITION, SYNONYM, ANTONYM, EXPRESSION eller RELATED.",
+          reason: 'type måste vara DEFINITION, SYNONYM, ANTONYM, EXPRESSION eller RELATED.',
           answer: rawWord,
           hint: rawValue || undefined,
         });
@@ -159,7 +159,7 @@ export async function importLexicon({
         summary.failedRows += 1;
         errorRows.push({
           rowNumber,
-          reason: "value får inte vara tomt.",
+          reason: 'value får inte vara tomt.',
           answer: rawWord,
         });
         continue;
@@ -182,7 +182,7 @@ export async function importLexicon({
         summary.skippedMissingWords += 1;
         errorRows.push({
           rowNumber,
-          reason: "Ordet finns inte i ordbanken.",
+          reason: 'Ordet finns inte i ordbanken.',
           answer: normalized.answer,
           hint: value,
         });
@@ -196,8 +196,8 @@ export async function importLexicon({
         continue;
       }
 
-      const rawSource = row.source?.trim() ?? "";
-      const entrySource = normalizeWordSource(rawSource || "import");
+      const rawSource = row.source?.trim() ?? '';
+      const entrySource = normalizeWordSource(rawSource || 'import');
       const sourceReference = resolveWordSourceReference({
         source: entrySource,
         explicitReference: row.sourcereference ?? row.source_reference,
@@ -231,13 +231,12 @@ export async function importLexicon({
       }
     }
 
-    const skippedRows =
-      summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords;
+    const skippedRows = summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords;
 
     await prisma.importBatch.update({
       where: { id: batch.id },
       data: {
-        status: "COMPLETED",
+        status: 'COMPLETED',
         totalRows: summary.totalRows,
         importedRows: summary.createdLexicalEntries,
         skippedRows,
@@ -251,11 +250,10 @@ export async function importLexicon({
       batchId: batch.id,
       summary,
       errorRows,
-      status: "COMPLETED",
+      status: 'COMPLETED',
     };
   } catch (error) {
-    const reason =
-      error instanceof Error ? error.message : "Lexikonimporten kunde inte slutföras.";
+    const reason = error instanceof Error ? error.message : 'Lexikonimporten kunde inte slutföras.';
 
     errorRows.push({
       rowNumber: 0,
@@ -267,11 +265,10 @@ export async function importLexicon({
     await prisma.importBatch.update({
       where: { id: batch.id },
       data: {
-        status: "FAILED",
+        status: 'FAILED',
         totalRows: summary.totalRows,
         importedRows: summary.createdLexicalEntries,
-        skippedRows:
-          summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords,
+        skippedRows: summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords,
         summary: buildSummary(summary),
         errorRows: buildErrorRowsJson(errorRows),
         completedAt: new Date(),
@@ -282,7 +279,7 @@ export async function importLexicon({
       batchId: batch.id,
       summary,
       errorRows,
-      status: "FAILED",
+      status: 'FAILED',
     };
   }
 }

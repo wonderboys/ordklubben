@@ -1,12 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { ChevronDown } from "lucide-react";
-import {
-  WordPicker,
-  type WordPickerOption,
-} from "@/components/admin/word-picker";
+import { useState } from 'react';
+import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
+import { WordPicker, type WordPickerOption } from '@/components/admin/word-picker';
 import {
   AdminPanel,
   Field,
@@ -14,12 +11,8 @@ import {
   SubmitButton,
   TextArea,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
-import {
-  createWordRelation,
-  deleteWordRelation,
-  updateWordRelation,
-} from "@/lib/content/actions";
+} from '@/components/admin/admin-ui';
+import { createWordRelation, deleteWordRelation, updateWordRelation } from '@/lib/content/actions';
 import {
   WORD_RELATION_TYPES,
   WORD_RELATION_TYPE_LABELS,
@@ -27,11 +20,11 @@ import {
   WORD_SOURCE_LABELS,
   formatWordRelationType,
   formatWordSourceWithReference,
-} from "@/lib/content/constants";
-import type { WordDetailData, WordDetailRelation } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData, WordDetailRelation } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-const RELATIONS_TAB = "relations";
+const RELATIONS_TAB = 'relations';
 
 function WordRelationForm({
   wordId,
@@ -46,19 +39,17 @@ function WordRelationForm({
   submitLabel: string;
   action: typeof createWordRelation | typeof updateWordRelation;
 }) {
-  const [targetWordId, setTargetWordId] = useState<string | null>(
-    relation?.targetWord.id ?? null,
-  );
+  const [targetWordId, setTargetWordId] = useState<string | null>(relation?.targetWord.id ?? null);
 
   return (
     <form action={action} className="grid gap-3">
       <input type="hidden" name="wordId" value={wordId} />
       <input type="hidden" name="tab" value={RELATIONS_TAB} />
       {relation ? <input type="hidden" name="relationId" value={relation.id} /> : null}
-      <input type="hidden" name="targetWordId" value={targetWordId ?? ""} required />
-      <Field label="Målord" htmlFor={`relation-target-${relation?.id ?? "new"}`}>
+      <input type="hidden" name="targetWordId" value={targetWordId ?? ''} required />
+      <Field label="Målord" htmlFor={`relation-target-${relation?.id ?? 'new'}`}>
         <WordPicker
-          id={`relation-target-${relation?.id ?? "new"}`}
+          id={`relation-target-${relation?.id ?? 'new'}`}
           value={targetWordId}
           onChange={setTargetWordId}
           options={wordOptions}
@@ -67,11 +58,11 @@ function WordRelationForm({
         />
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Relationstyp" htmlFor={`relation-type-${relation?.id ?? "new"}`}>
+        <Field label="Relationstyp" htmlFor={`relation-type-${relation?.id ?? 'new'}`}>
           <SelectInput
-            id={`relation-type-${relation?.id ?? "new"}`}
+            id={`relation-type-${relation?.id ?? 'new'}`}
             name="relationType"
-            defaultValue={relation?.relationType ?? "RELATED"}
+            defaultValue={relation?.relationType ?? 'RELATED'}
           >
             {WORD_RELATION_TYPES.map((value) => (
               <option key={value} value={value}>
@@ -80,11 +71,11 @@ function WordRelationForm({
             ))}
           </SelectInput>
         </Field>
-        <Field label="Källa" htmlFor={`relation-source-${relation?.id ?? "new"}`}>
+        <Field label="Källa" htmlFor={`relation-source-${relation?.id ?? 'new'}`}>
           <SelectInput
-            id={`relation-source-${relation?.id ?? "new"}`}
+            id={`relation-source-${relation?.id ?? 'new'}`}
             name="source"
-            defaultValue={relation?.source ?? "manual"}
+            defaultValue={relation?.source ?? 'manual'}
           >
             {WORD_SOURCES.map((value) => (
               <option key={value} value={value}>
@@ -94,15 +85,19 @@ function WordRelationForm({
           </SelectInput>
         </Field>
       </div>
-      <Field label="Anteckningar" htmlFor={`relation-notes-${relation?.id ?? "new"}`} hint="Valfritt">
+      <Field
+        label="Anteckningar"
+        htmlFor={`relation-notes-${relation?.id ?? 'new'}`}
+        hint="Valfritt"
+      >
         <TextArea
-          id={`relation-notes-${relation?.id ?? "new"}`}
+          id={`relation-notes-${relation?.id ?? 'new'}`}
           name="notes"
-          defaultValue={relation?.notes ?? ""}
+          defaultValue={relation?.notes ?? ''}
           className="min-h-16"
         />
       </Field>
-      <SubmitButton variant={relation ? "secondary" : "primary"}>{submitLabel}</SubmitButton>
+      <SubmitButton variant={relation ? 'secondary' : 'primary'}>{submitLabel}</SubmitButton>
     </form>
   );
 }
@@ -137,16 +132,14 @@ function WordRelationCard({
             {relation.targetWord.answer}
           </Link>
         </p>
-        {relation.notes ? (
-          <p className="mt-2 text-sm text-print-muted">{relation.notes}</p>
-        ) : null}
+        {relation.notes ? <p className="mt-2 text-sm text-print-muted">{relation.notes}</p> : null}
       </div>
 
       <input id={editFormId} type="checkbox" className="peer/edit sr-only" />
       <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
         <label
           htmlFor={editFormId}
-          className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+          className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
         >
           <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
           Redigera
@@ -181,12 +174,12 @@ export function WordRelationsSection({
 }: {
   word: WordDetailData;
   wordOptions: WordPickerOption[];
-  relationType?: WordDetailRelation["relationType"];
+  relationType?: WordDetailRelation['relationType'];
 }) {
   const filteredRelations = relationType
     ? word.relations.filter((relation) => relation.relationType === relationType)
     : word.relations;
-  const newFormId = "new-word-relation";
+  const newFormId = 'new-word-relation';
 
   return (
     <>
@@ -201,7 +194,7 @@ export function WordRelationsSection({
         {word.relations.length > 0 ? (
           <form method="get" className="flex flex-wrap items-center gap-2">
             <input type="hidden" name="tab" value={RELATIONS_TAB} />
-            <SelectInput name="relationType" defaultValue={relationType ?? ""} className="min-w-44">
+            <SelectInput name="relationType" defaultValue={relationType ?? ''} className="min-w-44">
               <option value="">Alla typer</option>
               {WORD_RELATION_TYPES.map((value) => (
                 <option key={value} value={value}>
@@ -218,7 +211,8 @@ export function WordRelationsSection({
       <div className="mb-4 hidden rounded-sm border border-print-ink/10 bg-print-ink/[0.02] p-3 peer-checked:block">
         <p className="mb-3 text-sm font-medium text-print-ink">Ny relation</p>
         <p className="mb-3 text-xs text-print-muted">
-          Strukturerade kopplingar till andra ord i ordbanken — skilt från lexikonets betydelseposter.
+          Strukturerade kopplingar till andra ord i ordbanken — skilt från lexikonets
+          betydelseposter.
         </p>
         <WordRelationForm
           wordId={word.id}
@@ -253,7 +247,7 @@ export function WordRelationsPanel({
 }: {
   word: WordDetailData;
   wordOptions: WordPickerOption[];
-  relationType?: WordDetailRelation["relationType"];
+  relationType?: WordDetailRelation['relationType'];
 }) {
   return (
     <AdminPanel title="Relationer">
@@ -264,11 +258,7 @@ export function WordRelationsPanel({
           GÅNGART och antonym till GALOPP.
         </p>
       </div>
-      <WordRelationsSection
-        word={word}
-        wordOptions={wordOptions}
-        relationType={relationType}
-      />
+      <WordRelationsSection word={word} wordOptions={wordOptions} relationType={relationType} />
     </AdminPanel>
   );
 }

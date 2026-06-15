@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { GameToast, useGameToast } from "@/components/games/game-toast";
-import { ScratchTile } from "@/components/games/skrapet/scratch-tile";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { GameToast, useGameToast } from '@/components/games/game-toast';
+import { ScratchTile } from '@/components/games/skrapet/scratch-tile';
+import { Button } from '@/components/ui/button';
 import {
   calculateSkrapetScore,
   formatSkrapetClock,
   normalizeSkrapetGuess,
   pickRandomSkrapetPuzzle,
   type SkrapetPuzzle,
-} from "@/lib/game/skrapet/puzzles";
+} from '@/lib/game/skrapet/puzzles';
 
 // TODO: Dagens Skrap — same word for all players each day.
 // TODO: Difficulty tiers — Easy 8 clues, Normal 6, Hard 4.
 // TODO: Scratch bonus tiles (✨ BONUS) for extra points.
 // TODO: False clues variant — not all hints are helpful.
 
-type GamePhase = "playing" | "won";
+type GamePhase = 'playing' | 'won';
 
 function ResultCard({
   word,
@@ -52,9 +52,7 @@ function ResultCard({
         <p className="font-mono text-sm tabular-nums text-print-muted">
           Tid: {formatSkrapetClock(elapsedSeconds)}
         </p>
-        <p className="font-mono text-sm font-bold tabular-nums text-print-green">
-          Poäng: {score}
-        </p>
+        <p className="font-mono text-sm font-bold tabular-nums text-print-green">Poäng: {score}</p>
       </div>
 
       <Button type="button" variant="accent" size="lg" className="w-full" onClick={onPlayAgain}>
@@ -86,18 +84,15 @@ export function SkrapetGame() {
   const [revealed, setRevealed] = useState<boolean[]>(() =>
     createInitialRevealed(puzzle.clues.length),
   );
-  const [phase, setPhase] = useState<GamePhase>("playing");
-  const [guess, setGuess] = useState("");
+  const [phase, setPhase] = useState<GamePhase>('playing');
+  const [guess, setGuess] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number | null>(null);
 
-  const revealedCount = useMemo(
-    () => revealed.filter(Boolean).length,
-    [revealed],
-  );
+  const revealedCount = useMemo(() => revealed.filter(Boolean).length, [revealed]);
 
   const allRevealed = revealedCount === puzzle.clues.length;
   const score = calculateSkrapetScore(revealedCount, elapsedSeconds);
@@ -136,21 +131,24 @@ export function SkrapetGame() {
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 
-  const resetRound = useCallback((nextPuzzle?: SkrapetPuzzle) => {
-    const picked = nextPuzzle ?? pickRandomSkrapetPuzzle();
-    setPuzzle(picked);
-    setRevealed(createInitialRevealed(picked.clues.length));
-    setPhase("playing");
-    setGuess("");
-    setElapsedSeconds(0);
-    setTimerActive(false);
-    startedAtRef.current = null;
-    clearTimer();
-  }, [clearTimer]);
+  const resetRound = useCallback(
+    (nextPuzzle?: SkrapetPuzzle) => {
+      const picked = nextPuzzle ?? pickRandomSkrapetPuzzle();
+      setPuzzle(picked);
+      setRevealed(createInitialRevealed(picked.clues.length));
+      setPhase('playing');
+      setGuess('');
+      setElapsedSeconds(0);
+      setTimerActive(false);
+      startedAtRef.current = null;
+      clearTimer();
+    },
+    [clearTimer],
+  );
 
   const revealTile = useCallback(
     (index: number) => {
-      if (phase !== "playing" || revealed[index]) {
+      if (phase !== 'playing' || revealed[index]) {
         return;
       }
 
@@ -166,7 +164,7 @@ export function SkrapetGame() {
   );
 
   const handleScratchMore = () => {
-    if (phase !== "playing" || allRevealed) {
+    if (phase !== 'playing' || allRevealed) {
       return;
     }
 
@@ -180,7 +178,7 @@ export function SkrapetGame() {
   };
 
   const handleGuess = () => {
-    if (phase !== "playing") {
+    if (phase !== 'playing') {
       return;
     }
 
@@ -192,14 +190,14 @@ export function SkrapetGame() {
 
     if (normalized === normalizeSkrapetGuess(puzzle.word)) {
       stopTimer();
-      setPhase("won");
+      setPhase('won');
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
       return;
     }
 
-    showToast("Inte rätt — skrapa mer eller försök igen", "error");
+    showToast('Inte rätt — skrapa mer eller försök igen', 'error');
   };
 
   const gridColumns = puzzle.clues.length <= 4 ? 2 : 3;
@@ -213,7 +211,7 @@ export function SkrapetGame() {
         placement="fixed-top-center"
       />
 
-      {phase === "playing" ? (
+      {phase === 'playing' ? (
         <>
           <div
             className="grid gap-2 sm:gap-2.5"
@@ -226,7 +224,7 @@ export function SkrapetGame() {
                 revealed={revealed[index] ?? false}
                 index={index}
                 onRevealed={revealTile}
-                disabled={phase !== "playing"}
+                disabled={phase !== 'playing'}
               />
             ))}
           </div>
@@ -251,7 +249,7 @@ export function SkrapetGame() {
               placeholder="Skriv ditt svar"
               onChange={(event) => setGuess(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === 'Enter') {
                   event.preventDefault();
                   handleGuess();
                 }
@@ -287,7 +285,7 @@ export function SkrapetGame() {
         </>
       ) : null}
 
-      {phase === "won" ? (
+      {phase === 'won' ? (
         <ResultCard
           word={puzzle.word}
           revealedCount={revealedCount}

@@ -1,4 +1,4 @@
-import type { ContentStatus, Prisma } from "@prisma/client";
+import type { ContentStatus, Prisma } from '@prisma/client';
 
 export const ADMIN_PAGE_SIZES = [25, 50, 100] as const;
 export type AdminPageSize = (typeof ADMIN_PAGE_SIZES)[number];
@@ -11,14 +11,14 @@ export type AdminPaginationState = {
 };
 
 export function parseAdminPageSize(value: string | undefined): AdminPageSize {
-  const parsed = Number.parseInt(value ?? "", 10);
+  const parsed = Number.parseInt(value ?? '', 10);
   return ADMIN_PAGE_SIZES.includes(parsed as AdminPageSize)
     ? (parsed as AdminPageSize)
     : DEFAULT_ADMIN_PAGE_SIZE;
 }
 
 export function parseAdminPage(value: string | undefined): number {
-  const parsed = Number.parseInt(value ?? "", 10);
+  const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
@@ -61,7 +61,7 @@ export function buildAdminListHref(
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === "") {
+    if (value === undefined || value === null || value === '') {
       continue;
     }
 
@@ -81,21 +81,19 @@ export type WordListFilters = {
 };
 
 export function buildWordListWhere(filters: WordListFilters): Prisma.WordWhereInput {
-  const query = filters.q?.trim() ?? "";
+  const query = filters.q?.trim() ?? '';
 
   return {
     AND: [
-      filters.status
-        ? { status: filters.status }
-        : { status: { not: "ARCHIVED" } },
+      filters.status ? { status: filters.status } : { status: { not: 'ARCHIVED' } },
       filters.themeId ? { themes: { some: { themeId: filters.themeId } } } : {},
       filters.withoutHint ? { hints: { none: {} } } : {},
       filters.withoutTheme ? { themes: { none: {} } } : {},
       query
         ? {
             OR: [
-              { answer: { contains: query, mode: "insensitive" } },
-              { normalizedAnswer: { contains: query, mode: "insensitive" } },
+              { answer: { contains: query, mode: 'insensitive' } },
+              { normalizedAnswer: { contains: query, mode: 'insensitive' } },
             ],
           }
         : {},
@@ -103,24 +101,27 @@ export function buildWordListWhere(filters: WordListFilters): Prisma.WordWhereIn
   };
 }
 
-export function parseWordListFilters(searchParams: {
-  q?: string;
-  status?: string;
-  themeId?: string;
-  withoutHint?: string;
-  withoutTheme?: string;
-}, allowedStatuses: readonly ContentStatus[]): WordListFilters {
+export function parseWordListFilters(
+  searchParams: {
+    q?: string;
+    status?: string;
+    themeId?: string;
+    withoutHint?: string;
+    withoutTheme?: string;
+  },
+  allowedStatuses: readonly ContentStatus[],
+): WordListFilters {
   const status =
     searchParams.status && allowedStatuses.includes(searchParams.status as ContentStatus)
       ? (searchParams.status as ContentStatus)
       : undefined;
 
   return {
-    q: searchParams.q?.trim() ?? "",
+    q: searchParams.q?.trim() ?? '',
     status,
     themeId: searchParams.themeId?.trim() || undefined,
-    withoutHint: searchParams.withoutHint === "1",
-    withoutTheme: searchParams.withoutTheme === "1",
+    withoutHint: searchParams.withoutHint === '1',
+    withoutTheme: searchParams.withoutTheme === '1',
   };
 }
 
@@ -129,21 +130,18 @@ export function buildWordListQuery(filters: WordListFilters) {
     q: filters.q || undefined,
     status: filters.status,
     themeId: filters.themeId,
-    withoutHint: filters.withoutHint ? "1" : undefined,
-    withoutTheme: filters.withoutTheme ? "1" : undefined,
+    withoutHint: filters.withoutHint ? '1' : undefined,
+    withoutTheme: filters.withoutTheme ? '1' : undefined,
   };
 }
 
-export function hasActiveWordListFilters(
-  filters: WordListFilters,
-  page = 1,
-): boolean {
+export function hasActiveWordListFilters(filters: WordListFilters, page = 1): boolean {
   return Boolean(
     filters.q ||
-      filters.status ||
-      filters.themeId ||
-      filters.withoutHint ||
-      filters.withoutTheme ||
-      page > 1,
+    filters.status ||
+    filters.themeId ||
+    filters.withoutHint ||
+    filters.withoutTheme ||
+    page > 1,
   );
 }

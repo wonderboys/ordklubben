@@ -1,7 +1,7 @@
-import type { Theme } from "@prisma/client";
-import type { wordBankClueSelect, wordBankWordSelect } from "@/lib/content/word-bank/queries";
-import type { WordBankClue, WordBankThemeRef, WordBankWord } from "@/lib/content/word-bank/types";
-import type { Prisma } from "@prisma/client";
+import type { Theme } from '@prisma/client';
+import type { wordBankClueSelect, wordBankWordSelect } from '@/lib/content/word-bank/queries';
+import type { WordBankClue, WordBankThemeRef, WordBankWord } from '@/lib/content/word-bank/types';
+import type { Prisma } from '@prisma/client';
 
 type WordBankWordRow = Prisma.WordGetPayload<{
   select: typeof wordBankWordSelect;
@@ -11,7 +11,7 @@ type WordBankClueRow = Prisma.HintGetPayload<{
   select: typeof wordBankClueSelect;
 }>;
 
-export function mapThemeRef(theme: Pick<Theme, "id" | "slug" | "name">): WordBankThemeRef {
+export function mapThemeRef(theme: Pick<Theme, 'id' | 'slug' | 'name'>): WordBankThemeRef {
   return {
     id: theme.id,
     slug: theme.slug,

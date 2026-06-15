@@ -1,8 +1,5 @@
-import type { HintType } from "@prisma/client";
-import {
-  Field,
-  SelectInput,
-} from "@/components/admin/admin-ui";
+import type { HintType } from '@prisma/client';
+import { Field, SelectInput } from '@/components/admin/admin-ui';
 import {
   DEFAULT_HINT_TONE,
   DEFAULT_HINT_TYPE,
@@ -13,7 +10,7 @@ import {
   HINT_TYPE_SELECT_OPTIONS,
   formatHintSource,
   isSelectableHintType,
-} from "@/lib/content/constants";
+} from '@/lib/content/constants';
 
 type HintMetadataFieldsProps = {
   idPrefix: string;
@@ -32,9 +29,7 @@ export function HintMetadataFields({
   source,
   compact = false,
 }: HintMetadataFieldsProps) {
-  const typeValue = isSelectableHintType(typeDefaultValue)
-    ? typeDefaultValue
-    : DEFAULT_HINT_TYPE;
+  const typeValue = isSelectableHintType(typeDefaultValue) ? typeDefaultValue : DEFAULT_HINT_TYPE;
 
   const toneValue =
     toneDefaultValue && (HINT_TONES as readonly string[]).includes(toneDefaultValue)
@@ -43,8 +38,8 @@ export function HintMetadataFields({
 
   return (
     <div className="space-y-3">
-      <div className={compact ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-2"}>
-        <Field label="Typ" htmlFor={`${idPrefix}-type`} hint={compact ? "Valfritt" : undefined}>
+      <div className={compact ? 'grid gap-3 sm:grid-cols-2' : 'grid gap-3 sm:grid-cols-2'}>
+        <Field label="Typ" htmlFor={`${idPrefix}-type`} hint={compact ? 'Valfritt' : undefined}>
           <SelectInput id={`${idPrefix}-type`} name="type" defaultValue={typeValue}>
             {HINT_TYPE_SELECT_OPTIONS.map((value) => (
               <option key={value} value={value}>
@@ -56,21 +51,21 @@ export function HintMetadataFields({
         <Field
           label="Svårighet"
           htmlFor={`${idPrefix}-difficulty`}
-          hint={compact ? "Valfritt" : undefined}
+          hint={compact ? 'Valfritt' : undefined}
         >
           <SelectInput
             id={`${idPrefix}-difficulty`}
             name="difficulty"
-            defaultValue={difficultyDefaultValue == null ? "" : String(difficultyDefaultValue)}
+            defaultValue={difficultyDefaultValue == null ? '' : String(difficultyDefaultValue)}
           >
             {HINT_DIFFICULTY_OPTIONS.map((option) => (
-              <option key={option.value || "unset"} value={option.value}>
+              <option key={option.value || 'unset'} value={option.value}>
                 {option.label}
               </option>
             ))}
           </SelectInput>
         </Field>
-        <Field label="Ton" htmlFor={`${idPrefix}-tone`} hint={compact ? "Valfritt" : undefined}>
+        <Field label="Ton" htmlFor={`${idPrefix}-tone`} hint={compact ? 'Valfritt' : undefined}>
           <SelectInput id={`${idPrefix}-tone`} name="tone" defaultValue={toneValue}>
             {HINT_TONES.map((value) => (
               <option key={value} value={value}>

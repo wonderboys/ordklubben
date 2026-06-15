@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Loader2, Sparkles } from "lucide-react";
-import { useFormStatus } from "react-dom";
-import { SubmitButton } from "@/components/admin/admin-ui";
-import { generateMediaSuggestionAction } from "@/lib/content/actions";
+import { Loader2, Sparkles } from 'lucide-react';
+import { useFormStatus } from 'react-dom';
+import { SubmitButton } from '@/components/admin/admin-ui';
+import { generateMediaSuggestionAction } from '@/lib/content/actions';
 
 type GenerateMediaSuggestionButtonProps = {
   wordId: string;
@@ -15,11 +15,7 @@ function GenerateMediaSuggestionFormBody() {
 
   return (
     <>
-      <SubmitButton
-        variant="secondary"
-        disabled={pending}
-        className="min-w-[11.5rem] gap-1.5"
-      >
+      <SubmitButton variant="secondary" disabled={pending} className="min-w-[11.5rem] gap-1.5">
         {pending ? (
           <>
             <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
@@ -39,10 +35,7 @@ function GenerateMediaSuggestionFormBody() {
   );
 }
 
-export function GenerateMediaSuggestionButton({
-  wordId,
-  tab,
-}: GenerateMediaSuggestionButtonProps) {
+export function GenerateMediaSuggestionButton({ wordId, tab }: GenerateMediaSuggestionButtonProps) {
   return (
     <form action={generateMediaSuggestionAction} className="inline-flex flex-col items-start">
       <input type="hidden" name="wordId" value={wordId} />

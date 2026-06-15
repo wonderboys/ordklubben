@@ -4,7 +4,7 @@ services:
     container_name: ordklubben-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -12,7 +12,7 @@ services:
     volumes:
       - ordklubben_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ordklubben"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d ordklubben']
       interval: 5s
       timeout: 5s
       retries: 5

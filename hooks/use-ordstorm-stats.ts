@@ -1,13 +1,9 @@
-"use client";
+'use client';
 
-import { type OrdstormStats } from "@/lib/game/ordstorm";
-import * as ordstormStatsStore from "@/lib/storage/ordstorm-stats";
-import { useBrowserStore } from "@/hooks/use-browser-store";
+import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { useBrowserStore } from '@/hooks/use-browser-store';
+import { ordstormStatsStore } from '@/lib/storage/ordstorm-stats';
 
 export function useOrdstormStats(): OrdstormStats {
-  return useBrowserStore({
-    defaultValue: ordstormStatsStore.defaultStats,
-    load: ordstormStatsStore.loadStats,
-    subscribe: ordstormStatsStore.subscribeToStats,
-  });
+  return useBrowserStore(ordstormStatsStore);
 }

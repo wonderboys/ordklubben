@@ -1,9 +1,19 @@
-import { CalendarDays, Dices, Grid3x3, ImageIcon, Route, Smile, Ticket, Zap, type LucideIcon } from "lucide-react";
-import type { GameId } from "@/lib/games/registry";
-import { cn } from "@/lib/utils";
+import {
+  CalendarDays,
+  Dices,
+  Grid3x3,
+  ImageIcon,
+  Route,
+  Smile,
+  Ticket,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import type { GameId } from '@/lib/games/registry';
+import { cn } from '@/lib/utils';
 
 const GAME_ICONS: Record<GameId, LucideIcon> = {
-  "dagens-ord": CalendarDays,
+  'dagens-ord': CalendarDays,
   ordstorm: Zap,
   stegvis: Route,
   emojirebus: Smile,
@@ -24,7 +34,7 @@ export function GameLibraryIcon({ gameId, className }: GameLibraryIconProps) {
   return (
     <div
       className={cn(
-        "flex size-11 shrink-0 items-center justify-center border border-print-ink bg-print-surface sm:size-12",
+        'flex size-11 shrink-0 items-center justify-center border border-print-ink bg-print-surface sm:size-12',
         className,
       )}
       aria-hidden="true"

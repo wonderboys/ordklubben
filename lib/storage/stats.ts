@@ -4,4 +4,4 @@ export {
   saveStats,
   subscribeToStats,
   updateStatsAfterRound,
-} from "@/lib/storage/ordstorm-stats";
+} from '@/lib/storage/ordstorm-stats';

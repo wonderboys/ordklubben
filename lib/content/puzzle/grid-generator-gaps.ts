@@ -1,18 +1,24 @@
-import { buildLetterMap, getAnswerLength, type PuzzlePlacementInput } from "@/lib/content/puzzle/grid";
-import { buildBlockedSet, type BlockedCell } from "@/lib/content/puzzle/grid-generator-blocks";
-import { getAnswerLetters } from "@/lib/content/puzzle/grid-generator-scoring";
-import { validateGeneratorPlacement } from "@/lib/content/puzzle/grid-generator-validation";
+import {
+  buildLetterMap,
+  getAnswerLength,
+  type PuzzlePlacementInput,
+} from '@/lib/content/puzzle/grid';
+import { buildBlockedSet, type BlockedCell } from '@/lib/content/puzzle/grid-generator-blocks';
+import { getAnswerLetters } from '@/lib/content/puzzle/grid-generator-scoring';
+import { validateGeneratorPlacement } from '@/lib/content/puzzle/grid-generator-validation';
 
 export type GridSlot = {
   row: number;
   col: number;
-  direction: "ACROSS" | "DOWN";
+  direction: 'ACROSS' | 'DOWN';
   length: number;
   /** Known letters at slot indices from existing crossings. */
   knownLetters: Map<number, string>;
 };
 
-export type GapFillResult<T extends { id: string; answer: string } = { id: string; answer: string }> = {
+export type GapFillResult<
+  T extends { id: string; answer: string } = { id: string; answer: string },
+> = {
   filledCount: number;
   placements: Array<{
     candidate: T;
@@ -24,13 +30,7 @@ function cellKey(row: number, col: number) {
   return `${row}:${col}`;
 }
 
-function isBlocked(
-  row: number,
-  col: number,
-  blocked: Set<string>,
-  width: number,
-  height: number,
-) {
+function isBlocked(row: number, col: number, blocked: Set<string>, width: number, height: number) {
   if (row < 0 || row >= height || col < 0 || col >= width) {
     return true;
   }
@@ -74,7 +74,7 @@ function findHorizontalSlots(
         slots.push({
           row,
           col: startCol,
-          direction: "ACROSS",
+          direction: 'ACROSS',
           length,
           knownLetters,
         });
@@ -121,7 +121,7 @@ function findVerticalSlots(
         slots.push({
           row: startRow,
           col,
-          direction: "DOWN",
+          direction: 'DOWN',
           length,
           knownLetters,
         });
@@ -157,10 +157,7 @@ export function findFillableSlots(
   });
 }
 
-function candidateMatchesSlot(
-  answer: string,
-  slot: GridSlot,
-) {
+function candidateMatchesSlot(answer: string, slot: GridSlot) {
   const letters = getAnswerLetters(answer);
 
   if (letters.length !== slot.length) {
@@ -199,20 +196,12 @@ export function fillGapSlots<T extends { id: string; answer: string }>(options: 
   scoreCandidate: (candidate: T, slotLength: number) => number;
   onReject: (validation: { ok: false; reason: string }) => void;
 }): GapFillResult {
-  const {
-    pool,
-    placedIds,
-    existing,
-    blockedCells,
-    width,
-    height,
-    scoreCandidate,
-    onReject,
-  } = options;
+  const { pool, placedIds, existing, blockedCells, width, height, scoreCandidate, onReject } =
+    options;
 
   const available = pool.filter((candidate) => !placedIds.has(candidate.id));
   const byLength = buildCandidatesByLength(available);
-  const placements: GapFillResult["placements"] = [];
+  const placements: GapFillResult['placements'] = [];
   let filledCount = 0;
   const placementInputs = [...existing];
   const blocked = [...blockedCells];
@@ -220,14 +209,17 @@ export function fillGapSlots<T extends { id: string; answer: string }>(options: 
 
   while (changed) {
     changed = false;
-    const slots = findFillableSlots(placementInputs, blocked, width, height)
-      .sort((left, right) => left.length - right.length);
+    const slots = findFillableSlots(placementInputs, blocked, width, height).sort(
+      (left, right) => left.length - right.length,
+    );
 
     for (const slot of slots) {
       const candidates = (byLength.get(slot.length) ?? [])
         .filter((candidate) => !placedIds.has(candidate.id))
         .filter((candidate) => candidateMatchesSlot(candidate.answer, slot))
-        .sort((left, right) => scoreCandidate(right, slot.length) - scoreCandidate(left, slot.length));
+        .sort(
+          (left, right) => scoreCandidate(right, slot.length) - scoreCandidate(left, slot.length),
+        );
 
       for (const candidate of candidates.slice(0, 12)) {
         const placement: PuzzlePlacementInput = {

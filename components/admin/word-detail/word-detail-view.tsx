@@ -1,4 +1,4 @@
-import type { HintCandidateStatus, LexicalEntryType, WordRelationType } from "@prisma/client";
+import type { HintCandidateStatus, LexicalEntryType, WordRelationType } from '@prisma/client';
 import {
   WordKeysSection,
   WordLanguagePanel,
@@ -9,10 +9,14 @@ import {
   WordRebusPanel,
   WordRelationsPanel,
   WordThemesSection,
-} from "@/components/admin/word-detail/sections";
-import { WordDetailTabs } from "@/components/admin/word-detail/word-detail-tabs";
-import type { WordDetailTab } from "@/lib/content/word-detail-path";
-import type { AvailableTheme, WordDetailData, WordPickerWord } from "@/components/admin/word-detail/types";
+} from '@/components/admin/word-detail/sections';
+import { WordDetailTabs } from '@/components/admin/word-detail/word-detail-tabs';
+import type { WordDetailTab } from '@/lib/content/word-detail-path';
+import type {
+  AvailableTheme,
+  WordDetailData,
+  WordPickerWord,
+} from '@/components/admin/word-detail/types';
 
 export function WordDetailView({
   word,
@@ -43,30 +47,28 @@ export function WordDetailView({
       <WordDetailTabs wordId={word.id} activeTab={activeTab} />
 
       <div className="pt-8">
-        {activeTab === "overview" ? <WordOverviewSection word={word} /> : null}
-        {activeTab === "language" ? <WordLanguagePanel word={word} /> : null}
-        {activeTab === "lexicon" ? (
-          <WordLexiconPanel word={word} entryType={entryType} />
-        ) : null}
-        {activeTab === "relations" ? (
+        {activeTab === 'overview' ? <WordOverviewSection word={word} /> : null}
+        {activeTab === 'language' ? <WordLanguagePanel word={word} /> : null}
+        {activeTab === 'lexicon' ? <WordLexiconPanel word={word} entryType={entryType} /> : null}
+        {activeTab === 'relations' ? (
           <WordRelationsPanel
             word={word}
             wordOptions={wordPickerOptions}
             relationType={relationType}
           />
         ) : null}
-        {activeTab === "keys" ? (
+        {activeTab === 'keys' ? (
           <WordKeysSection word={word} candidateStatus={candidateStatus} />
         ) : null}
-        {activeTab === "rebus" ? <WordRebusPanel word={word} /> : null}
-        {activeTab === "media" ? <WordMediaPanel word={word} /> : null}
-        {activeTab === "themes" ? (
+        {activeTab === 'rebus' ? <WordRebusPanel word={word} /> : null}
+        {activeTab === 'media' ? <WordMediaPanel word={word} /> : null}
+        {activeTab === 'themes' ? (
           <WordThemesSection word={word} availableThemes={availableThemes} />
         ) : null}
-        {activeTab === "history" ? (
+        {activeTab === 'history' ? (
           <WordPlaceholderSection message="Historik kommer senare." />
         ) : null}
-        {activeTab === "statistics" ? (
+        {activeTab === 'statistics' ? (
           <WordPlaceholderSection message="Statistik kommer senare." />
         ) : null}
       </div>

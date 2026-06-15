@@ -1,24 +1,21 @@
-import { logStegvisGeneratorMetrics } from "@/lib/content/stegvis/generator-metrics";
-import { loadStegvisPuzzleBundles } from "@/lib/content/stegvis/load-puzzles";
+import { logStegvisGeneratorMetrics } from '@/lib/content/stegvis/generator-metrics';
+import { loadStegvisPuzzleBundles } from '@/lib/content/stegvis/load-puzzles';
 import {
   chainMeetsPlayRequirement,
   countMiddleSteps,
   STEGVIS_MIDDLE_STEP_COUNT,
-} from "@/lib/content/stegvis/play-chain";
+} from '@/lib/content/stegvis/play-chain';
 import {
   isPlayReadyBundle,
   resolvePlayReadyBundle,
   tryGeneratePlayBundle,
-} from "@/lib/content/stegvis/resolve-play-bundle";
-import type { StegvisPuzzleBundle } from "@/lib/content/stegvis/types";
-import {
-  isWordBankAvailable,
-  listActiveWordsWithClues,
-} from "@/lib/content/word-bank";
-import { pickDailyPuzzle } from "@/lib/game/stegvis";
-import { normalizeStegvisWord } from "@/lib/game/stegvis";
+} from '@/lib/content/stegvis/resolve-play-bundle';
+import type { StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
+import { pickDailyPuzzle } from '@/lib/game/stegvis';
+import { normalizeStegvisWord } from '@/lib/game/stegvis';
 
-export type StegvisPuzzleSource = "generator" | "static";
+export type StegvisPuzzleSource = 'generator' | 'static';
 
 export type StegvisGeneratorDebugInfo = {
   start: string;
@@ -64,14 +61,16 @@ async function buildStaticSession(
     (await resolvePlayReadyBundle([
       preferred,
       ...fallbackBundles.filter((bundle) => bundle.puzzle.id !== preferred.puzzle.id),
-    ])) ?? playReadyFallbacks.find((bundle) => bundle.puzzle.id !== preferred.puzzle.id) ?? playReadyFallbacks[0];
+    ])) ??
+    playReadyFallbacks.find((bundle) => bundle.puzzle.id !== preferred.puzzle.id) ??
+    playReadyFallbacks[0];
 
   if (!resolved || !isPlayReadyBundle(resolved)) {
-    throw new Error("stegvis_no_play_ready_bundle");
+    throw new Error('stegvis_no_play_ready_bundle');
   }
 
   logStegvisGeneratorMetrics({
-    source: "static",
+    source: 'static',
     reason,
     chainLength: resolved.chain.length,
     middleSteps: countMiddleSteps(resolved.chain),
@@ -80,7 +79,7 @@ async function buildStaticSession(
   return {
     initialBundle: resolved,
     fallbackBundles,
-    source: "static",
+    source: 'static',
   };
 }
 
@@ -88,14 +87,14 @@ export async function loadStegvisPlaySession(): Promise<StegvisPlaySession> {
   const fallbackBundles = await loadStegvisPuzzleBundles();
 
   if (!isWordBankAvailable()) {
-    return buildStaticSession(fallbackBundles, "ordbank_unavailable");
+    return buildStaticSession(fallbackBundles, 'ordbank_unavailable');
   }
 
   try {
     const generatedBundle = await tryGeneratePlayBundle();
 
     if (!generatedBundle || !isPlayReadyBundle(generatedBundle)) {
-      return buildStaticSession(fallbackBundles, "generator_no_valid_chain");
+      return buildStaticSession(fallbackBundles, 'generator_no_valid_chain');
     }
 
     const words = await listActiveWordsWithClues({
@@ -103,19 +102,17 @@ export async function loadStegvisPlaySession(): Promise<StegvisPlaySession> {
       maxLength: 4,
     });
 
-    const allowedWords = words.map((word) =>
-      normalizeStegvisWord(word.normalizedAnswer),
-    );
+    const allowedWords = words.map((word) => normalizeStegvisWord(word.normalizedAnswer));
 
     const puzzlePath = generatedBundle.chain.map((step) => step.displayAnswer);
 
     logStegvisGeneratorMetrics({
-      source: "generator",
+      source: 'generator',
       steps: generatedBundle.puzzle.minimumSteps,
       chainLength: generatedBundle.chain.length,
       middleSteps: countMiddleSteps(generatedBundle.chain),
       missingClues: generatedBundle.chain.filter(
-        (step) => step.role === "middle" && step.clueText === "Nyckel saknas",
+        (step) => step.role === 'middle' && step.clueText === 'Nyckel saknas',
       ).length,
       candidates: undefined,
       pathsTried: undefined,
@@ -127,22 +124,19 @@ export async function loadStegvisPlaySession(): Promise<StegvisPlaySession> {
       steps: STEGVIS_MIDDLE_STEP_COUNT,
       score: 0,
       chain: puzzlePath,
-      missingClues: generatedBundle.chain.filter(
-        (step) => step.clueText === "Nyckel saknas",
-      ).length,
+      missingClues: generatedBundle.chain.filter((step) => step.clueText === 'Nyckel saknas')
+        .length,
     };
 
     return {
       initialBundle: generatedBundle,
       fallbackBundles,
-      source: "generator",
+      source: 'generator',
       allowedWords,
-      generatorDebug:
-        process.env.NODE_ENV === "development" ? generatorDebug : undefined,
+      generatorDebug: process.env.NODE_ENV === 'development' ? generatorDebug : undefined,
     };
   } catch (error) {
-    const reason =
-      error instanceof Error ? error.message : "generator_error";
+    const reason = error instanceof Error ? error.message : 'generator_error';
 
     return buildStaticSession(fallbackBundles, reason);
   }
@@ -151,4 +145,4 @@ export async function loadStegvisPlaySession(): Promise<StegvisPlaySession> {
 export {
   STEGVIS_CHAIN_WORD_COUNT,
   STEGVIS_MIDDLE_STEP_COUNT,
-} from "@/lib/content/stegvis/play-chain";
+} from '@/lib/content/stegvis/play-chain';

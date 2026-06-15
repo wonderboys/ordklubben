@@ -1,4 +1,4 @@
-import { KASTET_ACTIVE_DICE_COUNT, KASTET_LETTERS_PER_DIE } from "@/lib/game/kastet/config";
+import { KASTET_ACTIVE_DICE_COUNT, KASTET_LETTERS_PER_DIE } from '@/lib/game/kastet/config';
 
 export type DiceShakeProfile = {
   /** Stagger before this die joins the shake. */

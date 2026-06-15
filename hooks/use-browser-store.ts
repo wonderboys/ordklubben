@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from 'react';
 
 type BrowserStore<T> = {
   defaultValue: T;
@@ -9,9 +9,5 @@ type BrowserStore<T> = {
 };
 
 export function useBrowserStore<T>(store: BrowserStore<T>): T {
-  return useSyncExternalStore(
-    store.subscribe,
-    store.load,
-    () => store.defaultValue,
-  );
+  return useSyncExternalStore(store.subscribe, store.load, () => store.defaultValue);
 }

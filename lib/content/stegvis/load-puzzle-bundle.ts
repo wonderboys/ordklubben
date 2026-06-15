@@ -1,26 +1,23 @@
-import type { StegvisPuzzle } from "@/data/stegvis/puzzles";
-import { normalizeAnswer } from "@/lib/content/normalize-answer";
-import { formatStegvisEndpointClue } from "@/lib/content/stegvis/clue-display";
+import type { StegvisPuzzle } from '@/data/stegvis/puzzles';
+import { normalizeAnswer } from '@/lib/content/normalize-answer';
+import { formatStegvisEndpointClue } from '@/lib/content/stegvis/clue-display';
 import type {
   StegvisChainStep,
   StegvisPuzzleBundle,
   StegvisWordEndpoint,
-} from "@/lib/content/stegvis/types";
+} from '@/lib/content/stegvis/types';
 import {
   getWordWithClues,
   getWordWithCluesByNormalizedAnswer,
   isWordBankAvailable,
-} from "@/lib/content/word-bank";
-import { normalizeStegvisWord } from "@/lib/game/stegvis";
+} from '@/lib/content/word-bank';
+import { normalizeStegvisWord } from '@/lib/game/stegvis';
 
 function displayStegvisAnswer(answer: string): string {
-  return normalizeStegvisWord(answer).toLocaleUpperCase("sv-SE");
+  return normalizeStegvisWord(answer).toLocaleUpperCase('sv-SE');
 }
 
-function createFallbackEndpoint(
-  answer: string,
-  wordId?: string,
-): StegvisWordEndpoint {
+function createFallbackEndpoint(answer: string, wordId?: string): StegvisWordEndpoint {
   const displayAnswer = displayStegvisAnswer(answer);
 
   return {
@@ -97,22 +94,15 @@ async function buildChainFromSolution(
 
     return {
       answer,
-      displayAnswer: answer.toLocaleUpperCase("sv-SE"),
+      displayAnswer: answer.toLocaleUpperCase('sv-SE'),
       clueText: endpoint.clueText,
       wordId: endpoint.wordId,
-      role:
-        index === 0
-          ? "start"
-          : index === solutionWords.length - 1
-            ? "target"
-            : "middle",
+      role: index === 0 ? 'start' : index === solutionWords.length - 1 ? 'target' : 'middle',
     };
   });
 }
 
-export async function loadStegvisPuzzleBundle(
-  puzzle: StegvisPuzzle,
-): Promise<StegvisPuzzleBundle> {
+export async function loadStegvisPuzzleBundle(puzzle: StegvisPuzzle): Promise<StegvisPuzzleBundle> {
   const [start, target] = await Promise.all([
     resolveStegvisWordEndpoint(puzzle.start, puzzle.startWordId),
     resolveStegvisWordEndpoint(puzzle.target, puzzle.targetWordId),

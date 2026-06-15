@@ -1,19 +1,22 @@
-import { getAnswerLength, type PuzzlePlacementInput } from "@/lib/content/puzzle/grid";
+import { getAnswerLength, type PuzzlePlacementInput } from '@/lib/content/puzzle/grid';
 import {
   countGridCrossings,
   finalizeBlockedCells,
   isWordCapBlock,
   proposeWordCapBlocks,
   type BlockedCell,
-} from "@/lib/content/puzzle/grid-generator-blocks";
-import { fillGapSlots } from "@/lib/content/puzzle/grid-generator-gaps";
+} from '@/lib/content/puzzle/grid-generator-blocks';
+import { fillGapSlots } from '@/lib/content/puzzle/grid-generator-gaps';
 import {
   buildLetterFrequency,
   getGridSizeProfile,
   scoreWordCandidate,
   type GridSizeProfile,
-} from "@/lib/content/puzzle/grid-generator-scoring";
-import { validateFinalGrid, validateGeneratorPlacement } from "@/lib/content/puzzle/grid-generator-validation";
+} from '@/lib/content/puzzle/grid-generator-scoring';
+import {
+  validateFinalGrid,
+  validateGeneratorPlacement,
+} from '@/lib/content/puzzle/grid-generator-validation';
 
 export type OptimizationImprovement = {
   wordsAdded: number;
@@ -28,7 +31,7 @@ type OptimizeCandidate = {
   hints: Array<{
     id: string;
     text: string;
-    status: "DRAFT" | "APPROVED";
+    status: 'DRAFT' | 'APPROVED';
   }>;
 };
 
@@ -37,7 +40,7 @@ type OptimizePlacedEntry = {
   answerSnapshot: string;
   row: number;
   col: number;
-  direction: "ACROSS" | "DOWN";
+  direction: 'ACROSS' | 'DOWN';
   hintId: string | null;
   hintSnapshot: string | null;
 };
@@ -88,9 +91,11 @@ function tryPlaceAdditionalCrossings(options: {
   const localInputs = [...placementInputs];
 
   for (let attempt = 0; attempt < maxAdds; attempt += 1) {
-    let best:
-      | { candidate: OptimizeCandidate; placement: PuzzlePlacementInput; score: number }
-      | null = null;
+    let best: {
+      candidate: OptimizeCandidate;
+      placement: PuzzlePlacementInput;
+      score: number;
+    } | null = null;
 
     for (const candidate of pool) {
       if (localIds.has(candidate.id)) {
@@ -99,36 +104,40 @@ function tryPlaceAdditionalCrossings(options: {
 
       const candidateLetters = candidate.answer
         .trim()
-        .toLocaleUpperCase("sv-SE")
-        .replace(/[\s'’\-‐‑‒–—]+/g, "")
-        .split("");
+        .toLocaleUpperCase('sv-SE')
+        .replace(/[\s'’\-‐‑‒–—]+/g, '')
+        .split('');
 
       for (const placed of placementInputs) {
         const placedLetters = placed.answerSnapshot
           .trim()
-          .toLocaleUpperCase("sv-SE")
-          .replace(/[\s'’\-‐‑‒–—]+/g, "")
-          .split("");
+          .toLocaleUpperCase('sv-SE')
+          .replace(/[\s'’\-‐‑‒–—]+/g, '')
+          .split('');
 
-        for (let candidateIndex = 0; candidateIndex < candidateLetters.length; candidateIndex += 1) {
+        for (
+          let candidateIndex = 0;
+          candidateIndex < candidateLetters.length;
+          candidateIndex += 1
+        ) {
           for (let placedIndex = 0; placedIndex < placedLetters.length; placedIndex += 1) {
             if (candidateLetters[candidateIndex] !== placedLetters[placedIndex]) {
               continue;
             }
 
             const placement: PuzzlePlacementInput =
-              placed.direction === "ACROSS"
+              placed.direction === 'ACROSS'
                 ? {
                     answerSnapshot: candidate.answer,
                     row: placed.row - candidateIndex,
                     col: placed.col + placedIndex,
-                    direction: "DOWN",
+                    direction: 'DOWN',
                   }
                 : {
                     answerSnapshot: candidate.answer,
                     row: placed.row + placedIndex,
                     col: placed.col - candidateIndex,
-                    direction: "ACROSS",
+                    direction: 'ACROSS',
                   };
 
             const validation = validateGeneratorPlacement({
@@ -149,7 +158,7 @@ function tryPlaceAdditionalCrossings(options: {
               placedLengths: localInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
               letterFrequency: buildLetterFrequency(localInputs),
               themeSelected,
-              phase: "crossing",
+              phase: 'crossing',
             });
 
             if (!best || score > best.score) {
@@ -212,9 +221,7 @@ export function optimizeGridLayout(options: {
   let currentBlocks = [...blockedCells];
   const workingIds = new Set(placedIds);
 
-  const removableBlocks = currentBlocks.filter(
-    (cell) => !isWordCapBlock(cell, currentInputs),
-  );
+  const removableBlocks = currentBlocks.filter((cell) => !isWordCapBlock(cell, currentInputs));
 
   const blocksToTry = removableBlocks.slice(0, maxBlockRemovals);
 
@@ -224,9 +231,7 @@ export function optimizeGridLayout(options: {
     }
 
     const blockKey = cellKey(block.row, block.col);
-    const nextBlocks = currentBlocks.filter(
-      (cell) => cellKey(cell.row, cell.col) !== blockKey,
-    );
+    const nextBlocks = currentBlocks.filter((cell) => cellKey(cell.row, cell.col) !== blockKey);
     const capBlocks = proposeWordCapBlocks(currentInputs, width, height).cells;
     const trialBlocks = [...capBlocks];
     const trialBlockKeys = new Set(trialBlocks.map((cell) => cellKey(cell.row, cell.col)));
@@ -276,7 +281,7 @@ export function optimizeGridLayout(options: {
           placedLengths: trialInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
           letterFrequency: buildLetterFrequency(trialInputs),
           themeSelected,
-          phase: "gap",
+          phase: 'gap',
           slotLength,
         }),
       onReject: () => {},
@@ -363,8 +368,8 @@ export function formatOptimizationImprovement(improvement: OptimizationImproveme
   }
 
   if (parts.length === 0) {
-    return "Inga förbättringar";
+    return 'Inga förbättringar';
   }
 
-  return parts.join(", ");
+  return parts.join(', ');
 }

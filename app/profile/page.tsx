@@ -1,6 +1,6 @@
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { Card, CardContent } from "@/components/ui/card";
-import { BodyText, PageTitle } from "@/components/ui/typography";
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { Card, CardContent } from '@/components/ui/card';
+import { BodyText, PageTitle } from '@/components/ui/typography';
 
 export default function ProfilePage() {
   return (
@@ -9,8 +9,8 @@ export default function ProfilePage() {
         <div className="space-y-1 sm:space-y-2">
           <PageTitle>Profil</PageTitle>
           <BodyText>
-            Profilen är medvetet mockad i första versionen. Tanken är att framtida
-            spel ska kunna läsa samma presentationslager utan backendberoenden.
+            Profilen är medvetet mockad i första versionen. Tanken är att framtida spel ska kunna
+            läsa samma presentationslager utan backendberoenden.
           </BodyText>
         </div>
 
@@ -22,9 +22,8 @@ export default function ProfilePage() {
             <div className="space-y-1.5">
               <PageTitle variant="compact">Gästspelare</PageTitle>
               <BodyText variant="card">
-                Senare kan den här ytan ta emot favoritspel, dagliga streaks,
-                achievements och en lätt profilidentitet utan att ändra befintliga
-                spellayouter.
+                Senare kan den här ytan ta emot favoritspel, dagliga streaks, achievements och en
+                lätt profilidentitet utan att ändra befintliga spellayouter.
               </BodyText>
             </div>
           </CardContent>

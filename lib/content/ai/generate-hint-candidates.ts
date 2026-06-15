@@ -1,12 +1,12 @@
 import {
   getOpenAiApiKey,
   requestOpenAiHintCandidates,
-} from "@/lib/content/ai/openai-hint-candidates";
-import { AiHintGenerationError } from "@/lib/content/ai/parse-hint-candidates-response";
+} from '@/lib/content/ai/openai-hint-candidates';
+import { AiHintGenerationError } from '@/lib/content/ai/parse-hint-candidates-response';
 import type {
   GenerateHintCandidatesInput,
   GenerateHintCandidatesResult,
-} from "@/lib/content/ai/types";
+} from '@/lib/content/ai/types';
 
 export function isAiProviderConfigured(): boolean {
   return Boolean(getOpenAiApiKey());
@@ -17,7 +17,7 @@ export async function generateHintCandidates(
 ): Promise<GenerateHintCandidatesResult> {
   if (!isAiProviderConfigured()) {
     throw new AiHintGenerationError(
-      "AI-generatorn är inte konfigurerad. Sätt OPENAI_API_KEY i miljövariablerna.",
+      'AI-generatorn är inte konfigurerad. Sätt OPENAI_API_KEY i miljövariablerna.',
     );
   }
 
@@ -28,10 +28,7 @@ export async function generateHintCandidates(
       throw error;
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "AI-generering misslyckades.";
+    const message = error instanceof Error ? error.message : 'AI-generering misslyckades.';
 
     throw new AiHintGenerationError(message);
   }

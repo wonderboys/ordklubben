@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useFormStatus } from "react-dom";
-import {
-  Field,
-  SelectInput,
-  SubmitButton,
-  TextArea,
-  TextInput,
-} from "@/components/admin/admin-ui";
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { Field, SelectInput, SubmitButton, TextArea, TextInput } from '@/components/admin/admin-ui';
 import {
   PUZZLE_GENERATION_DIFFICULTIES,
   PUZZLE_GENERATION_DIFFICULTY_LABELS,
@@ -17,9 +11,9 @@ import {
   PUZZLE_STATUS_LABELS,
   PUZZLE_TYPE_LABELS,
   PUZZLE_TYPE_SELECT_OPTIONS,
-} from "@/lib/content/constants";
-import { createAndGeneratePuzzle, createPuzzle } from "@/lib/content/puzzle-actions";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import { createAndGeneratePuzzle, createPuzzle } from '@/lib/content/puzzle-actions';
+import { cn } from '@/lib/utils';
 
 export type PuzzleCreateThemeOption = {
   id: string;
@@ -28,7 +22,7 @@ export type PuzzleCreateThemeOption = {
   wordCount: number;
 };
 
-type PuzzleCreateMode = "manual" | "generated";
+type PuzzleCreateMode = 'manual' | 'generated';
 
 type PuzzleCreateViewProps = {
   themes: PuzzleCreateThemeOption[];
@@ -36,8 +30,8 @@ type PuzzleCreateViewProps = {
 };
 
 const MODE_LABELS: Record<PuzzleCreateMode, string> = {
-  manual: "Manuell ordfläta",
-  generated: "Genererad ordfläta",
+  manual: 'Manuell ordfläta',
+  generated: 'Genererad ordfläta',
 };
 
 function GeneratedPuzzleForm({ themes }: { themes: PuzzleCreateThemeOption[] }) {
@@ -54,8 +48,8 @@ function GeneratedPuzzleForm({ themes }: { themes: PuzzleCreateThemeOption[] }) 
         htmlFor="generated-themeId"
         hint={
           themes.length === 0
-            ? "Inga teman finns ännu. Du kan generera utan tema och koppla innehåll senare."
-            : "Valfritt. Begränsar ord ur valt tema."
+            ? 'Inga teman finns ännu. Du kan generera utan tema och koppla innehåll senare.'
+            : 'Valfritt. Begränsar ord ur valt tema.'
         }
       >
         <SelectInput id="generated-themeId" name="themeId" defaultValue="">
@@ -147,23 +141,18 @@ function GeneratedPuzzleForm({ themes }: { themes: PuzzleCreateThemeOption[] }) 
               Genererar fläta...
             </>
           ) : (
-            "Skapa och generera"
+            'Skapa och generera'
           )}
         </SubmitButton>
         {pending ? (
-          <p className="mt-2 text-xs text-print-muted">
-            Genereringen kan ta några sekunder.
-          </p>
+          <p className="mt-2 text-xs text-print-muted">Genereringen kan ta några sekunder.</p>
         ) : null}
       </div>
     </fieldset>
   );
 }
 
-export function PuzzleCreateView({
-  themes,
-  defaultMode = "generated",
-}: PuzzleCreateViewProps) {
+export function PuzzleCreateView({ themes, defaultMode = 'generated' }: PuzzleCreateViewProps) {
   const [mode, setMode] = useState<PuzzleCreateMode>(defaultMode);
 
   return (
@@ -173,7 +162,7 @@ export function PuzzleCreateView({
         aria-label="Skapa ordfläta"
         className="grid grid-cols-2 gap-1 rounded-sm border border-print-ink/15 bg-print-bg/40 p-1"
       >
-        {(["generated", "manual"] as const).map((value) => (
+        {(['generated', 'manual'] as const).map((value) => (
           <button
             key={value}
             type="button"
@@ -181,10 +170,10 @@ export function PuzzleCreateView({
             aria-selected={mode === value}
             onClick={() => setMode(value)}
             className={cn(
-              "rounded-sm px-3 py-2 text-xs font-medium transition-colors",
+              'rounded-sm px-3 py-2 text-xs font-medium transition-colors',
               mode === value
-                ? "bg-print-ink text-print-surface"
-                : "text-print-muted hover:bg-print-ink/[0.04] hover:text-print-ink",
+                ? 'bg-print-ink text-print-surface'
+                : 'text-print-muted hover:bg-print-ink/[0.04] hover:text-print-ink',
             )}
           >
             {MODE_LABELS[value]}
@@ -192,7 +181,7 @@ export function PuzzleCreateView({
         ))}
       </div>
 
-      {mode === "manual" ? (
+      {mode === 'manual' ? (
         <form action={createPuzzle} className="grid gap-3">
           <Field label="Titel" htmlFor="manual-title">
             <TextInput id="manual-title" name="title" required />
@@ -244,7 +233,11 @@ export function PuzzleCreateView({
             </Field>
           </div>
 
-          <Field label="Slug" htmlFor="manual-slug" hint="Valfritt. Används vid framtida publicering.">
+          <Field
+            label="Slug"
+            htmlFor="manual-slug"
+            hint="Valfritt. Används vid framtida publicering."
+          >
             <TextInput id="manual-slug" name="slug" placeholder="t.ex. ordflata-vecka-24" />
           </Field>
 

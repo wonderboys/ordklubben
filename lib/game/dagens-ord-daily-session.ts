@@ -5,28 +5,24 @@ import {
   isDagensOrdWon,
   pickDailyWord,
   type DagensOrdRound,
-} from "@/lib/game/dagens-ord";
+} from '@/lib/game/dagens-ord';
 import {
   loadDagensOrdDaily,
   saveDagensOrdDaily,
   type DagensOrdDailyStatus,
-} from "@/lib/storage/dagens-ord-daily";
+} from '@/lib/storage/dagens-ord-daily';
 
 export function loadOrCreateDailyRound(date = new Date()): DagensOrdRound {
   const todayKey = getDayKey(date);
   const todayWord = pickDailyWord(date);
   const saved = loadDagensOrdDaily();
 
-  if (
-    saved.dayKey === todayKey &&
-    saved.targetWord === todayWord &&
-    saved.guesses.length > 0
-  ) {
+  if (saved.dayKey === todayKey && saved.targetWord === todayWord && saved.guesses.length > 0) {
     return {
       dayKey: saved.dayKey,
       targetWord: saved.targetWord,
       guesses: saved.guesses,
-      currentInput: "",
+      currentInput: '',
     };
   }
 
@@ -42,17 +38,14 @@ export function getSavedDailyStatus(date = new Date()): DagensOrdDailyStatus | n
     return null;
   }
 
-  if (saved.status === "won" || saved.status === "lost") {
+  if (saved.status === 'won' || saved.status === 'lost') {
     return saved.status;
   }
 
-  return saved.guesses.length > 0 ? "playing" : null;
+  return saved.guesses.length > 0 ? 'playing' : null;
 }
 
-export function persistDailyRound(
-  round: DagensOrdRound,
-  status: DagensOrdDailyStatus,
-) {
+export function persistDailyRound(round: DagensOrdRound, status: DagensOrdDailyStatus) {
   saveDagensOrdDaily({
     dayKey: round.dayKey,
     targetWord: round.targetWord,
@@ -62,16 +55,16 @@ export function persistDailyRound(
 }
 
 export function resolveDailyStatus(
-  guesses: DagensOrdRound["guesses"],
+  guesses: DagensOrdRound['guesses'],
   targetWord: string,
 ): DagensOrdDailyStatus {
   if (isDagensOrdWon(guesses, targetWord)) {
-    return "won";
+    return 'won';
   }
 
   if (isDagensOrdLost(guesses, targetWord)) {
-    return "lost";
+    return 'lost';
   }
 
-  return "playing";
+  return 'playing';
 }

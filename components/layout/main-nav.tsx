@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useId, useState } from "react";
-import { GameLibraryPanel } from "@/components/layout/game-library-panel";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { useEffect, useId, useState } from 'react';
+import { GameLibraryPanel } from '@/components/layout/game-library-panel';
+import { cn } from '@/lib/utils';
 
 export function MainNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -15,19 +15,19 @@ export function MainNav() {
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setMenuOpen(false);
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [menuOpen]);
 
@@ -37,7 +37,7 @@ export function MainNav() {
         <Link
           href="/"
           className={cn(
-            "cursor-pointer font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink",
+            'cursor-pointer font-mono text-[15px] font-bold uppercase leading-none tracking-[0.04em] text-print-ink',
           )}
           onClick={() => setMenuOpen(false)}
         >
@@ -48,7 +48,7 @@ export function MainNav() {
           type="button"
           aria-expanded={menuOpen}
           aria-controls={menuId}
-          aria-label={menuOpen ? "Stäng spelbibliotek" : "Öppna spelbibliotek"}
+          aria-label={menuOpen ? 'Stäng spelbibliotek' : 'Öppna spelbibliotek'}
           className="flex size-10 cursor-pointer items-center justify-center text-print-ink"
           onClick={() => setMenuOpen((open) => !open)}
         >
@@ -81,11 +81,7 @@ export function MainNav() {
         />
       ) : null}
 
-      <GameLibraryPanel
-        id={menuId}
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
+      <GameLibraryPanel id={menuId} open={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
   );
 }

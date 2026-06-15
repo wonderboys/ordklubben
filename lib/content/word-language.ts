@@ -1,29 +1,28 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from '@prisma/client';
 
 export const NOUN_INFLECTION_FIELDS = [
-  { key: "definiteSingular", label: "Bestämd form" },
-  { key: "indefinitePlural", label: "Plural" },
-  { key: "definitePlural", label: "Plural bestämd" },
+  { key: 'definiteSingular', label: 'Bestämd form' },
+  { key: 'indefinitePlural', label: 'Plural' },
+  { key: 'definitePlural', label: 'Plural bestämd' },
 ] as const;
 
-export type NounInflectionKey = (typeof NOUN_INFLECTION_FIELDS)[number]["key"];
+export type NounInflectionKey = (typeof NOUN_INFLECTION_FIELDS)[number]['key'];
 
 export type WordNounInflections = Partial<Record<NounInflectionKey, string>>;
 
 /** Inflection groups shown in the language tab. Add verb/adjective groups here later. */
 export const WORD_LANGUAGE_INFLECTION_GROUPS = [
   {
-    id: "noun",
-    label: "Substantivböjningar",
+    id: 'noun',
+    label: 'Substantivböjningar',
     fields: NOUN_INFLECTION_FIELDS,
   },
 ] as const;
 
-export type WordLanguageInflectionGroup =
-  (typeof WORD_LANGUAGE_INFLECTION_GROUPS)[number];
+export type WordLanguageInflectionGroup = (typeof WORD_LANGUAGE_INFLECTION_GROUPS)[number];
 
 export function parseWordInflections(value: unknown): WordNounInflections {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {};
   }
 
@@ -32,7 +31,7 @@ export function parseWordInflections(value: unknown): WordNounInflections {
 
   for (const field of NOUN_INFLECTION_FIELDS) {
     const raw = record[field.key];
-    if (typeof raw === "string" && raw.trim().length > 0) {
+    if (typeof raw === 'string' && raw.trim().length > 0) {
       inflections[field.key] = raw.trim();
     }
   }
@@ -61,7 +60,7 @@ export function serializeWordInflections(
   inflections: WordNounInflections,
 ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
   const entries = Object.entries(inflections).filter(
-    ([, value]) => typeof value === "string" && value.trim().length > 0,
+    ([, value]) => typeof value === 'string' && value.trim().length > 0,
   );
 
   if (entries.length === 0) {

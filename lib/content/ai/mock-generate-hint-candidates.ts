@@ -2,11 +2,11 @@ import type {
   GenerateHintCandidatesInput,
   GenerateHintCandidatesResult,
   HintCandidateDraft,
-} from "@/lib/content/ai/types";
+} from '@/lib/content/ai/types';
 
-const MOCK_SOURCE = "mock_generator";
-const MOCK_MODEL = "mock";
-const MOCK_PROMPT_VERSION = "mock-v1";
+const MOCK_SOURCE = 'mock_generator';
+const MOCK_MODEL = 'mock';
+const MOCK_PROMPT_VERSION = 'mock-v1';
 
 export function mockGenerateHintCandidates(
   input: GenerateHintCandidatesInput,
@@ -16,35 +16,35 @@ export function mockGenerateHintCandidates(
   const templates: HintCandidateDraft[] = [
     {
       text: `${word} i kort ledtråd`,
-      type: "DEFINITION",
+      type: 'DEFINITION',
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
     },
     {
       text: `Kan förknippas med ${word}`,
-      type: "ASSOCIATION",
+      type: 'ASSOCIATION',
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
     },
     {
       text: `Exempel på användning av ${word}`,
-      type: "EXAMPLE",
+      type: 'EXAMPLE',
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
     },
     {
       text: `Ordlek kring ${word}`,
-      type: "WORDPLAY",
+      type: 'WORDPLAY',
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,
     },
     {
       text: `Synonym eller nära betydelse till ${word}`,
-      type: "SYNONYM",
+      type: 'SYNONYM',
       source: MOCK_SOURCE,
       model: MOCK_MODEL,
       promptVersion: MOCK_PROMPT_VERSION,

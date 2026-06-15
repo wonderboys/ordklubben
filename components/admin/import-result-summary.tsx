@@ -1,5 +1,5 @@
-import type { ImportBatchType } from "@prisma/client";
-import type { BatchSummary } from "@/lib/content/import-batch";
+import type { ImportBatchType } from '@prisma/client';
+import type { BatchSummary } from '@/lib/content/import-batch';
 
 export function ImportResultStatGrid({
   batchType,
@@ -12,7 +12,7 @@ export function ImportResultStatGrid({
   totalRows: number;
   errorCount: number;
 }) {
-  if (batchType === "LEXICON") {
+  if (batchType === 'LEXICON') {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <ImportStat label="Rader lästa" value={summary?.totalRows ?? totalRows} />
@@ -49,15 +49,7 @@ export function ImportResultStatGrid({
   );
 }
 
-function ImportStat({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: number;
-  detail?: string;
-}) {
+function ImportStat({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
     <div className="border border-print-ink/10 p-3">
       <p className="text-xs uppercase text-print-muted">{label}</p>
@@ -67,29 +59,26 @@ function ImportStat({
   );
 }
 
-export function importBatchHistoryLabel(
-  batchType: ImportBatchType,
-  summary: BatchSummary | null,
-) {
+export function importBatchHistoryLabel(batchType: ImportBatchType, summary: BatchSummary | null) {
   if (!summary) {
-    return "Öppna batch";
+    return 'Öppna batch';
   }
 
-  if (batchType === "LEXICON") {
+  if (batchType === 'LEXICON') {
     return `${summary.createdLexicalEntries} lexikonposter`;
   }
 
   return `${summary.createdWords} ord, ${summary.createdHints} nycklar${
     summary.createdThemes + summary.reusedThemes > 0
       ? `, ${summary.createdThemes + summary.reusedThemes} teman`
-      : ""
+      : ''
   }`;
 }
 
 export function importErrorTableHeaders(batchType: ImportBatchType) {
-  if (batchType === "LEXICON") {
-    return ["Rad", "Orsak", "Ord", "Värde"] as const;
+  if (batchType === 'LEXICON') {
+    return ['Rad', 'Orsak', 'Ord', 'Värde'] as const;
   }
 
-  return ["Rad", "Orsak", "Ord", "Nyckel"] as const;
+  return ['Rad', 'Orsak', 'Ord', 'Nyckel'] as const;
 }

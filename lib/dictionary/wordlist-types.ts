@@ -1,27 +1,27 @@
-export type WordListKind = "allowed" | "common" | "seed";
+export type WordListKind = 'allowed' | 'common' | 'seed';
 
-export type RawWordSource = "hunspell" | "kelly" | "text";
+export type RawWordSource = 'hunspell' | 'kelly' | 'text';
 
-export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
 export type FilterReason =
-  | "empty"
-  | "contains_digits"
-  | "contains_symbol"
-  | "contains_whitespace"
-  | "contains_uppercase"
-  | "too_short"
-  | "too_long"
-  | "not_swedish_letters"
-  | "proper_noun"
-  | "duplicate"
-  | "verb_like"
-  | "low_playability"
-  | "cefr_excluded"
-  | "phrase"
-  | "abbrev_consonant_block"
-  | "abbrev_org_pattern"
-  | "never_allow";
+  | 'empty'
+  | 'contains_digits'
+  | 'contains_symbol'
+  | 'contains_whitespace'
+  | 'contains_uppercase'
+  | 'too_short'
+  | 'too_long'
+  | 'not_swedish_letters'
+  | 'proper_noun'
+  | 'duplicate'
+  | 'verb_like'
+  | 'low_playability'
+  | 'cefr_excluded'
+  | 'phrase'
+  | 'abbrev_consonant_block'
+  | 'abbrev_org_pattern'
+  | 'never_allow';
 
 export type FilteredWordExample = {
   word: string;
@@ -39,7 +39,7 @@ export type KellyEntry = {
   rank: number;
   rawFreq: number | null;
   wpm: number | null;
-  cefr: CefrLevel | "";
+  cefr: CefrLevel | '';
   lemma: string;
   wordClass: string;
   raw: string;
@@ -63,7 +63,7 @@ export type SeedCandidate = {
   kellyRank: number | null;
   cefr: CefrLevel | null;
   wpm: number | null;
-  source: "preferred" | "generated";
+  source: 'preferred' | 'generated';
   score: number;
 };
 
@@ -72,7 +72,7 @@ export type BuildWordlistsReport = {
   rawWords: number;
   allowedWords: number;
   commonWords: number;
-  seedSource: "common" | "allowed_fallback";
+  seedSource: 'common' | 'allowed_fallback';
   seedCandidatesBeforeFilter: number;
   seedCandidates: number;
   cefrDistribution: CefrDistribution;

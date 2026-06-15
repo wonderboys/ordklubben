@@ -1,30 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { ExternalLink } from "lucide-react";
-import { SubmitButton, adminButtonSecondaryClass } from "@/components/admin/admin-ui";
-import type { PuzzlePlacedEntry } from "@/components/admin/puzzle/puzzle-placed-entries-panel";
-import {
-  getPlacedEntryHintPreview,
-} from "@/components/admin/puzzle/puzzle-placed-entries-panel";
-import { formatPuzzleHintOptionLabel } from "@/lib/content/puzzle/hint-label";
-import { PuzzleRemoveEntryConfirm } from "@/components/admin/puzzle/puzzle-remove-entry-confirm";
-import { updatePuzzleEntryHint } from "@/lib/content/puzzle-actions";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
+import { SubmitButton, adminButtonSecondaryClass } from '@/components/admin/admin-ui';
+import type { PuzzlePlacedEntry } from '@/components/admin/puzzle/puzzle-placed-entries-panel';
+import { getPlacedEntryHintPreview } from '@/components/admin/puzzle/puzzle-placed-entries-panel';
+import { formatPuzzleHintOptionLabel } from '@/lib/content/puzzle/hint-label';
+import { PuzzleRemoveEntryConfirm } from '@/components/admin/puzzle/puzzle-remove-entry-confirm';
+import { updatePuzzleEntryHint } from '@/lib/content/puzzle-actions';
+import { cn } from '@/lib/utils';
 
 type PuzzleEntryEditorPanelProps = {
   puzzleId: string;
   entry: PuzzlePlacedEntry;
 };
 
-function InspectorRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function InspectorRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="space-y-1.5">
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-print-muted">
@@ -51,10 +43,10 @@ function WordDetailLink({ wordId }: { wordId: string }) {
 
 function hintOptionClassName(isActive: boolean) {
   return cn(
-    "flex cursor-pointer gap-2 rounded-sm border px-2.5 py-1.5 transition-colors",
+    'flex cursor-pointer gap-2 rounded-sm border px-2.5 py-1.5 transition-colors',
     isActive
-      ? "border-print-ink/20 border-l-2 border-l-print-ink bg-print-bg/70"
-      : "border-print-ink/10 hover:border-print-ink/20 hover:bg-print-ink/[0.03]",
+      ? 'border-print-ink/20 border-l-2 border-l-print-ink bg-print-bg/70'
+      : 'border-print-ink/10 hover:border-print-ink/20 hover:bg-print-ink/[0.03]',
   );
 }
 
@@ -62,7 +54,7 @@ export function PuzzleEntryEditorPanel({ puzzleId, entry }: PuzzleEntryEditorPan
   const [confirmOpen, setConfirmOpen] = useState(false);
   const hints = entry.availableHints;
   const hasHints = hints.length > 0;
-  const currentHint = getPlacedEntryHintPreview(entry) ?? "Saknar nyckel";
+  const currentHint = getPlacedEntryHintPreview(entry) ?? 'Saknar nyckel';
 
   return (
     <>

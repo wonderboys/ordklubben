@@ -1,16 +1,16 @@
-import { createLetterPool } from "@/lib/dictionary/letter-pool";
-import { canBuildWord } from "@/lib/dictionary/can-build-word";
-import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
-import { ORDSTORM_MIN_WORD_LENGTH } from "@/lib/game/ordstorm";
+import { createLetterPool } from '@/lib/dictionary/letter-pool';
+import { canBuildWord } from '@/lib/dictionary/can-build-word';
+import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
+import { ORDSTORM_MIN_WORD_LENGTH } from '@/lib/game/ordstorm';
 
-export type LetterTilePlayState = "idle" | "selected" | "depleted" | "used";
+export type LetterTilePlayState = 'idle' | 'selected' | 'depleted' | 'used';
 
 export type TypingHint = {
   message: string;
 } | null;
 
 export function indicesToWord(indices: number[], letters: string[]) {
-  return indices.map((index) => normalizeSwedish(letters[index])).join("");
+  return indices.map((index) => normalizeSwedish(letters[index])).join('');
 }
 
 export function wordToSelectedIndices(word: string, letters: string[]) {
@@ -21,8 +21,7 @@ export function wordToSelectedIndices(word: string, letters: string[]) {
   for (const character of normalizedWord) {
     const index = letters.findIndex(
       (letter, letterIndex) =>
-        !usedIndices.has(letterIndex) &&
-        normalizeSwedish(letter) === character,
+        !usedIndices.has(letterIndex) && normalizeSwedish(letter) === character,
     );
 
     if (index === -1) {
@@ -44,14 +43,14 @@ export function getLetterTilePlayState(options: {
   const { index, selectedIndices, isStarting } = options;
 
   if (isStarting) {
-    return "used";
+    return 'used';
   }
 
   if (selectedIndices.includes(index)) {
-    return "depleted";
+    return 'depleted';
   }
 
-  return "idle";
+  return 'idle';
 }
 
 export function getTypingHint(
@@ -75,10 +74,10 @@ export function getTypingHint(
     }
 
     if (!roundPool[character]) {
-      return { message: "Bokstaven finns inte i rundan." };
+      return { message: 'Bokstaven finns inte i rundan.' };
     }
 
-    return { message: "Bokstaven används redan." };
+    return { message: 'Bokstaven används redan.' };
   }
 
   return null;
@@ -90,7 +89,7 @@ export function getSubmitLengthHint(length: number) {
   }
 
   if (length < ORDSTORM_MIN_WORD_LENGTH) {
-    return { message: "Minst tre bokstäver." };
+    return { message: 'Minst tre bokstäver.' };
   }
 
   return null;
@@ -104,18 +103,18 @@ export function getPlayingIdleMessage(options: {
   const { wordsFound, timeLeft, inputLength } = options;
 
   if (inputLength > 0 && inputLength < ORDSTORM_MIN_WORD_LENGTH) {
-    return "Minst tre bokstäver.";
+    return 'Minst tre bokstäver.';
   }
 
   if (timeLeft <= 10) {
-    return "Sista sekunderna.";
+    return 'Sista sekunderna.';
   }
 
   if (wordsFound === 0) {
-    return "Hitta första ordet.";
+    return 'Hitta första ordet.';
   }
 
-  return "Fortsätt bygga.";
+  return 'Fortsätt bygga.';
 }
 
 export type RoundResultCopy = {
@@ -130,69 +129,68 @@ export function getRoundResultCopy(options: {
   bestScore: number;
   isNewRecord: boolean;
 }): RoundResultCopy {
-  const { score, wordsFound, commonFoundPercentage, bestScore, isNewRecord } =
-    options;
+  const { score, wordsFound, commonFoundPercentage, bestScore, isNewRecord } = options;
 
   if (wordsFound === 0) {
     return {
-      headline: "Inga ord den här gången.",
-      subline: "Nästa runda är en ny chans.",
+      headline: 'Inga ord den här gången.',
+      subline: 'Nästa runda är en ny chans.',
     };
   }
 
   if (isNewRecord) {
     return {
-      headline: "Nytt rekord.",
-      subline: "Stark runda.",
+      headline: 'Nytt rekord.',
+      subline: 'Stark runda.',
     };
   }
 
   if (score >= bestScore && bestScore > 0) {
     return {
-      headline: "Du matchade ditt rekord.",
-      subline: "Stabil runda.",
+      headline: 'Du matchade ditt rekord.',
+      subline: 'Stabil runda.',
     };
   }
 
   if (commonFoundPercentage >= 70) {
     return {
-      headline: "Starkt hittat.",
-      subline: "Många vanliga ord i rundan.",
+      headline: 'Starkt hittat.',
+      subline: 'Många vanliga ord i rundan.',
     };
   }
 
   if (commonFoundPercentage >= 45) {
     return {
-      headline: "Bra jobbat.",
-      subline: "Nära hälften av de vanliga orden.",
+      headline: 'Bra jobbat.',
+      subline: 'Nära hälften av de vanliga orden.',
     };
   }
 
   if (wordsFound >= 6) {
     return {
-      headline: "Bra tempo.",
-      subline: "Fortsätt bygga rytmen.",
+      headline: 'Bra tempo.',
+      subline: 'Fortsätt bygga rytmen.',
     };
   }
 
   return {
-    headline: "Bra start.",
-    subline: "En runda till?",
+    headline: 'Bra start.',
+    subline: 'En runda till?',
   };
 }
 
 export function getSuccessMessage(word: string) {
   if (word.length === 6) {
-    return "Fullträff.";
+    return 'Fullträff.';
   }
 
   if (word.length === 5) {
-    return "Långt ord.";
+    return 'Långt ord.';
   }
 
   if (word.length === 4) {
-    return "Bra hittat.";
+    return 'Bra hittat.';
   }
 
-  return "Bra hittat.";
+  return 'Bra hittat.';
 }

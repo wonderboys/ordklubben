@@ -1,7 +1,7 @@
-import { allowedSvWords, commonSvWords } from "@/data/words";
-import { seedWordsSv } from "@/data/words/ordstorm-wordlists";
-import { canBuildWord } from "@/lib/dictionary/can-build-word";
-import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
+import { allowedSvWords, commonSvWords } from '@/data/words';
+import { seedWordsSv } from '@/data/words/ordstorm-wordlists';
+import { canBuildWord } from '@/lib/dictionary/can-build-word';
+import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 export const GAME_DURATION_SECONDS = 60;
 export const ORDSTORM_MIN_WORD_LENGTH = 3;
@@ -33,11 +33,9 @@ export type OrdstormStats = {
 export const ORDSTORM_WORDS = [...new Set([...commonSvWords, ...allowedSvWords])]
   .map((word) => normalizeSwedish(word))
   .filter(
-    (word) =>
-      word.length >= ORDSTORM_MIN_WORD_LENGTH &&
-      word.length <= ORDSTORM_MAX_WORD_LENGTH,
+    (word) => word.length >= ORDSTORM_MIN_WORD_LENGTH && word.length <= ORDSTORM_MAX_WORD_LENGTH,
   )
-  .sort((a, b) => a.localeCompare(b, "sv-SE"));
+  .sort((a, b) => a.localeCompare(b, 'sv-SE'));
 
 export const ORDSTORM_WORD_SET = new Set(ORDSTORM_WORDS);
 
@@ -116,25 +114,20 @@ function createStrongShuffle(letters: string[], randomValue = Math.random) {
   };
 }
 
-export function selectSeedWord(
-  recentSeedWords: string[] = [],
-  randomValue = Math.random(),
-) {
-  const normalizedRecentSeedWords = recentSeedWords.map((seedWord) =>
-    normalizeSwedish(seedWord),
-  );
+export function selectSeedWord(recentSeedWords: string[] = [], randomValue = Math.random()) {
+  const normalizedRecentSeedWords = recentSeedWords.map((seedWord) => normalizeSwedish(seedWord));
   const availableSeedWords = seedWordsSv.filter(
     (seedWord) => !normalizedRecentSeedWords.includes(normalizeSwedish(seedWord)),
   );
   const source = availableSeedWords.length ? availableSeedWords : seedWordsSv;
   const index = Math.floor(randomValue * source.length);
 
-  return source[index] ?? source[0] ?? "spelar";
+  return source[index] ?? source[0] ?? 'spelar';
 }
 
 function getValidRoundWords(letters: string[]) {
   return ORDSTORM_WORDS.filter((word) => canBuildWord(word, letters)).sort(
-    (a, b) => b.length - a.length || a.localeCompare(b, "sv-SE"),
+    (a, b) => b.length - a.length || a.localeCompare(b, 'sv-SE'),
   );
 }
 
@@ -143,7 +136,7 @@ export function createRoundFromSeedWord(
   options?: { shuffleLetters?: boolean },
 ): OrdstormRound {
   const normalizedSeedWord = normalizeSwedish(seedWord);
-  const baseLetters = normalizedSeedWord.toLocaleUpperCase("sv-SE").split("");
+  const baseLetters = normalizedSeedWord.toLocaleUpperCase('sv-SE').split('');
   const shuffleResult =
     options?.shuffleLetters === false
       ? { letters: baseLetters, attempts: 0 }
@@ -168,10 +161,7 @@ export function createRound(recentSeedWords: string[] = []): OrdstormRound {
     const candidateSeedWord = selectSeedWord(recentSeedWords);
     const candidateRound = createRoundFromSeedWord(candidateSeedWord);
 
-    if (
-      !bestRound ||
-      candidateRound.validWords.length > bestRound.validWords.length
-    ) {
+    if (!bestRound || candidateRound.validWords.length > bestRound.validWords.length) {
       bestRound = candidateRound;
     }
 

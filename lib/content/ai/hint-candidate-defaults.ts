@@ -1,19 +1,19 @@
-import type { HintType } from "@prisma/client";
-import type { HintTone } from "@/lib/content/constants";
-import type { HintCandidateDraft } from "@/lib/content/ai/types";
+import type { HintType } from '@prisma/client';
+import type { HintTone } from '@/lib/content/constants';
+import type { HintCandidateDraft } from '@/lib/content/ai/types';
 
-const AI_SOURCE = "ai";
+const AI_SOURCE = 'ai';
 
 const TYPE_METADATA: Record<
-  "DEFINITION" | "PARAPHRASE" | "ASSOCIATION" | "SYNONYM" | "WORDPLAY" | "EXAMPLE",
+  'DEFINITION' | 'PARAPHRASE' | 'ASSOCIATION' | 'SYNONYM' | 'WORDPLAY' | 'EXAMPLE',
   { tone: HintTone; difficulty: number }
 > = {
-  DEFINITION: { tone: "NEUTRAL", difficulty: 1 },
-  PARAPHRASE: { tone: "NEUTRAL", difficulty: 2 },
-  ASSOCIATION: { tone: "PLAYFUL", difficulty: 3 },
-  SYNONYM: { tone: "NEUTRAL", difficulty: 2 },
-  WORDPLAY: { tone: "TRICKY", difficulty: 4 },
-  EXAMPLE: { tone: "NEUTRAL", difficulty: 2 },
+  DEFINITION: { tone: 'NEUTRAL', difficulty: 1 },
+  PARAPHRASE: { tone: 'NEUTRAL', difficulty: 2 },
+  ASSOCIATION: { tone: 'PLAYFUL', difficulty: 3 },
+  SYNONYM: { tone: 'NEUTRAL', difficulty: 2 },
+  WORDPLAY: { tone: 'TRICKY', difficulty: 4 },
+  EXAMPLE: { tone: 'NEUTRAL', difficulty: 2 },
 };
 
 export function applyHintCandidateDefaults(

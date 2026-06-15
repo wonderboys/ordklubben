@@ -1,4 +1,4 @@
-import type { PuzzleDirection } from "@prisma/client";
+import type { PuzzleDirection } from '@prisma/client';
 
 export type PuzzleCell = {
   row: number;
@@ -21,19 +21,19 @@ export const EMPTY_PLACEMENT_DRAFT: PuzzlePlacementDraft = {
 
 export function getPlacementStatusMessage(draft: PuzzlePlacementDraft) {
   if (!draft.mode && !draft.cell) {
-    return "Klicka på en ruta i rutnätet för att välja var ordet ska börja.";
+    return 'Klicka på en ruta i rutnätet för att välja var ordet ska börja.';
   }
 
   if (!draft.cell) {
-    return "Välj startcell i rutnätet.";
+    return 'Välj startcell i rutnätet.';
   }
 
   if (!draft.wordId) {
-    return "Välj ord.";
+    return 'Välj ord.';
   }
 
   if (!draft.direction) {
-    return "Välj riktning.";
+    return 'Välj riktning.';
   }
 
   return null;

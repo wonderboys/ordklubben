@@ -1,8 +1,8 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-import { computeStartCellNumbers, getAnswerLength } from "@/lib/content/puzzle/grid";
-import { generateGridLayout } from "@/lib/content/puzzle/grid-generator";
-import { getGridSizeProfile } from "@/lib/content/puzzle/grid-generator-scoring";
-import type { CreateGeneratedPuzzleInput } from "@/lib/content/validators";
+import type { Prisma, PrismaClient } from '@prisma/client';
+import { computeStartCellNumbers, getAnswerLength } from '@/lib/content/puzzle/grid';
+import { generateGridLayout } from '@/lib/content/puzzle/grid-generator';
+import { getGridSizeProfile } from '@/lib/content/puzzle/grid-generator-scoring';
+import type { CreateGeneratedPuzzleInput } from '@/lib/content/validators';
 
 export type GeneratePuzzleReport = {
   themeName: string | null;
@@ -86,7 +86,7 @@ function mapWordRows(
       hints: word.hints.map((hint) => ({
         id: hint.id,
         text: hint.text,
-        status: hint.status as "DRAFT" | "APPROVED",
+        status: hint.status as 'DRAFT' | 'APPROVED',
       })),
     }));
 }
@@ -105,17 +105,15 @@ function mergeUniqueWords<T extends { id: string }>(primary: T[], secondary: T[]
   return merged;
 }
 
-function buildBaseWordWhere(
-  input: CreateGeneratedPuzzleInput,
-): Prisma.WordWhereInput {
-  const hintStatusFilter: Array<"DRAFT" | "APPROVED"> = input.allowDraftHints
-    ? ["DRAFT", "APPROVED"]
-    : ["APPROVED"];
+function buildBaseWordWhere(input: CreateGeneratedPuzzleInput): Prisma.WordWhereInput {
+  const hintStatusFilter: Array<'DRAFT' | 'APPROVED'> = input.allowDraftHints
+    ? ['DRAFT', 'APPROVED']
+    : ['APPROVED'];
 
   return {
     ...(input.allowDraftWords
-      ? { status: { in: ["DRAFT", "APPROVED"] as Array<"DRAFT" | "APPROVED"> } }
-      : { status: "APPROVED" }),
+      ? { status: { in: ['DRAFT', 'APPROVED'] as Array<'DRAFT' | 'APPROVED'> } }
+      : { status: 'APPROVED' }),
     hints: {
       some: {
         status: { in: hintStatusFilter },
@@ -131,9 +129,9 @@ async function fetchCandidates(
 ) {
   const limit = buildCandidateLimit(targetWordCount);
   const profile = getGridSizeProfile(input.width, input.height);
-  const hintStatusFilter: Array<"DRAFT" | "APPROVED"> = input.allowDraftHints
-    ? ["DRAFT", "APPROVED"]
-    : ["APPROVED"];
+  const hintStatusFilter: Array<'DRAFT' | 'APPROVED'> = input.allowDraftHints
+    ? ['DRAFT', 'APPROVED']
+    : ['APPROVED'];
   const baseWhere = buildBaseWordWhere(input);
   const longTake = Math.max(Math.round(limit / 3), 40);
   const fillerTake = Math.max(Math.round(limit / 4), 30);
@@ -161,13 +159,13 @@ async function fetchCandidates(
           length: { gte: profile.anchorMin },
         },
         select: wordSelect,
-        orderBy: [{ length: "desc" }, { answer: "asc" }],
+        orderBy: [{ length: 'desc' }, { answer: 'asc' }],
         take: longTake,
       }),
       prisma.word.findMany({
         where: baseWhere,
         select: wordSelect,
-        orderBy: [{ length: "asc" }, { answer: "asc" }],
+        orderBy: [{ length: 'asc' }, { answer: 'asc' }],
         take: limit,
       }),
     ]);
@@ -201,27 +199,24 @@ async function fetchCandidates(
         length: { gte: profile.anchorMin },
       },
       select: wordSelect,
-      orderBy: [{ length: "desc" }, { answer: "asc" }],
+      orderBy: [{ length: 'desc' }, { answer: 'asc' }],
       take: longTake,
     }),
     prisma.word.findMany({
       where: themeWhere,
       select: wordSelect,
-      orderBy: [{ length: "asc" }, { answer: "asc" }],
+      orderBy: [{ length: 'asc' }, { answer: 'asc' }],
       take: limit,
     }),
     prisma.word.findMany({
       where: fillerWhere,
       select: wordSelect,
-      orderBy: [{ length: "asc" }, { answer: "asc" }],
+      orderBy: [{ length: 'asc' }, { answer: 'asc' }],
       take: fillerTake,
     }),
   ]);
 
-  const themeCandidates = mapWordRows(
-    mergeUniqueWords(themeLongWords, themeWords),
-    true,
-  );
+  const themeCandidates = mapWordRows(mergeUniqueWords(themeLongWords, themeWords), true);
   const fillerCandidates = mapWordRows(fillerWords, false);
 
   return mergeUniqueWords(themeCandidates, fillerCandidates);
@@ -244,7 +239,7 @@ export async function generatePuzzle(
   ]);
 
   if (candidates.length === 0) {
-    throw new Error("Inga ord matchade urvalet. Justera tema eller statusfilter.");
+    throw new Error('Inga ord matchade urvalet. Justera tema eller statusfilter.');
   }
 
   const layout = generateGridLayout({
@@ -259,7 +254,7 @@ export async function generatePuzzle(
   if (layout.placed.length === 0) {
     throw new Error(
       layout.summaryNote ??
-        "Kunde inte placera några ord i rutnätet. Prova större rutnät eller fler kandidater.",
+        'Kunde inte placera några ord i rutnätet. Prova större rutnät eller fler kandidater.',
     );
   }
 
@@ -269,7 +264,7 @@ export async function generatePuzzle(
     const createdPuzzle = await tx.puzzle.create({
       data: {
         title: input.title,
-        type: "WORD_GRID",
+        type: 'WORD_GRID',
         status: input.status,
         width: input.width,
         height: input.height,

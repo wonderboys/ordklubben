@@ -3,7 +3,7 @@ import {
   getOccupiedCells,
   getPlacementCells,
   type PuzzlePlacementInput,
-} from "@/lib/content/puzzle/grid";
+} from '@/lib/content/puzzle/grid';
 
 export type BlockedCell = {
   row: number;
@@ -31,7 +31,7 @@ function cellKey(row: number, col: number) {
 }
 
 function parseKey(key: string) {
-  const [row, col] = key.split(":").map(Number);
+  const [row, col] = key.split(':').map(Number);
   return { row, col };
 }
 
@@ -165,16 +165,9 @@ function countEmptyInRegion(
   return count;
 }
 
-function isInsideBounds(
-  row: number,
-  col: number,
-  bounds: ReturnType<typeof getClusterBounds>,
-) {
+function isInsideBounds(row: number, col: number, bounds: ReturnType<typeof getClusterBounds>) {
   return (
-    row >= bounds.minRow &&
-    row <= bounds.maxRow &&
-    col >= bounds.minCol &&
-    col <= bounds.maxCol
+    row >= bounds.minRow && row <= bounds.maxRow && col >= bounds.minCol && col <= bounds.maxCol
   );
 }
 
@@ -189,7 +182,7 @@ function collectWordCapCandidates(
   for (const entry of entries) {
     const length = getAnswerLength(entry.answerSnapshot);
 
-    if (entry.direction === "ACROSS") {
+    if (entry.direction === 'ACROSS') {
       caps.push({ row: entry.row, col: entry.col - 1 });
       caps.push({ row: entry.row, col: entry.col + length });
     } else {
@@ -236,7 +229,12 @@ function collectSmallHoleCandidates(
       let occupiedNeighbors = 0;
 
       for (const neighbor of neighbors) {
-        if (neighbor.row < 0 || neighbor.row >= height || neighbor.col < 0 || neighbor.col >= width) {
+        if (
+          neighbor.row < 0 ||
+          neighbor.row >= height ||
+          neighbor.col < 0 ||
+          neighbor.col >= width
+        ) {
           occupiedNeighbors += 1;
           continue;
         }
@@ -337,7 +335,7 @@ export function countBlockedClusters(blockedKeys: Set<string>, width: number, he
     visited.add(key);
 
     while (queue.length > 0) {
-      const current = queue.pop() ?? "";
+      const current = queue.pop() ?? '';
       const { row, col } = parseKey(current);
       const neighbors = [
         { row: row - 1, col },
@@ -347,7 +345,12 @@ export function countBlockedClusters(blockedKeys: Set<string>, width: number, he
       ];
 
       for (const neighbor of neighbors) {
-        if (neighbor.row < 0 || neighbor.row >= height || neighbor.col < 0 || neighbor.col >= width) {
+        if (
+          neighbor.row < 0 ||
+          neighbor.row >= height ||
+          neighbor.col < 0 ||
+          neighbor.col >= width
+        ) {
           continue;
         }
 
@@ -381,7 +384,7 @@ function largestBlockedClusterSize(blockedKeys: Set<string>, width: number, heig
 
     while (queue.length > 0) {
       size += 1;
-      const current = queue.pop() ?? "";
+      const current = queue.pop() ?? '';
       const { row, col } = parseKey(current);
       const neighbors = [
         { row: row - 1, col },
@@ -391,7 +394,12 @@ function largestBlockedClusterSize(blockedKeys: Set<string>, width: number, heig
       ];
 
       for (const neighbor of neighbors) {
-        if (neighbor.row < 0 || neighbor.row >= height || neighbor.col < 0 || neighbor.col >= width) {
+        if (
+          neighbor.row < 0 ||
+          neighbor.row >= height ||
+          neighbor.col < 0 ||
+          neighbor.col >= width
+        ) {
           continue;
         }
 
@@ -427,7 +435,7 @@ function countLetterIslands(entries: PuzzlePlacementInput[], width: number, heig
     visited.add(key);
 
     while (queue.length > 0) {
-      const current = queue.pop() ?? "";
+      const current = queue.pop() ?? '';
       const { row, col } = parseKey(current);
       const neighbors = [
         { row: row - 1, col },
@@ -437,7 +445,12 @@ function countLetterIslands(entries: PuzzlePlacementInput[], width: number, heig
       ];
 
       for (const neighbor of neighbors) {
-        if (neighbor.row < 0 || neighbor.row >= height || neighbor.col < 0 || neighbor.col >= width) {
+        if (
+          neighbor.row < 0 ||
+          neighbor.row >= height ||
+          neighbor.col < 0 ||
+          neighbor.col >= width
+        ) {
           continue;
         }
 
@@ -470,14 +483,11 @@ function countEdgeBlocks(blockedKeys: Set<string>, width: number, height: number
   return count;
 }
 
-export function isWordCapBlock(
-  cell: BlockedCell,
-  entries: PuzzlePlacementInput[],
-) {
+export function isWordCapBlock(cell: BlockedCell, entries: PuzzlePlacementInput[]) {
   for (const entry of entries) {
     const length = getAnswerLength(entry.answerSnapshot);
 
-    if (entry.direction === "ACROSS") {
+    if (entry.direction === 'ACROSS') {
       if (cell.row === entry.row && cell.col === entry.col - 1) {
         return true;
       }
@@ -514,7 +524,10 @@ export function hasUnacceptableBlockPattern(
     return true;
   }
 
-  if (largestBlockedClusterSize(blockedKeys, width, height) > Math.max(6, Math.floor((width * height) * 0.12))) {
+  if (
+    largestBlockedClusterSize(blockedKeys, width, height) >
+    Math.max(6, Math.floor(width * height * 0.12))
+  ) {
     return true;
   }
 
@@ -542,15 +555,12 @@ export function scoreBlockPattern(options: {
   const runPenalty = longestRun >= 3 ? (longestRun - 2) * 95 : 0;
   const fullLinePenalty = countFullBlockedLines(blockedKeys, width, height) * 280;
   const largestCluster = largestBlockedClusterSize(blockedKeys, width, height);
-  const clusterPenalty =
-    largestCluster > 2 ? (largestCluster - 2) * 48 : 0;
+  const clusterPenalty = largestCluster > 2 ? (largestCluster - 2) * 48 : 0;
   const clusters = countBlockedClusters(blockedKeys, width, height);
   const spreadBonus = clusters > 0 ? Math.min(clusters * 4, 24) : 0;
   const edgeBlocks = countEdgeBlocks(blockedKeys, width, height);
   const wallPenalty =
-    edgeBlocks > blockedCells.length * 0.55
-      ? (edgeBlocks - blockedCells.length * 0.45) * 14
-      : 0;
+    edgeBlocks > blockedCells.length * 0.55 ? (edgeBlocks - blockedCells.length * 0.45) * 14 : 0;
   const islands = countLetterIslands(entries, width, height);
   const islandPenalty = islands > 1 ? (islands - 1) * 60 : 0;
 
@@ -671,13 +681,7 @@ export function proposeBlockedCells(
 
   for (let pass = 0; pass < holePasses; pass += 1) {
     const blockedKeys = new Set(accepted.keys());
-    const holes = collectSmallHoleCandidates(
-      entries,
-      blockedKeys,
-      letterKeys,
-      width,
-      height,
-    );
+    const holes = collectSmallHoleCandidates(entries, blockedKeys, letterKeys, width, height);
 
     for (const hole of holes) {
       tryAdd(hole);
@@ -744,14 +748,7 @@ export function finalizeBlockedCells(
     const key = cellKey(cell.row, cell.col);
     const candidate = [...accepted.values(), cell];
 
-    if (
-      hasUnacceptableBlockPatternForFinalize(
-        candidate,
-        letterKeys,
-        width,
-        height,
-      )
-    ) {
+    if (hasUnacceptableBlockPatternForFinalize(candidate, letterKeys, width, height)) {
       rejectedBlockPatterns += 1;
       continue;
     }
@@ -804,7 +801,7 @@ export function countGridCrossings(entries: PuzzlePlacementInput[]) {
   const downKeys = new Set<string>();
 
   for (const entry of entries) {
-    const target = entry.direction === "ACROSS" ? acrossKeys : downKeys;
+    const target = entry.direction === 'ACROSS' ? acrossKeys : downKeys;
 
     for (const cell of getPlacementCells(entry)) {
       target.add(cellKey(cell.row, cell.col));

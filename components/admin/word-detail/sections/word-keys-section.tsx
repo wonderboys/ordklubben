@@ -1,7 +1,7 @@
-import type { HintCandidateStatus } from "@prisma/client";
-import { ChevronDown } from "lucide-react";
-import { ProposalActions } from "@/components/admin/generate-hint-candidates-button";
-import { HintMetadataFields } from "@/components/admin/hint-metadata-fields";
+import type { HintCandidateStatus } from '@prisma/client';
+import { ChevronDown } from 'lucide-react';
+import { ProposalActions } from '@/components/admin/generate-hint-candidates-button';
+import { HintMetadataFields } from '@/components/admin/hint-metadata-fields';
 import {
   AdminActionGroup,
   AdminPanel,
@@ -17,7 +17,7 @@ import {
   TextArea,
   TextInput,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
+} from '@/components/admin/admin-ui';
 import {
   approveEditedHintCandidate,
   approveHintCandidate,
@@ -26,7 +26,7 @@ import {
   rejectHintCandidate,
   updateHint,
   updateHintStatus,
-} from "@/lib/content/actions";
+} from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
   HINT_CANDIDATE_STATUSES,
@@ -36,19 +36,19 @@ import {
   formatHintSource,
   formatHintTone,
   formatHintType,
-} from "@/lib/content/constants";
-import type { WordDetailData } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-const PROPOSE_FORM_ID = "show-propose-form";
-const KEYS_TAB = "keys";
+const PROPOSE_FORM_ID = 'show-propose-form';
+const KEYS_TAB = 'keys';
 
 type HintMetadataItem = {
-  type: WordDetailData["hints"][number]["type"];
+  type: WordDetailData['hints'][number]['type'];
   difficulty: number | null;
   tone: string | null;
   source: string | null;
-  status?: WordDetailData["hints"][number]["status"];
+  status?: WordDetailData['hints'][number]['status'];
   createdAt?: Date;
   notes?: string | null;
 };
@@ -83,9 +83,7 @@ function HintMetadataDisplay({ item }: { item: HintMetadataItem }) {
       {item.createdAt ? (
         <div>
           <dt className="text-print-muted">Skapad</dt>
-          <dd className="mt-0.5 text-print-ink">
-            {item.createdAt.toLocaleDateString("sv-SE")}
-          </dd>
+          <dd className="mt-0.5 text-print-ink">{item.createdAt.toLocaleDateString('sv-SE')}</dd>
         </div>
       ) : null}
       {item.notes ? (
@@ -98,13 +96,7 @@ function HintMetadataDisplay({ item }: { item: HintMetadataItem }) {
   );
 }
 
-function HintCard({
-  wordId,
-  hint,
-}: {
-  wordId: string;
-  hint: WordDetailData["hints"][number];
-}) {
+function HintCard({ wordId, hint }: { wordId: string; hint: WordDetailData['hints'][number] }) {
   const editFormId = `hint-edit-${hint.id}`;
 
   return (
@@ -121,10 +113,7 @@ function HintCard({
       </div>
 
       <div className="border-t border-print-ink/10 px-3 py-3">
-        <form
-          action={updateHintStatus}
-          className="flex flex-wrap items-center gap-2"
-        >
+        <form action={updateHintStatus} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="wordId" value={wordId} />
           <input type="hidden" name="hintId" value={hint.id} />
           <input type="hidden" name="tab" value={KEYS_TAB} />
@@ -148,7 +137,7 @@ function HintCard({
       <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
         <label
           htmlFor={editFormId}
-          className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+          className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
         >
           <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
           Redigera nyckel
@@ -180,7 +169,7 @@ function HintCard({
               id={`hint-edit-notes-${hint.id}`}
               name="notes"
               className="min-h-20"
-              defaultValue={hint.notes ?? ""}
+              defaultValue={hint.notes ?? ''}
             />
           </Field>
           <SubmitButton variant="secondary">Spara ändringar</SubmitButton>
@@ -190,11 +179,7 @@ function HintCard({
   );
 }
 
-function ProposalMetadata({
-  proposal,
-}: {
-  proposal: WordDetailData["hintCandidates"][number];
-}) {
+function ProposalMetadata({ proposal }: { proposal: WordDetailData['hintCandidates'][number] }) {
   return (
     <HintMetadataDisplay
       item={{
@@ -210,7 +195,7 @@ function ProposalCard({
   proposal,
 }: {
   wordId: string;
-  proposal: WordDetailData["hintCandidates"][number];
+  proposal: WordDetailData['hintCandidates'][number];
 }) {
   const editFormId = `proposal-edit-${proposal.id}`;
 
@@ -223,7 +208,7 @@ function ProposalCard({
         </div>
       </div>
 
-      {proposal.status === "PENDING" ? (
+      {proposal.status === 'PENDING' ? (
         <div className="border-t border-print-ink/10 px-3 py-3">
           <AdminActionGroup>
             <form action={approveHintCandidate}>
@@ -255,14 +240,14 @@ function ProposalCard({
         <ProposalMetadata proposal={proposal} />
       </div>
 
-      {proposal.status === "PENDING" ? (
+      {proposal.status === 'PENDING' ? (
         <>
           <input id={editFormId} type="checkbox" className="peer/edit sr-only" />
 
           <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
             <label
               htmlFor={editFormId}
-              className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+              className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
             >
               <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
               Redigera innan godkännande
@@ -299,14 +284,14 @@ function ProposalCard({
                   id={`proposal-edit-notes-${proposal.id}`}
                   name="notes"
                   className="min-h-20"
-                  defaultValue={proposal.notes ?? ""}
+                  defaultValue={proposal.notes ?? ''}
                 />
               </Field>
               <SubmitButton variant="secondary">Redigera och godkänn</SubmitButton>
             </form>
           </div>
         </>
-      ) : proposal.status === "REJECTED" ? (
+      ) : proposal.status === 'REJECTED' ? (
         <div className="border-t border-print-ink/10 px-3 py-3">
           <form action={deleteHintCandidate}>
             <input type="hidden" name="wordId" value={wordId} />
@@ -318,7 +303,7 @@ function ProposalCard({
       ) : (
         <div className="border-t border-print-ink/10 px-3 py-3">
           <p className="text-xs text-print-muted">
-            {proposal.approvedHintId ? "Skapade nyckel." : "Godkänd."}
+            {proposal.approvedHintId ? 'Skapade nyckel.' : 'Godkänd.'}
           </p>
         </div>
       )}
@@ -331,7 +316,7 @@ function ProposalList({
   proposals,
 }: {
   wordId: string;
-  proposals: WordDetailData["hintCandidates"];
+  proposals: WordDetailData['hintCandidates'];
 }) {
   if (proposals.length === 0) {
     return null;
@@ -357,23 +342,17 @@ function ProposalsWorkspace({
     ? word.hintCandidates.filter((proposal) => proposal.status === candidateStatus)
     : word.hintCandidates;
 
-  const pendingProposals = filteredProposals.filter(
-    (proposal) => proposal.status === "PENDING",
-  );
+  const pendingProposals = filteredProposals.filter((proposal) => proposal.status === 'PENDING');
   const otherProposals = candidateStatus
     ? []
-    : filteredProposals.filter((proposal) => proposal.status !== "PENDING");
+    : filteredProposals.filter((proposal) => proposal.status !== 'PENDING');
 
   return (
     <>
       <AdminToolbar className="mb-4">
         <AdminToolbarSection label="Nytt förslag">
           <AdminActionGroup>
-            <ProposalActions
-              wordId={word.id}
-              tab={KEYS_TAB}
-              manualToggleId={PROPOSE_FORM_ID}
-            />
+            <ProposalActions wordId={word.id} tab={KEYS_TAB} manualToggleId={PROPOSE_FORM_ID} />
           </AdminActionGroup>
         </AdminToolbarSection>
 
@@ -386,7 +365,7 @@ function ProposalsWorkspace({
                   <input type="hidden" name="tab" value={KEYS_TAB} />
                   <SelectInput
                     name="candidateStatus"
-                    defaultValue={candidateStatus ?? ""}
+                    defaultValue={candidateStatus ?? ''}
                     className="min-w-44"
                   >
                     <option value="">Alla statusar</option>

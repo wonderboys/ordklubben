@@ -2,8 +2,8 @@ import {
   getStegvisValidationMessage,
   normalizeStegvisWord,
   validateStegvisStep,
-} from "@/lib/game/stegvis";
-import type { StegvisValidationResult } from "@/lib/game/stegvis-validation";
+} from '@/lib/game/stegvis';
+import type { StegvisValidationResult } from '@/lib/game/stegvis-validation';
 
 export type StegvisChainStepValidationResult =
   | { valid: true; normalizedWord: string }
@@ -33,7 +33,7 @@ export function validateStegvisChainStep(
   if (stepResult.normalizedWord !== normalizeStegvisWord(expectedWord)) {
     return {
       valid: false,
-      message: "Fel ord för den här nyckeln.",
+      message: 'Fel ord för den här nyckeln.',
     };
   }
 

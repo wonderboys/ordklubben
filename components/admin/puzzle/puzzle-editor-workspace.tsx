@@ -1,31 +1,34 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AdminPanel } from "@/components/admin/admin-ui";
-import { PuzzleAddEntryPanel, type PuzzleWordOption } from "@/components/admin/puzzle/puzzle-add-entry-panel";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AdminPanel } from '@/components/admin/admin-ui';
+import {
+  PuzzleAddEntryPanel,
+  type PuzzleWordOption,
+} from '@/components/admin/puzzle/puzzle-add-entry-panel';
 import {
   PuzzleActiveEntryPanel,
   PuzzleBlockedCellPanel,
   PuzzleBlockModePanel,
-} from "@/components/admin/puzzle/puzzle-active-entry-panel";
+} from '@/components/admin/puzzle/puzzle-active-entry-panel';
 import {
   EMPTY_PLACEMENT_DRAFT,
   type PuzzlePlacementDraft,
-} from "@/components/admin/puzzle/puzzle-editor-state";
-import { PuzzleEntryEditorPanel } from "@/components/admin/puzzle/puzzle-entry-editor-panel";
-import { PuzzleCluePanel, type PuzzleClueEntry } from "@/components/admin/puzzle/puzzle-clue-panel";
-import { buildGhostPlacement } from "@/components/admin/puzzle/puzzle-ghost-placement";
+} from '@/components/admin/puzzle/puzzle-editor-state';
+import { PuzzleEntryEditorPanel } from '@/components/admin/puzzle/puzzle-entry-editor-panel';
+import { PuzzleCluePanel, type PuzzleClueEntry } from '@/components/admin/puzzle/puzzle-clue-panel';
+import { buildGhostPlacement } from '@/components/admin/puzzle/puzzle-ghost-placement';
 import {
   PuzzleGridEditor,
   type PuzzleGridCellInteraction,
   type PuzzleGridEntry,
-} from "@/components/admin/puzzle/puzzle-grid-editor";
+} from '@/components/admin/puzzle/puzzle-grid-editor';
 import {
   PuzzlePlacedEntriesPanel,
   type PuzzlePlacedEntry,
-} from "@/components/admin/puzzle/puzzle-placed-entries-panel";
-import type { PuzzleBlockedCellInput } from "@/lib/content/puzzle/grid";
-import { cn } from "@/lib/utils";
+} from '@/components/admin/puzzle/puzzle-placed-entries-panel';
+import type { PuzzleBlockedCellInput } from '@/lib/content/puzzle/grid';
+import { cn } from '@/lib/utils';
 
 type PuzzleEditorWorkspaceProps = {
   puzzleId: string;
@@ -53,8 +56,7 @@ export function PuzzleEditorWorkspace({
     row: number;
     col: number;
   } | null>(null);
-  const [placementDraft, setPlacementDraft] =
-    useState<PuzzlePlacementDraft>(EMPTY_PLACEMENT_DRAFT);
+  const [placementDraft, setPlacementDraft] = useState<PuzzlePlacementDraft>(EMPTY_PLACEMENT_DRAFT);
   const [blockMode, setBlockMode] = useState(false);
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [wordPickerOpen, setWordPickerOpen] = useState(false);
@@ -100,15 +102,7 @@ export function PuzzleEditorWorkspace({
       width,
       height,
     });
-  }, [
-    blockMode,
-    placementDraft,
-    selectedWordForPlacement,
-    entries,
-    blockedCells,
-    width,
-    height,
-  ]);
+  }, [blockMode, placementDraft, selectedWordForPlacement, entries, blockedCells, width, height]);
 
   const clearActiveEntry = useCallback(() => {
     setActiveEntryId(null);
@@ -199,7 +193,7 @@ export function PuzzleEditorWorkspace({
 
     setIsEditingEntry(false);
 
-    if (interaction.type === "entry") {
+    if (interaction.type === 'entry') {
       const lastClick = lastActiveEntryClickRef.current;
       const isRepeatActiveClick =
         activeEntryId === interaction.entryId &&
@@ -228,7 +222,7 @@ export function PuzzleEditorWorkspace({
       return;
     }
 
-    if (interaction.type === "blocked") {
+    if (interaction.type === 'blocked') {
       clearActiveEntry();
       clearPlacementDraft();
       setSelectedBlockedCell({ row: interaction.row, col: interaction.col });
@@ -247,7 +241,7 @@ export function PuzzleEditorWorkspace({
     enterPlacementMode(interaction.row, interaction.col);
   }
 
-  function handleDirectionChange(direction: "ACROSS" | "DOWN") {
+  function handleDirectionChange(direction: 'ACROSS' | 'DOWN') {
     setPlacementDraft((draft) => ({ ...draft, direction }));
   }
 
@@ -258,7 +252,7 @@ export function PuzzleEditorWorkspace({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") {
+      if (event.key !== 'Escape') {
         return;
       }
 
@@ -293,9 +287,9 @@ export function PuzzleEditorWorkspace({
       }
     }
 
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
 
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     wordPickerOpen,
     blockMode,
@@ -327,9 +321,9 @@ export function PuzzleEditorWorkspace({
       clearAllSelection();
     }
 
-    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown);
 
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [clearAllSelection]);
 
   const placementCell = placementDraft.mode ? placementDraft.cell : null;
@@ -341,10 +335,8 @@ export function PuzzleEditorWorkspace({
           <div ref={gridRegionRef} className="min-w-0">
             <div
               className={cn(
-                "rounded-sm border bg-print-bg/25",
-                blockMode
-                  ? "border-print-yellow/50 bg-print-yellow/[0.04]"
-                  : "border-print-ink/15",
+                'rounded-sm border bg-print-bg/25',
+                blockMode ? 'border-print-yellow/50 bg-print-yellow/[0.04]' : 'border-print-ink/15',
               )}
             >
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-print-ink/10 px-2 py-1.5">
@@ -357,8 +349,8 @@ export function PuzzleEditorWorkspace({
                   />
                   <span
                     className={cn(
-                      "text-xs font-medium",
-                      blockMode ? "text-print-ink" : "text-print-muted",
+                      'text-xs font-medium',
+                      blockMode ? 'text-print-ink' : 'text-print-muted',
                     )}
                   >
                     Blockera rutor
@@ -446,9 +438,7 @@ export function PuzzleEditorWorkspace({
       </AdminPanel>
 
       <AdminPanel title="Spelarförhandsvisning" compact>
-        <p className="mb-3 text-sm text-print-muted">
-          Så här kommer spelaren att se flätan.
-        </p>
+        <p className="mb-3 text-sm text-print-muted">Så här kommer spelaren att se flätan.</p>
         <PuzzleCluePanel entries={clueEntries} />
       </AdminPanel>
     </>

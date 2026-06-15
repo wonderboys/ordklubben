@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import type { ContentStatus } from "@prisma/client";
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import type { ContentStatus } from '@prisma/client';
 import {
   AdminDefinitionList,
   AdminFilterToolbar,
@@ -13,13 +13,13 @@ import {
   StatusBadge,
   SubmitButton,
   Table,
-} from "@/components/admin/admin-ui";
-import { CONTENT_STATUSES, STATUS_LABELS } from "@/lib/content/constants";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/admin-ui';
+import { CONTENT_STATUSES, STATUS_LABELS } from '@/lib/content/constants';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
-  status?: ContentStatus | "";
-  sort?: "answer" | "status" | "hints";
+  status?: ContentStatus | '';
+  sort?: 'answer' | 'status' | 'hints';
   error?: string;
   success?: string;
 }>;
@@ -38,31 +38,31 @@ type ThemeWordEntry = {
 };
 
 const SORT_OPTIONS = [
-  { value: "answer", label: "Ord" },
-  { value: "status", label: "Status" },
-  { value: "hints", label: "Antal nycklar" },
+  { value: 'answer', label: 'Ord' },
+  { value: 'status', label: 'Status' },
+  { value: 'hints', label: 'Antal nycklar' },
 ] as const;
 
 function sortThemeWords(
   words: ThemeWordEntry[],
-  sort: "answer" | "status" | "hints",
+  sort: 'answer' | 'status' | 'hints',
 ): ThemeWordEntry[] {
   const sorted = [...words];
 
   switch (sort) {
-    case "status":
+    case 'status':
       return sorted.sort((a, b) => {
         const statusOrder = a.status.localeCompare(b.status);
-        return statusOrder !== 0 ? statusOrder : a.answer.localeCompare(b.answer, "sv");
+        return statusOrder !== 0 ? statusOrder : a.answer.localeCompare(b.answer, 'sv');
       });
-    case "hints":
+    case 'hints':
       return sorted.sort((a, b) => {
         const hintOrder = b.hintCount - a.hintCount;
-        return hintOrder !== 0 ? hintOrder : a.answer.localeCompare(b.answer, "sv");
+        return hintOrder !== 0 ? hintOrder : a.answer.localeCompare(b.answer, 'sv');
       });
-    case "answer":
+    case 'answer':
     default:
-      return sorted.sort((a, b) => a.answer.localeCompare(b.answer, "sv"));
+      return sorted.sort((a, b) => a.answer.localeCompare(b.answer, 'sv'));
   }
 }
 
@@ -75,14 +75,11 @@ export default async function ThemeDetailPage({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const status =
-    query.status && CONTENT_STATUSES.includes(query.status)
-      ? query.status
-      : undefined;
+  const status = query.status && CONTENT_STATUSES.includes(query.status) ? query.status : undefined;
   const sort =
     query.sort && SORT_OPTIONS.some((option) => option.value === query.sort)
       ? query.sort
-      : "answer";
+      : 'answer';
 
   if (!isDatabaseConfigured()) {
     return (
@@ -130,7 +127,7 @@ export default async function ThemeDetailPage({
     hintCount: word._count.hints,
   }));
 
-  const approvedWordCount = allWords.filter((word) => word.status === "APPROVED").length;
+  const approvedWordCount = allWords.filter((word) => word.status === 'APPROVED').length;
   const totalHintCount = allWords.reduce((sum, word) => sum + word.hintCount, 0);
   const wordsWithoutHints = allWords.filter((word) => word.hintCount === 0).length;
 
@@ -155,7 +152,7 @@ export default async function ThemeDetailPage({
         <AdminPanel title="Ord i temat">
           <form method="get">
             <AdminFilterToolbar>
-              <SelectInput name="status" defaultValue={status ?? ""} className="min-w-40">
+              <SelectInput name="status" defaultValue={status ?? ''} className="min-w-40">
                 <option value="">Alla statusar</option>
                 {CONTENT_STATUSES.map((value) => (
                   <option key={value} value={value}>
@@ -174,7 +171,7 @@ export default async function ThemeDetailPage({
             </AdminFilterToolbar>
           </form>
 
-          <Table headers={["Ord", "Status", "Nycklar", "Uppdaterad", ""]}>
+          <Table headers={['Ord', 'Status', 'Nycklar', 'Uppdaterad', '']}>
             {filteredWords.map((word) => (
               <tr key={word.id} className="border-b border-print-ink/10 align-top">
                 <td className="font-medium text-print-ink">{word.answer}</td>
@@ -182,9 +179,7 @@ export default async function ThemeDetailPage({
                   <StatusBadge status={word.status} />
                 </td>
                 <td>{word.hintCount}</td>
-                <td className="text-print-muted">
-                  {word.updatedAt.toLocaleDateString("sv-SE")}
-                </td>
+                <td className="text-print-muted">{word.updatedAt.toLocaleDateString('sv-SE')}</td>
                 <td>
                   <Link
                     href={`/admin/words/${word.id}`}
@@ -199,8 +194,8 @@ export default async function ThemeDetailPage({
           {filteredWords.length === 0 ? (
             <p className="mt-3 text-sm text-print-muted">
               {allWords.length === 0
-                ? "Inga ord kopplade till temat ännu."
-                : "Inga ord matchade filtret."}
+                ? 'Inga ord kopplade till temat ännu.'
+                : 'Inga ord matchade filtret.'}
             </p>
           ) : null}
         </AdminPanel>
@@ -208,14 +203,14 @@ export default async function ThemeDetailPage({
         <AdminPanel title="Temainfo">
           <AdminDefinitionList
             items={[
-              { label: "Slug", value: <span className="font-mono text-xs">{theme.slug}</span> },
-              { label: "Beskrivning", value: theme.description?.trim() || "—" },
-              { label: "Ord utan nycklar", value: wordsWithoutHints },
+              { label: 'Slug', value: <span className="font-mono text-xs">{theme.slug}</span> },
+              { label: 'Beskrivning', value: theme.description?.trim() || '—' },
+              { label: 'Ord utan nycklar', value: wordsWithoutHints },
               {
-                label: "Uppdaterad",
-                value: theme.updatedAt.toLocaleString("sv-SE", {
-                  dateStyle: "short",
-                  timeStyle: "short",
+                label: 'Uppdaterad',
+                value: theme.updatedAt.toLocaleString('sv-SE', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
                 }),
               },
             ]}

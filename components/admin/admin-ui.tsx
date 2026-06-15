@@ -1,38 +1,34 @@
-import Link from "next/link";
-import type { ContentStatus, HintCandidateStatus } from "@prisma/client";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { HINT_CANDIDATE_STATUS_LABELS, STATUS_LABELS } from "@/lib/content/constants";
+import Link from 'next/link';
+import type { ContentStatus, HintCandidateStatus } from '@prisma/client';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { HINT_CANDIDATE_STATUS_LABELS, STATUS_LABELS } from '@/lib/content/constants';
 
 /** 14px utility class — see `admin-control` in globals.css */
 const adminControlClass = cn(
-  "admin-control h-8 rounded-sm border border-print-ink/15 bg-print-surface px-2.5 font-normal text-print-ink outline-none transition-[border-color,box-shadow] focus:border-print-green focus:ring-2 focus:ring-print-green/15",
+  'admin-control h-8 rounded-sm border border-print-ink/15 bg-print-surface px-2.5 font-normal text-print-ink outline-none transition-[border-color,box-shadow] focus:border-print-green focus:ring-2 focus:ring-print-green/15',
 );
 
 const adminButtonBaseClass = cn(
-  "admin-control inline-flex h-8 cursor-pointer items-center justify-center rounded-sm px-2.5 font-sans font-medium no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+  'admin-control inline-flex h-8 cursor-pointer items-center justify-center rounded-sm px-2.5 font-sans font-medium no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50',
 );
 
 export const adminButtonPrimaryClass = cn(
   adminButtonBaseClass,
-  "border border-print-ink bg-print-ink text-print-surface hover:bg-print-ink/90",
+  'border border-print-ink bg-print-ink text-print-surface hover:bg-print-ink/90',
 );
 
 export const adminButtonSecondaryClass = cn(
   adminButtonBaseClass,
-  "border border-print-ink/15 bg-print-surface text-print-ink hover:bg-print-ink/[0.04]",
+  'border border-print-ink/15 bg-print-surface text-print-ink hover:bg-print-ink/[0.04]',
 );
 
 export const adminButtonTertiaryClass = cn(
   adminButtonBaseClass,
-  "px-1.5 text-print-muted hover:bg-print-ink/[0.04] hover:text-print-ink",
+  'px-1.5 text-print-muted hover:bg-print-ink/[0.04] hover:text-print-ink',
 );
 
-export function AdminBreadcrumb({
-  items,
-}: {
-  items: Array<{ label: string; href?: string }>;
-}) {
+export function AdminBreadcrumb({ items }: { items: Array<{ label: string; href?: string }> }) {
   return (
     <nav aria-label="Brödsmula" className="mb-2">
       <ol className="flex flex-wrap items-center gap-1.5 text-xs text-print-muted">
@@ -121,8 +117,8 @@ export function AdminPanel({
   return (
     <section
       className={cn(
-        "flex flex-col rounded-sm border border-print-ink/10 bg-print-surface",
-        footer ? "h-full" : null,
+        'flex flex-col rounded-sm border border-print-ink/10 bg-print-surface',
+        footer ? 'h-full' : null,
         className,
       )}
     >
@@ -136,9 +132,9 @@ export function AdminPanel({
       ) : null}
       <div
         className={cn(
-          "flex flex-1 flex-col",
-          compact ? "px-3 pb-3 sm:px-4" : "px-3 pb-4 sm:px-4",
-          title ? "pt-2" : "pt-3 sm:pt-4",
+          'flex flex-1 flex-col',
+          compact ? 'px-3 pb-3 sm:px-4' : 'px-3 pb-4 sm:px-4',
+          title ? 'pt-2' : 'pt-3 sm:pt-4',
         )}
       >
         <div className="flex-1">{children}</div>
@@ -179,8 +175,8 @@ export function AdminSection({
   return (
     <section
       className={cn(
-        "border-t border-print-ink/10 first:border-t-0 first:pt-0",
-        compact ? "space-y-2 pt-3" : "space-y-3 pt-4",
+        'border-t border-print-ink/10 first:border-t-0 first:pt-0',
+        compact ? 'space-y-2 pt-3' : 'space-y-3 pt-4',
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -194,7 +190,7 @@ export function AdminSection({
   );
 }
 
-export { FeedbackMessage } from "@/components/admin/feedback-message";
+export { FeedbackMessage } from '@/components/admin/feedback-message';
 
 export function DatabaseNotice() {
   return (
@@ -225,7 +221,7 @@ export function Field({
 }
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={cn(adminControlClass, "w-full", props.className)} />;
+  return <input {...props} className={cn(adminControlClass, 'w-full', props.className)} />;
 }
 
 export function FileInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -233,7 +229,7 @@ export function FileInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "admin-control block w-full rounded-sm border border-print-ink/15 bg-print-surface px-2.5 py-2 font-normal text-print-ink file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-print-ink/15 file:bg-print-surface file:px-2.5 file:py-1.5 file:text-[14px] file:font-medium file:text-print-ink file:hover:bg-print-ink/[0.04]",
+        'admin-control block w-full rounded-sm border border-print-ink/15 bg-print-surface px-2.5 py-2 font-normal text-print-ink file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-print-ink/15 file:bg-print-surface file:px-2.5 file:py-1.5 file:text-[14px] file:font-medium file:text-print-ink file:hover:bg-print-ink/[0.04]',
         props.className,
       )}
     />
@@ -245,13 +241,13 @@ export function SelectInput({
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <div className={cn("relative min-w-0", className)}>
+    <div className={cn('relative min-w-0', className)}>
       <select
         {...props}
         className={cn(
           adminControlClass,
-          "w-full appearance-none pr-8",
-          props.multiple ? "pr-2.5" : null,
+          'w-full appearance-none pr-8',
+          props.multiple ? 'pr-2.5' : null,
         )}
       />
       {props.multiple ? null : (
@@ -270,7 +266,7 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
     <textarea
       {...props}
       className={cn(
-        "admin-control min-h-24 w-full rounded-sm border border-print-ink/15 bg-print-surface px-2.5 py-2 font-normal leading-normal text-print-ink outline-none transition-[border-color,box-shadow] focus:border-print-green focus:ring-2 focus:ring-print-green/15",
+        'admin-control min-h-24 w-full rounded-sm border border-print-ink/15 bg-print-surface px-2.5 py-2 font-normal leading-normal text-print-ink outline-none transition-[border-color,box-shadow] focus:border-print-green focus:ring-2 focus:ring-print-green/15',
         props.className,
       )}
     />
@@ -290,10 +286,7 @@ export function AdminToolbar({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-sm border border-print-ink/10 bg-print-ink/[0.02] p-2.5",
-        className,
-      )}
+      className={cn('rounded-sm border border-print-ink/10 bg-print-ink/[0.02] p-2.5', className)}
     >
       {children}
     </div>
@@ -331,7 +324,7 @@ export function AdminFilterToolbar({
   className?: string;
 }) {
   return (
-    <AdminToolbar className={cn("mb-4 flex flex-wrap items-center gap-2", className)}>
+    <AdminToolbar className={cn('mb-4 flex flex-wrap items-center gap-2', className)}>
       {children}
     </AdminToolbar>
   );
@@ -339,28 +332,28 @@ export function AdminFilterToolbar({
 
 export function SubmitButton({
   children,
-  variant = "primary",
+  variant = 'primary',
   className: classNameProp,
   disabled,
 }: {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "tertiary" | "ghost" | "default" | "outline" | "accent";
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'default' | 'outline' | 'accent';
   className?: string;
   disabled?: boolean;
 }) {
   const resolvedVariant =
-    variant === "default" || variant === "accent"
-      ? "primary"
-      : variant === "outline"
-        ? "secondary"
-        : variant === "ghost"
-          ? "tertiary"
+    variant === 'default' || variant === 'accent'
+      ? 'primary'
+      : variant === 'outline'
+        ? 'secondary'
+        : variant === 'ghost'
+          ? 'tertiary'
           : variant;
 
   const variantClass =
-    resolvedVariant === "primary"
+    resolvedVariant === 'primary'
       ? adminButtonPrimaryClass
-      : resolvedVariant === "secondary"
+      : resolvedVariant === 'secondary'
         ? adminButtonSecondaryClass
         : adminButtonTertiaryClass;
 
@@ -373,19 +366,19 @@ export function SubmitButton({
 
 export function AdminToggleLabel({
   htmlFor,
-  variant = "secondary",
+  variant = 'secondary',
   children,
   className,
 }: {
   htmlFor: string;
-  variant?: "primary" | "secondary" | "tertiary";
+  variant?: 'primary' | 'secondary' | 'tertiary';
   children: React.ReactNode;
   className?: string;
 }) {
   const variantClass =
-    variant === "primary"
+    variant === 'primary'
       ? adminButtonPrimaryClass
-      : variant === "tertiary"
+      : variant === 'tertiary'
         ? adminButtonTertiaryClass
         : adminButtonSecondaryClass;
 
@@ -399,16 +392,16 @@ export function AdminToggleLabel({
 export function AdminLinkButton({
   href,
   children,
-  variant = "secondary",
+  variant = 'secondary',
 }: {
   href: string;
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "tertiary";
+  variant?: 'primary' | 'secondary' | 'tertiary';
 }) {
   const className =
-    variant === "primary"
+    variant === 'primary'
       ? adminButtonPrimaryClass
-      : variant === "tertiary"
+      : variant === 'tertiary'
         ? adminButtonTertiaryClass
         : adminButtonSecondaryClass;
 
@@ -435,19 +428,19 @@ export function AdminTextLink({
   );
 }
 
-type AdminBadgeTone = "neutral" | "info" | "success" | "danger" | "warning";
+type AdminBadgeTone = 'neutral' | 'info' | 'success' | 'danger' | 'warning';
 
 const adminBadgeToneClass: Record<AdminBadgeTone, string> = {
-  neutral: "border-print-ink/10 bg-print-ink/[0.04] text-print-muted",
-  info: "border-print-ink/15 bg-print-surface text-print-ink",
-  success: "border-print-green/20 bg-print-green-soft text-print-green",
-  danger: "border-print-red/20 bg-print-red-soft text-print-red",
-  warning: "border-print-yellow/30 bg-print-yellow-soft text-print-ink",
+  neutral: 'border-print-ink/10 bg-print-ink/[0.04] text-print-muted',
+  info: 'border-print-ink/15 bg-print-surface text-print-ink',
+  success: 'border-print-green/20 bg-print-green-soft text-print-green',
+  danger: 'border-print-red/20 bg-print-red-soft text-print-red',
+  warning: 'border-print-yellow/30 bg-print-yellow-soft text-print-ink',
 };
 
 export function AdminStatusBadge({
   children,
-  tone = "neutral",
+  tone = 'neutral',
 }: {
   children: React.ReactNode;
   tone?: AdminBadgeTone;
@@ -455,7 +448,7 @@ export function AdminStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium leading-none",
+        'inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium leading-none',
         adminBadgeToneClass[tone],
       )}
     >
@@ -466,41 +459,25 @@ export function AdminStatusBadge({
 
 export function StatusBadge({ status }: { status: ContentStatus }) {
   const tone: AdminBadgeTone =
-    status === "APPROVED"
-      ? "success"
-      : status === "REJECTED"
-        ? "danger"
-        : status === "ARCHIVED"
-          ? "warning"
-          : "neutral";
+    status === 'APPROVED'
+      ? 'success'
+      : status === 'REJECTED'
+        ? 'danger'
+        : status === 'ARCHIVED'
+          ? 'warning'
+          : 'neutral';
 
   return <AdminStatusBadge tone={tone}>{STATUS_LABELS[status]}</AdminStatusBadge>;
 }
 
-export function HintCandidateStatusBadge({
-  status,
-}: {
-  status: HintCandidateStatus;
-}) {
+export function HintCandidateStatusBadge({ status }: { status: HintCandidateStatus }) {
   const tone: AdminBadgeTone =
-    status === "APPROVED"
-      ? "success"
-      : status === "REJECTED"
-        ? "danger"
-        : "warning";
+    status === 'APPROVED' ? 'success' : status === 'REJECTED' ? 'danger' : 'warning';
 
-  return (
-    <AdminStatusBadge tone={tone}>{HINT_CANDIDATE_STATUS_LABELS[status]}</AdminStatusBadge>
-  );
+  return <AdminStatusBadge tone={tone}>{HINT_CANDIDATE_STATUS_LABELS[status]}</AdminStatusBadge>;
 }
 
-export function Table({
-  headers,
-  children,
-}: {
-  headers: string[];
-  children: React.ReactNode;
-}) {
+export function Table({ headers, children }: { headers: string[]; children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse text-left text-sm">
@@ -562,7 +539,11 @@ export function AdminPanelEmpty({
   return (
     <div>
       <p className="text-sm text-print-muted">{message}</p>
-      {children ? <div className="mt-3"><AdminActionGroup>{children}</AdminActionGroup></div> : null}
+      {children ? (
+        <div className="mt-3">
+          <AdminActionGroup>{children}</AdminActionGroup>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -639,10 +620,7 @@ export function AdminCollapsible({
   defaultOpen?: boolean;
 }) {
   return (
-    <details
-      className="rounded-sm border border-print-ink/10 bg-print-surface"
-      open={defaultOpen}
-    >
+    <details className="rounded-sm border border-print-ink/10 bg-print-surface" open={defaultOpen}>
       <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-print-ink marker:text-print-muted">
         {title}
       </summary>

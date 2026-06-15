@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 import {
   AdminPage,
   AdminPanel,
@@ -9,20 +9,16 @@ import {
   Table,
   TextArea,
   TextInput,
-} from "@/components/admin/admin-ui";
-import { createTheme } from "@/lib/content/actions";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/admin-ui';
+import { createTheme } from '@/lib/content/actions';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   error?: string;
   success?: string;
 }>;
 
-export default async function ThemesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function ThemesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   if (!isDatabaseConfigured()) {
@@ -40,7 +36,7 @@ export default async function ThemesPage({
         select: { words: true },
       },
     },
-    orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
+    orderBy: [{ updatedAt: 'desc' }, { name: 'asc' }],
   });
 
   return (
@@ -49,7 +45,7 @@ export default async function ThemesPage({
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <AdminPanel title="Temalista">
-          <Table headers={["Tema", "Antal ord", "Uppdaterad"]}>
+          <Table headers={['Tema', 'Antal ord', 'Uppdaterad']}>
             {themes.map((theme) => (
               <tr key={theme.id} className="border-b border-print-ink/10 align-top">
                 <td className="font-medium text-print-ink">
@@ -66,9 +62,7 @@ export default async function ThemesPage({
                   ) : null}
                 </td>
                 <td>{theme._count.words}</td>
-                <td className="text-print-muted">
-                  {theme.updatedAt.toLocaleDateString("sv-SE")}
-                </td>
+                <td className="text-print-muted">{theme.updatedAt.toLocaleDateString('sv-SE')}</td>
               </tr>
             ))}
           </Table>

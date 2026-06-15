@@ -1,24 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  Field,
-  FileInput,
-  SelectInput,
-  SubmitButton,
-} from "@/components/admin/admin-ui";
-import { importContentAction } from "@/lib/content/actions";
+import { useState } from 'react';
+import { Field, FileInput, SelectInput, SubmitButton } from '@/components/admin/admin-ui';
+import { importContentAction } from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
   IMPORT_BATCH_TYPE_LABELS,
   IMPORT_BATCH_TYPES,
   STATUS_LABELS,
-} from "@/lib/content/constants";
-import type { ImportBatchType } from "@prisma/client";
+} from '@/lib/content/constants';
+import type { ImportBatchType } from '@prisma/client';
 
 export function AdminImportForm() {
-  const [importType, setImportType] = useState<ImportBatchType>("WORDS_AND_HINTS");
-  const isLexiconImport = importType === "LEXICON";
+  const [importType, setImportType] = useState<ImportBatchType>('WORDS_AND_HINTS');
+  const isLexiconImport = importType === 'LEXICON';
 
   return (
     <form action={importContentAction} className="grid gap-3">
@@ -49,7 +44,7 @@ export function AdminImportForm() {
             hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya ord."
           >
             <SelectInput id="wordStatus" name="wordStatus" defaultValue="DRAFT">
-              {CONTENT_STATUSES.filter((status) => status !== "REJECTED").map((value) => (
+              {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
                 <option key={value} value={value}>
                   {STATUS_LABELS[value]}
                 </option>
@@ -63,7 +58,7 @@ export function AdminImportForm() {
             hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya nycklar."
           >
             <SelectInput id="hintStatus" name="hintStatus" defaultValue="DRAFT">
-              {CONTENT_STATUSES.filter((status) => status !== "REJECTED").map((value) => (
+              {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
                 <option key={value} value={value}>
                   {STATUS_LABELS[value]}
                 </option>
@@ -78,8 +73,8 @@ export function AdminImportForm() {
         htmlFor="file"
         hint={
           isLexiconImport
-            ? "Kolumner: word, type, value, source, sourceReference, notes."
-            : "Stöd för ord, nycklar eller kombinerad import enligt exemplen."
+            ? 'Kolumner: word, type, value, source, sourceReference, notes.'
+            : 'Stöd för ord, nycklar eller kombinerad import enligt exemplen.'
         }
       >
         <FileInput id="file" name="file" type="file" accept=".csv,text/csv" required />

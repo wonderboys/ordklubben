@@ -1,12 +1,12 @@
-import { getOccupiedCells, type PuzzlePlacementInput } from "@/lib/content/puzzle/grid";
-import { buildBlockedSet, type BlockedCell } from "@/lib/content/puzzle/grid-generator-blocks";
+import { getOccupiedCells, type PuzzlePlacementInput } from '@/lib/content/puzzle/grid';
+import { buildBlockedSet, type BlockedCell } from '@/lib/content/puzzle/grid-generator-blocks';
 
 function cellKey(row: number, col: number) {
   return `${row}:${col}`;
 }
 
 function parseKey(key: string) {
-  const [row, col] = key.split(":").map(Number);
+  const [row, col] = key.split(':').map(Number);
   return { row, col };
 }
 
@@ -21,20 +21,11 @@ function isInside(row: number, col: number, width: number, height: number) {
   return row >= 0 && row < height && col >= 0 && col < width;
 }
 
-function isLetterCell(
-  row: number,
-  col: number,
-  letterKeys: Set<string>,
-) {
+function isLetterCell(row: number, col: number, letterKeys: Set<string>) {
   return letterKeys.has(cellKey(row, col));
 }
 
-function isEmptyCell(
-  row: number,
-  col: number,
-  letterKeys: Set<string>,
-  blockedKeys: Set<string>,
-) {
+function isEmptyCell(row: number, col: number, letterKeys: Set<string>, blockedKeys: Set<string>) {
   const key = cellKey(row, col);
   return !letterKeys.has(key) && !blockedKeys.has(key);
 }
@@ -127,7 +118,7 @@ export function countIsolatedEmptyRegions(
       let touchesLetters = touchesLetter(row, col, letterKeys, width, height);
 
       while (queue.length > 0) {
-        const current = queue.pop() ?? "";
+        const current = queue.pop() ?? '';
         const { row: currentRow, col: currentCol } = parseKey(current);
 
         for (const delta of ORTHOGONAL) {
@@ -140,7 +131,10 @@ export function countIsolatedEmptyRegions(
 
           const neighborKey = cellKey(neighborRow, neighborCol);
 
-          if (!isEmptyCell(neighborRow, neighborCol, letterKeys, blockedKeys) || visited.has(neighborKey)) {
+          if (
+            !isEmptyCell(neighborRow, neighborCol, letterKeys, blockedKeys) ||
+            visited.has(neighborKey)
+          ) {
             continue;
           }
 

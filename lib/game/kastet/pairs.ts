@@ -1,32 +1,32 @@
-import { KASTET_ACTIVE_DICE_COUNT, KASTET_LETTERS_PER_DIE } from "@/lib/game/kastet/config";
+import { KASTET_ACTIVE_DICE_COUNT, KASTET_LETTERS_PER_DIE } from '@/lib/game/kastet/config';
 
 export const KASTET_LETTER_PAIRS = [
-  "AR",
-  "ER",
-  "OR",
-  "EN",
-  "AN",
-  "IN",
-  "AL",
-  "EL",
-  "ST",
-  "SK",
-  "TR",
-  "BL",
-  "BR",
-  "KL",
-  "KR",
-  "PR",
-  "FR",
-  "GR",
-  "AB",
-  "AK",
-  "AV",
-  "UR",
-  "OM",
-  "OS",
-  "OL",
-  "RT",
+  'AR',
+  'ER',
+  'OR',
+  'EN',
+  'AN',
+  'IN',
+  'AL',
+  'EL',
+  'ST',
+  'SK',
+  'TR',
+  'BL',
+  'BR',
+  'KL',
+  'KR',
+  'PR',
+  'FR',
+  'GR',
+  'AB',
+  'AK',
+  'AV',
+  'UR',
+  'OM',
+  'OS',
+  'OL',
+  'RT',
 ] as const;
 
 export type KastetLetterPair = (typeof KASTET_LETTER_PAIRS)[number];
@@ -58,10 +58,12 @@ export function pickRandomKastetPairs(
 
 export function pickRandomKastetPair(): KastetLetterPair {
   const index = Math.floor(Math.random() * KASTET_LETTER_PAIRS.length);
-  return KASTET_LETTER_PAIRS[index] ?? "AR";
+  return KASTET_LETTER_PAIRS[index] ?? 'AR';
 }
 
-export function pickRandomKastetFlicker(count: number = KASTET_ACTIVE_DICE_COUNT): KastetLetterPair[] {
+export function pickRandomKastetFlicker(
+  count: number = KASTET_ACTIVE_DICE_COUNT,
+): KastetLetterPair[] {
   return Array.from({ length: count }, () => pickRandomKastetPair());
 }
 
@@ -70,7 +72,7 @@ export function createEmptyKastetRows<T>(createRow: () => T): T[] {
 }
 
 export function normalizeKastetWord(value: string): string {
-  return value.trim().toLocaleUpperCase("sv-SE").replace(/\s+/g, "");
+  return value.trim().toLocaleUpperCase('sv-SE').replace(/\s+/g, '');
 }
 
 export function validateKastetWord(
@@ -80,14 +82,14 @@ export function validateKastetWord(
   const normalized = normalizeKastetWord(value);
 
   if (normalized.length === 0) {
-    return { ok: false, message: "Skriv ett ord." };
+    return { ok: false, message: 'Skriv ett ord.' };
   }
 
   if (normalized.length < 3) {
-    return { ok: false, message: "Ordet måste ha minst 3 bokstäver." };
+    return { ok: false, message: 'Ordet måste ha minst 3 bokstäver.' };
   }
 
-  if (!normalized.startsWith(pair.toLocaleUpperCase("sv-SE"))) {
+  if (!normalized.startsWith(pair.toLocaleUpperCase('sv-SE'))) {
     return { ok: false, message: `Ordet måste börja med ${pair}.` };
   }
 
@@ -97,9 +99,9 @@ export function validateKastetWord(
 export function formatKastetClock(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 export function formatKastetElapsed(seconds: number): string {
-  return `${seconds} sekund${seconds === 1 ? "" : "er"}`;
+  return `${seconds} sekund${seconds === 1 ? '' : 'er'}`;
 }

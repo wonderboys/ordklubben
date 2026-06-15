@@ -1,22 +1,22 @@
-import type { PuzzleDirection } from "@prisma/client";
-import {
-  getAnswerLength,
-  type PuzzlePlacementInput,
-} from "@/lib/content/puzzle/grid";
+import type { PuzzleDirection } from '@prisma/client';
+import { getAnswerLength, type PuzzlePlacementInput } from '@/lib/content/puzzle/grid';
 import {
   computeGridUtilization,
   countGridCrossings,
   finalizeBlockedCells,
   proposeWordCapBlocks,
   type BlockedCell,
-} from "@/lib/content/puzzle/grid-generator-blocks";
-import { fillGapSlots } from "@/lib/content/puzzle/grid-generator-gaps";
+} from '@/lib/content/puzzle/grid-generator-blocks';
+import { fillGapSlots } from '@/lib/content/puzzle/grid-generator-gaps';
 import {
   formatOptimizationImprovement,
   optimizeGridLayout,
-} from "@/lib/content/puzzle/grid-generator-optimize";
-import { scoreGridAttempt, compareGridAttempts } from "@/lib/content/puzzle/grid-generator-result-scoring";
-import { computeThemeMetrics } from "@/lib/content/puzzle/grid-generator-quality";
+} from '@/lib/content/puzzle/grid-generator-optimize';
+import {
+  scoreGridAttempt,
+  compareGridAttempts,
+} from '@/lib/content/puzzle/grid-generator-result-scoring';
+import { computeThemeMetrics } from '@/lib/content/puzzle/grid-generator-quality';
 import {
   buildCandidatePool,
   buildLetterFrequency,
@@ -32,11 +32,11 @@ import {
   type GridSizeProfile,
   type ScoredPlacement,
   type WordLengthStats,
-} from "@/lib/content/puzzle/grid-generator-scoring";
+} from '@/lib/content/puzzle/grid-generator-scoring';
 import {
   validateFinalGrid,
   validateGeneratorPlacement,
-} from "@/lib/content/puzzle/grid-generator-validation";
+} from '@/lib/content/puzzle/grid-generator-validation';
 
 export type GeneratorCandidate = {
   id: string;
@@ -45,7 +45,7 @@ export type GeneratorCandidate = {
   hints: Array<{
     id: string;
     text: string;
-    status: "DRAFT" | "APPROVED";
+    status: 'DRAFT' | 'APPROVED';
   }>;
 };
 
@@ -160,10 +160,7 @@ function computeMaxAttemptCount(width: number, height: number) {
 const GENERATION_TIME_BUDGET_MS = 14_000;
 const OPTIMIZATION_TIME_BUDGET_MS = 3_000;
 
-function meetsQualityTarget(
-  result: SingleAttemptResult,
-  profile: GridSizeProfile,
-) {
+function meetsQualityTarget(result: SingleAttemptResult, profile: GridSizeProfile) {
   return (
     result.placed.length >= profile.targetWordMin &&
     result.score.crossingCount >= profile.targetCrossingMin &&
@@ -185,23 +182,16 @@ function crossingCandidateLimit(width: number, height: number) {
   return 22;
 }
 
-function recordRejection(
-  counters: RejectionCounters,
-  validation: { ok: false; reason: string },
-) {
-  if (validation.reason === "side_word") {
+function recordRejection(counters: RejectionCounters, validation: { ok: false; reason: string }) {
+  if (validation.reason === 'side_word') {
     counters.rejectedSideWords += 1;
   } else {
     counters.rejectedCollisions += 1;
   }
 }
 
-function pickHint(
-  hints: GeneratorCandidate["hints"],
-  allowDraftHints: boolean,
-  rng: () => number,
-) {
-  const approved = hints.filter((hint) => hint.status === "APPROVED");
+function pickHint(hints: GeneratorCandidate['hints'], allowDraftHints: boolean, rng: () => number) {
+  const approved = hints.filter((hint) => hint.status === 'APPROVED');
 
   if (approved.length > 0) {
     return approved[Math.floor(rng() * approved.length)] ?? null;
@@ -211,7 +201,7 @@ function pickHint(
     return null;
   }
 
-  const draft = hints.filter((hint) => hint.status === "DRAFT");
+  const draft = hints.filter((hint) => hint.status === 'DRAFT');
 
   if (draft.length === 0) {
     return null;
@@ -239,11 +229,7 @@ function buildPlacedEntry(
   };
 }
 
-function constructionBlockedCells(
-  entries: PuzzlePlacementInput[],
-  width: number,
-  height: number,
-) {
+function constructionBlockedCells(entries: PuzzlePlacementInput[], width: number, height: number) {
   return proposeWordCapBlocks(entries, width, height).cells;
 }
 
@@ -270,13 +256,13 @@ function findCrossingPlacements(
         }
 
         const crossingOptions: PuzzlePlacementInput[] =
-          placed.direction === "ACROSS"
+          placed.direction === 'ACROSS'
             ? [
                 {
                   answerSnapshot: candidate.answer,
                   row: placed.row - candidateIndex,
                   col: placed.col + placedIndex,
-                  direction: "DOWN",
+                  direction: 'DOWN',
                 },
               ]
             : [
@@ -284,7 +270,7 @@ function findCrossingPlacements(
                   answerSnapshot: candidate.answer,
                   row: placed.row + placedIndex,
                   col: placed.col - candidateIndex,
-                  direction: "ACROSS",
+                  direction: 'ACROSS',
                 },
               ];
 
@@ -305,7 +291,7 @@ function findCrossingPlacements(
           const scored = scorePlacement(placement, existing, width, height, blockedCells, {
             themeSelected,
             hasThemeMatch: candidate.hasThemeMatch ?? false,
-            phase: "crossing",
+            phase: 'crossing',
             profile,
           });
 
@@ -358,7 +344,7 @@ function placeAnchorWord(
           placedLengths: [],
           letterFrequency: new Map(),
           themeSelected,
-          phase: "anchor",
+          phase: 'anchor',
         }) -
         scoreWordCandidate({
           candidate: left,
@@ -366,7 +352,7 @@ function placeAnchorWord(
           placedLengths: [],
           letterFrequency: new Map(),
           themeSelected,
-          phase: "anchor",
+          phase: 'anchor',
         }),
     );
 
@@ -387,7 +373,7 @@ function placeAnchorWord(
           answerSnapshot: candidate.answer,
           row,
           col: Math.max(0, Math.min(col, width - length)),
-          direction: "ACROSS",
+          direction: 'ACROSS',
         };
 
         const validation = validateGeneratorPlacement({
@@ -446,7 +432,7 @@ function placeCrossingWords(options: {
     const blockedCells = constructionBlockedCells(placementInputs, width, height);
     const letterFrequency = buildLetterFrequency(placementInputs);
     const longCount = placedLengths.filter(
-      (value) => getLengthBucket(value, profile) === "long",
+      (value) => getLengthBucket(value, profile) === 'long',
     ).length;
     const rankedCandidates = pool
       .filter((candidate) => !placedIds.has(candidate.id))
@@ -455,7 +441,7 @@ function placeCrossingWords(options: {
           return true;
         }
 
-        return getLengthBucket(getAnswerLength(candidate.answer), profile) !== "long";
+        return getLengthBucket(getAnswerLength(candidate.answer), profile) !== 'long';
       })
       .map((candidate) => ({
         candidate,
@@ -465,7 +451,7 @@ function placeCrossingWords(options: {
           placedLengths,
           letterFrequency,
           themeSelected,
-          phase: "crossing",
+          phase: 'crossing',
         }),
       }))
       .sort((left, right) => right.score - left.score);
@@ -500,10 +486,7 @@ function placeCrossingWords(options: {
         continue;
       }
 
-      const combinedScore = combineWordAndPlacementScore(
-        wordScore,
-        bestPlacement.totalScore,
-      );
+      const combinedScore = combineWordAndPlacementScore(wordScore, bestPlacement.totalScore);
       const bestCombinedScore = bestChoice
         ? combineWordAndPlacementScore(bestChoice.wordScore, bestChoice.scored.totalScore)
         : Number.NEGATIVE_INFINITY;
@@ -582,7 +565,7 @@ function runGapFillPass(options: {
         placedLengths: placementInputs.map((entry) => getAnswerLength(entry.answerSnapshot)),
         letterFrequency: buildLetterFrequency(placementInputs),
         themeSelected,
-        phase: "gap",
+        phase: 'gap',
         slotLength,
       }),
     onReject: (validation) => recordRejection(counters, validation),
@@ -595,9 +578,7 @@ function runGapFillPass(options: {
       continue;
     }
 
-    placedEntries.push(
-      buildPlacedEntry(fullCandidate, fill.placement, allowDraftHints, rng),
-    );
+    placedEntries.push(buildPlacedEntry(fullCandidate, fill.placement, allowDraftHints, rng));
     placementInputs.push(fill.placement);
     placedLengths.push(getAnswerLength(fill.candidate.answer));
   }
@@ -640,9 +621,7 @@ function buildThemeMetricsFromPlaced(
 
   return computeThemeMetrics({
     answers: placed.map((entry) => entry.answerSnapshot),
-    themeMatches: placed.map(
-      (entry) => poolById.get(entry.wordId)?.hasThemeMatch ?? false,
-    ),
+    themeMatches: placed.map((entry) => poolById.get(entry.wordId)?.hasThemeMatch ?? false),
     themeSelected,
   });
 }
@@ -682,8 +661,8 @@ function buildSummaryNote(options: {
     `Längsta ${options.wordLengthStats.longestWord}, snitt ${avgLength} — korta ${options.wordLengthStats.shortCount}, mellan ${options.wordLengthStats.mediumCount}, långa ${options.wordLengthStats.longCount}.`,
     `Tematräffar ${options.themeHitCount}, temapoäng ${Math.round(options.themeScore)}, nödord ${options.emergencyWordCount}.`,
     `${options.gapsFilled} luckor fyllda, ${blockPercent} % stopprutor, ${utilizationPercent} % bokstäver, ${options.crossingCount} korsningar.`,
-    `Öppna anslutningar: ${options.openConnections}, blockkluster: ${options.blockClusters}, isolerade regioner: ${options.isolatedRegions}${options.optimizationImprovements ? `, optimering: ${options.optimizationImprovements}` : ""}.`,
-    `Slutvalidering: ${options.finalValidationOk ? "OK" : "FAILED"}${options.remainingEmptyCount > 0 ? ` (${options.remainingEmptyCount} tomrutor i ytterkant)` : ""}.`,
+    `Öppna anslutningar: ${options.openConnections}, blockkluster: ${options.blockClusters}, isolerade regioner: ${options.isolatedRegions}${options.optimizationImprovements ? `, optimering: ${options.optimizationImprovements}` : ''}.`,
+    `Slutvalidering: ${options.finalValidationOk ? 'OK' : 'FAILED'}${options.remainingEmptyCount > 0 ? ` (${options.remainingEmptyCount} tomrutor i ytterkant)` : ''}.`,
   ];
 
   if (
@@ -696,7 +675,7 @@ function buildSummaryNote(options: {
     );
   }
 
-  return parts.join(" ");
+  return parts.join(' ');
 }
 
 function runSingleAttempt(options: {
@@ -709,16 +688,7 @@ function runSingleAttempt(options: {
   themeSelected: boolean;
   seed: number;
 }): SingleAttemptResult | null {
-  const {
-    pool,
-    profile,
-    width,
-    height,
-    wordCount,
-    allowDraftHints,
-    themeSelected,
-    seed,
-  } = options;
+  const { pool, profile, width, height, wordCount, allowDraftHints, themeSelected, seed } = options;
   const rng = createRng(seed);
   const counters: RejectionCounters = {
     rejectedCollisions: 0,
@@ -767,12 +737,7 @@ function runSingleAttempt(options: {
   });
 
   const capBlocks = proposeWordCapBlocks(placementInputs, width, height);
-  const finalized = finalizeBlockedCells(
-    placementInputs,
-    capBlocks.cells,
-    width,
-    height,
-  );
+  const finalized = finalizeBlockedCells(placementInputs, capBlocks.cells, width, height);
   counters.rejectedBlockPatterns += finalized.rejectedBlockPatterns;
 
   const finalValidation = validateFinalGrid({
@@ -782,11 +747,7 @@ function runSingleAttempt(options: {
     height,
   });
 
-  const attemptThemeMetrics = buildThemeMetricsFromPlaced(
-    placedEntries,
-    pool,
-    themeSelected,
-  );
+  const attemptThemeMetrics = buildThemeMetricsFromPlaced(placedEntries, pool, themeSelected);
   const score = scoreGridAttempt({
     entries: placementInputs,
     blockedCells: finalized.cells,
@@ -868,14 +829,7 @@ export function generateGridLayout(options: {
   allowDraftHints: boolean;
   themeSelected?: boolean;
 }): GeneratorResult {
-  const {
-    candidates,
-    width,
-    height,
-    wordCount,
-    allowDraftHints,
-    themeSelected = false,
-  } = options;
+  const { candidates, width, height, wordCount, allowDraftHints, themeSelected = false } = options;
   const profile = getGridSizeProfile(width, height);
   const gridLimit = Math.max(width, height);
   const pool = buildCandidatePool(candidates, profile, gridLimit);
@@ -886,7 +840,7 @@ export function generateGridLayout(options: {
 
   if (candidateCount === 0) {
     return emptyResult(
-      "Inga ord matchade längd- och kvalitetskraven för rutnätet.",
+      'Inga ord matchade längd- och kvalitetskraven för rutnätet.',
       candidates.length,
     );
   }
@@ -931,7 +885,7 @@ export function generateGridLayout(options: {
 
   if (!bestAttempt || bestAttempt.placed.length === 0) {
     return emptyResult(
-      "Ingen giltig fläta kunde skapas. Prova fler kandidater eller tillåt utkast.",
+      'Ingen giltig fläta kunde skapas. Prova fler kandidater eller tillåt utkast.',
       candidateCount,
     );
   }
@@ -979,11 +933,7 @@ export function generateGridLayout(options: {
 
   const finalPlacementInputs = optimized.placementInputs;
   const finalBlockedCells = optimized.blockedCells;
-  const finalThemeMetrics = buildThemeMetricsFromPlaced(
-    optimizedPlaced,
-    pool,
-    themeSelected,
-  );
+  const finalThemeMetrics = buildThemeMetricsFromPlaced(optimizedPlaced, pool, themeSelected);
   const finalScore = scoreGridAttempt({
     entries: finalPlacementInputs,
     blockedCells: finalBlockedCells,

@@ -1,46 +1,36 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
 const ROOT_DIR = process.cwd();
-const RAW_DIR = path.join(ROOT_DIR, "data", "raw");
-const GENERATED_DIR = path.join(ROOT_DIR, "data", "generated");
-const HUNSPELL_DIR = path.join(RAW_DIR, "hunspell-sv");
-const KELLY_DIR = path.join(RAW_DIR, "kelly");
-const NEVER_SEED_INPUT = path.join(ROOT_DIR, "data", "words", "never-seed-sv.ts");
-const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, "data", "words", "never-allow-sv.ts");
-const PREFERRED_SEED_INPUT = path.join(
-  ROOT_DIR,
-  "data",
-  "words",
-  "preferred-seed-sv.ts",
-);
-const ALLOWED_ABBREV_INPUT = path.join(
-  ROOT_DIR,
-  "data",
-  "words",
-  "allowed-abbrev-sv.ts",
-);
-const ALLOWED_OUTPUT = path.join(GENERATED_DIR, "allowed-sv.generated.ts");
-const COMMON_OUTPUT = path.join(GENERATED_DIR, "common-sv.generated.ts");
-const SEED_OUTPUT = path.join(GENERATED_DIR, "seed-words-sv.generated.ts");
+const RAW_DIR = path.join(ROOT_DIR, 'data', 'raw');
+const GENERATED_DIR = path.join(ROOT_DIR, 'data', 'generated');
+const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell-sv');
+const KELLY_DIR = path.join(RAW_DIR, 'kelly');
+const NEVER_SEED_INPUT = path.join(ROOT_DIR, 'data', 'words', 'never-seed-sv.ts');
+const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, 'data', 'words', 'never-allow-sv.ts');
+const PREFERRED_SEED_INPUT = path.join(ROOT_DIR, 'data', 'words', 'preferred-seed-sv.ts');
+const ALLOWED_ABBREV_INPUT = path.join(ROOT_DIR, 'data', 'words', 'allowed-abbrev-sv.ts');
+const ALLOWED_OUTPUT = path.join(GENERATED_DIR, 'allowed-sv.generated.ts');
+const COMMON_OUTPUT = path.join(GENERATED_DIR, 'common-sv.generated.ts');
+const SEED_OUTPUT = path.join(GENERATED_DIR, 'seed-words-sv.generated.ts');
 
-type RawWordSource = "hunspell" | "kelly" | "text";
-type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+type RawWordSource = 'hunspell' | 'kelly' | 'text';
+type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 type FilterReason =
-  | "empty"
-  | "contains_digits"
-  | "contains_symbol"
-  | "contains_whitespace"
-  | "too_short"
-  | "too_long"
-  | "not_swedish_letters"
-  | "proper_noun"
-  | "duplicate"
-  | "cefr_excluded"
-  | "phrase"
-  | "abbrev_consonant_block"
-  | "abbrev_org_pattern"
-  | "never_allow";
+  | 'empty'
+  | 'contains_digits'
+  | 'contains_symbol'
+  | 'contains_whitespace'
+  | 'too_short'
+  | 'too_long'
+  | 'not_swedish_letters'
+  | 'proper_noun'
+  | 'duplicate'
+  | 'cefr_excluded'
+  | 'phrase'
+  | 'abbrev_consonant_block'
+  | 'abbrev_org_pattern'
+  | 'never_allow';
 type WordEntry = {
   word: string;
   source: RawWordSource;
@@ -50,7 +40,7 @@ type KellyEntry = {
   rank: number;
   rawFreq: number | null;
   wpm: number | null;
-  cefr: CefrLevel | "";
+  cefr: CefrLevel | '';
   lemma: string;
   wordClass: string;
   raw: string;
@@ -67,18 +57,18 @@ type SeedCandidate = {
   kellyRank: number | null;
   cefr: CefrLevel | null;
   wpm: number | null;
-  source: "preferred" | "generated";
+  source: 'preferred' | 'generated';
   score: number;
 };
-type SeedSource = "common" | "allowed_fallback";
+type SeedSource = 'common' | 'allowed_fallback';
 type SeedFilterReason =
-  | "not_six_letters"
-  | "placeholder"
-  | "blocked_manual"
-  | "proper_noun"
-  | "not_swedish_letters"
-  | "verb_like"
-  | "low_playability";
+  | 'not_six_letters'
+  | 'placeholder'
+  | 'blocked_manual'
+  | 'proper_noun'
+  | 'not_swedish_letters'
+  | 'verb_like'
+  | 'low_playability';
 type SeedFilteredExample = {
   word: string;
   reason: SeedFilterReason;
@@ -125,7 +115,7 @@ const SWEDISH_WORD_PATTERN = /^[a-zåäö]+$/;
 const PROPER_NOUN_PATTERN = /^[A-ZÅÄÖ][a-zåäö]+$/;
 const UPPERCASE_WORD_PATTERN = /^[A-ZÅÄÖ]+$/;
 const KELLY_DATA_ROW_PATTERN = /^\d+;/;
-const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(["A1", "A2", "B1", "B2"]);
+const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(['A1', 'A2', 'B1', 'B2']);
 const CEFR_PRIORITY_SCORE: Record<CefrLevel, number> = {
   A1: 40,
   A2: 30,
@@ -134,29 +124,29 @@ const CEFR_PRIORITY_SCORE: Record<CefrLevel, number> = {
   C1: 0,
   C2: 0,
 };
-const CEFR_LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const CEFR_LEVELS: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const ABBREV_CONSONANT_BLOCK_PATTERN = /^[bcdfghjklmnpqrstvwxz]{3,5}$/;
 const ABBREV_ORG_PATTERN = /^[bcdfghjklmnpqrstvwxz]{2,4}a$/;
-const VERB_LIKE_ENDINGS = ["ade", "ande", "ar", "at", "er", "or", "ast", "ing"];
+const VERB_LIKE_ENDINGS = ['ade', 'ande', 'ar', 'at', 'er', 'or', 'ast', 'ing'];
 const MINIMUM_SEED_PLAYABLE_WORDS = 15;
 const PLACEHOLDER_SEEDS = new Set([
-  "abcdef",
-  "banan",
-  "foobar",
-  "demo",
-  "dummy",
-  "testad",
-  "tester",
-  "spelar",
+  'abcdef',
+  'banan',
+  'foobar',
+  'demo',
+  'dummy',
+  'testad',
+  'tester',
+  'spelar',
 ]);
 function readManualWordList(filePath: string) {
   if (!fs.existsSync(filePath)) {
     return [] as string[];
   }
 
-  const fileContents = fs.readFileSync(filePath, "utf8");
+  const fileContents = fs.readFileSync(filePath, 'utf8');
   const matches = [...fileContents.matchAll(/"([^"]+)"/g)];
-  return matches.map((match) => match[1] ?? "").filter(Boolean);
+  return matches.map((match) => match[1] ?? '').filter(Boolean);
 }
 
 const NEVER_SEED_WORDS = new Set(readManualWordList(NEVER_SEED_INPUT));
@@ -165,11 +155,11 @@ const PREFERRED_SEED_WORDS = new Set(readManualWordList(PREFERRED_SEED_INPUT));
 const ALLOWED_ABBREV_WORDS = new Set(readManualWordList(ALLOWED_ABBREV_INPUT));
 
 function normalizeSwedish(value: string) {
-  return value.trim().toLocaleLowerCase("sv-SE").normalize("NFC");
+  return value.trim().toLocaleLowerCase('sv-SE').normalize('NFC');
 }
 
 function cleanRawWord(rawValue: string) {
-  return rawValue.trim().replace(/^\uFEFF/, "");
+  return rawValue.trim().replace(/^\uFEFF/, '');
 }
 
 function normalizeWordCandidate(rawValue: string) {
@@ -203,31 +193,31 @@ function detectBaseFilterReason(
   options: { minLength: number; maxLength?: number },
 ): FilterReason | null {
   if (!rawValue.trim()) {
-    return "empty";
+    return 'empty';
   }
 
   if (hasWhitespace(rawValue.trim())) {
-    return "contains_whitespace";
+    return 'contains_whitespace';
   }
 
   if (hasDigits(rawValue)) {
-    return "contains_digits";
+    return 'contains_digits';
   }
 
   if (hasDisallowedSymbols(rawValue)) {
-    return "contains_symbol";
+    return 'contains_symbol';
   }
 
   if (!SWEDISH_WORD_PATTERN.test(normalizedWord)) {
-    return "not_swedish_letters";
+    return 'not_swedish_letters';
   }
 
   if (normalizedWord.length < options.minLength) {
-    return "too_short";
+    return 'too_short';
   }
 
   if (options.maxLength && normalizedWord.length > options.maxLength) {
-    return "too_long";
+    return 'too_long';
   }
 
   return null;
@@ -245,7 +235,7 @@ function filterWordEntry(
   }
 
   if (options.rejectProperNouns && looksLikeProperNoun(entry.raw)) {
-    return { ok: false, reason: "proper_noun" };
+    return { ok: false, reason: 'proper_noun' };
   }
 
   return { ok: true, word: normalizedWord };
@@ -277,10 +267,7 @@ function isObviousPhrase(rawValue: string) {
   const trimmed = cleanRawWord(rawValue);
 
   return (
-    hasWhitespace(trimmed) ||
-    /[()]/.test(trimmed) ||
-    /[/\\]/.test(trimmed) ||
-    trimmed.includes("…")
+    hasWhitespace(trimmed) || /[()]/.test(trimmed) || /[/\\]/.test(trimmed) || trimmed.includes('…')
   );
 }
 
@@ -301,21 +288,14 @@ function scoreKellyFrequency(rank: number | null) {
 }
 
 function scoreSeedCandidate(candidate: SeedCandidate) {
-  const diversityScore = new Set(candidate.word.split("")).size;
+  const diversityScore = new Set(candidate.word.split('')).size;
   const penalty = isVerbLikeSeed(candidate.word) ? 3 : 0;
-  const preferredBonus = candidate.source === "preferred" ? 1000 : 0;
+  const preferredBonus = candidate.source === 'preferred' ? 1000 : 0;
   const playabilityScore = candidate.playableWordCount * 10;
   const frequencyScore = scoreKellyFrequency(candidate.kellyRank);
   const cefrScore = candidate.cefr ? CEFR_PRIORITY_SCORE[candidate.cefr] : 0;
 
-  return (
-    playabilityScore +
-    frequencyScore +
-    cefrScore +
-    diversityScore -
-    penalty +
-    preferredBonus
-  );
+  return playabilityScore + frequencyScore + cefrScore + diversityScore - penalty + preferredBonus;
 }
 
 function recordSeedFilteredExample(
@@ -337,7 +317,7 @@ function rankSeedCandidates(candidates: SeedCandidate[]) {
       b.score - a.score ||
       b.playableWordCount - a.playableWordCount ||
       (a.kellyRank ?? Number.MAX_SAFE_INTEGER) - (b.kellyRank ?? Number.MAX_SAFE_INTEGER) ||
-      a.word.localeCompare(b.word, "sv-SE")
+      a.word.localeCompare(b.word, 'sv-SE')
     );
   });
 }
@@ -387,13 +367,13 @@ function listFiles(directory: string) {
 
   return fs
     .readdirSync(directory)
-    .filter((name) => !name.startsWith("."))
+    .filter((name) => !name.startsWith('.'))
     .map((name) => path.join(directory, name))
     .filter((filePath) => fs.statSync(filePath).isFile());
 }
 
 function readTextFile(filePath: string) {
-  return fs.readFileSync(filePath, "utf8");
+  return fs.readFileSync(filePath, 'utf8');
 }
 
 function appendEntries(target: WordEntry[], source: WordEntry[]) {
@@ -413,7 +393,7 @@ function mergeUniqueWords(primary: string[], secondary: string[]) {
     merged.add(word);
   }
 
-  return [...merged].sort((a, b) => a.localeCompare(b, "sv-SE"));
+  return [...merged].sort((a, b) => a.localeCompare(b, 'sv-SE'));
 }
 
 function extractWordsFromDic(filePath: string, source: RawWordSource) {
@@ -426,11 +406,11 @@ function extractWordsFromDic(filePath: string, source: RawWordSource) {
     }
 
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) {
+    if (!trimmed || trimmed.startsWith('#')) {
       continue;
     }
 
-    const stem = trimmed.split("/")[0]?.trim() ?? "";
+    const stem = trimmed.split('/')[0]?.trim() ?? '';
     if (!stem) {
       continue;
     }
@@ -448,7 +428,7 @@ function extractWordsFromDelimitedFile(filePath: string, source: RawWordSource) 
 
   for (const row of rows) {
     const trimmed = row.trim();
-    if (!trimmed || trimmed.startsWith("#")) {
+    if (!trimmed || trimmed.startsWith('#')) {
       continue;
     }
 
@@ -458,8 +438,7 @@ function extractWordsFromDelimitedFile(filePath: string, source: RawWordSource) 
       .filter(Boolean);
 
     if (columns.length > 1) {
-      const candidate =
-        columns.find((value) => /[A-Za-zÅÄÖåäö]/.test(value)) ?? columns[0];
+      const candidate = columns.find((value) => /[A-Za-zÅÄÖåäö]/.test(value)) ?? columns[0];
       entries.push({ word: candidate, raw: candidate, source });
       continue;
     }
@@ -471,7 +450,7 @@ function extractWordsFromDelimitedFile(filePath: string, source: RawWordSource) 
 }
 
 function parseKellyNumber(value: string) {
-  const normalized = value.trim().replace(",", ".");
+  const normalized = value.trim().replace(',', '.');
   if (!normalized) {
     return null;
   }
@@ -490,18 +469,18 @@ function parseKellyCsv(filePath: string) {
       continue;
     }
 
-    const columns = trimmed.split(";");
+    const columns = trimmed.split(';');
     if (columns.length < 8) {
       continue;
     }
 
-    const rank = Number.parseInt(columns[0] ?? "", 10);
-    const rawFreqValue = columns[1]?.trim() ?? "";
+    const rank = Number.parseInt(columns[0] ?? '', 10);
+    const rawFreqValue = columns[1]?.trim() ?? '';
     const rawFreq = rawFreqValue ? Number.parseInt(rawFreqValue, 10) : null;
-    const wpm = parseKellyNumber(columns[2] ?? "");
-    const cefr = (columns[3]?.trim() ?? "") as CefrLevel | "";
-    const lemma = columns[6]?.trim() ?? "";
-    const wordClass = columns[7]?.trim() ?? "";
+    const wpm = parseKellyNumber(columns[2] ?? '');
+    const cefr = (columns[3]?.trim() ?? '') as CefrLevel | '';
+    const lemma = columns[6]?.trim() ?? '';
+    const wordClass = columns[7]?.trim() ?? '';
 
     if (!lemma || Number.isNaN(rank)) {
       continue;
@@ -526,13 +505,13 @@ function loadHunspellEntries() {
   const entries: WordEntry[] = [];
 
   for (const filePath of hunspellFiles) {
-    if (filePath.endsWith(".dic")) {
-      appendEntries(entries, extractWordsFromDic(filePath, "hunspell"));
+    if (filePath.endsWith('.dic')) {
+      appendEntries(entries, extractWordsFromDic(filePath, 'hunspell'));
       continue;
     }
 
     if (/\.(txt|csv)$/i.test(filePath)) {
-      appendEntries(entries, extractWordsFromDelimitedFile(filePath, "hunspell"));
+      appendEntries(entries, extractWordsFromDelimitedFile(filePath, 'hunspell'));
     }
   }
 
@@ -552,10 +531,7 @@ function loadKellyEntries() {
   return entries;
 }
 
-function recordCefrCount(
-  distribution: Partial<Record<CefrLevel, number>>,
-  level: CefrLevel | "",
-) {
+function recordCefrCount(distribution: Partial<Record<CefrLevel, number>>, level: CefrLevel | '') {
   if (!level) {
     return;
   }
@@ -577,9 +553,7 @@ function buildKellyLemmaSet(kellyEntries: KellyEntry[]) {
 }
 
 function matchesAbbreviationPattern(word: string) {
-  return (
-    ABBREV_CONSONANT_BLOCK_PATTERN.test(word) || ABBREV_ORG_PATTERN.test(word)
-  );
+  return ABBREV_CONSONANT_BLOCK_PATTERN.test(word) || ABBREV_ORG_PATTERN.test(word);
 }
 
 function detectAllowedAbbreviationFilterReason(
@@ -603,11 +577,11 @@ function detectAllowedAbbreviationFilterReason(
   }
 
   if (ABBREV_CONSONANT_BLOCK_PATTERN.test(word)) {
-    return "abbrev_consonant_block";
+    return 'abbrev_consonant_block';
   }
 
   if (ABBREV_ORG_PATTERN.test(word)) {
-    return "abbrev_org_pattern";
+    return 'abbrev_org_pattern';
   }
 
   return null;
@@ -625,11 +599,11 @@ function filterNeverAllowWords(
       if (filteredNeverAllowExamples.length < 24) {
         filteredNeverAllowExamples.push({
           word,
-          reason: "never_allow",
-          source: "hunspell",
+          reason: 'never_allow',
+          source: 'hunspell',
         });
       }
-      recordFilteredWord(filteredExamples, word, "never_allow", "hunspell");
+      recordFilteredWord(filteredExamples, word, 'never_allow', 'hunspell');
       continue;
     }
 
@@ -659,9 +633,9 @@ function filterAllowedAbbreviations(
 
     if (reason) {
       if (filteredAbbrevExamples.length < 24) {
-        filteredAbbrevExamples.push({ word, reason, source: "hunspell" });
+        filteredAbbrevExamples.push({ word, reason, source: 'hunspell' });
       }
-      recordFilteredWord(filteredExamples, word, reason, "hunspell");
+      recordFilteredWord(filteredExamples, word, reason, 'hunspell');
       continue;
     }
 
@@ -681,9 +655,7 @@ function filterAllowedAbbreviations(
       allowedWordsBefore: words.length,
       filteredAbbreviations: words.length - kept.length,
       filteredAbbrevExamples,
-      keptAllowlistedAbbreviations: keptAllowlisted.sort((a, b) =>
-        a.localeCompare(b, "sv-SE"),
-      ),
+      keptAllowlistedAbbreviations: keptAllowlisted.sort((a, b) => a.localeCompare(b, 'sv-SE')),
     },
     words: kept,
   };
@@ -706,7 +678,7 @@ function filterAllowedWords(entries: WordEntry[], filteredExamples: FilteredWord
     }
 
     if (seen.has(result.word)) {
-      recordFilteredWord(filteredExamples, entry.raw, "duplicate", entry.source);
+      recordFilteredWord(filteredExamples, entry.raw, 'duplicate', entry.source);
       continue;
     }
 
@@ -714,7 +686,7 @@ function filterAllowedWords(entries: WordEntry[], filteredExamples: FilteredWord
     words.push(result.word);
   }
 
-  return words.sort((a, b) => a.localeCompare(b, "sv-SE"));
+  return words.sort((a, b) => a.localeCompare(b, 'sv-SE'));
 }
 
 function filterKellyToCommon(
@@ -729,24 +701,24 @@ function filterKellyToCommon(
     recordCefrCount(cefrDistribution.all, entry.cefr);
 
     if (!ALLOWED_CEFR_LEVELS.has(entry.cefr as CefrLevel)) {
-      recordFilteredWord(filteredExamples, entry.lemma, "cefr_excluded", "kelly");
+      recordFilteredWord(filteredExamples, entry.lemma, 'cefr_excluded', 'kelly');
       continue;
     }
 
     if (isKellyProperName(entry)) {
-      recordFilteredWord(filteredExamples, entry.lemma, "proper_noun", "kelly");
+      recordFilteredWord(filteredExamples, entry.lemma, 'proper_noun', 'kelly');
       continue;
     }
 
     if (isObviousPhrase(entry.lemma)) {
-      recordFilteredWord(filteredExamples, entry.lemma, "phrase", "kelly");
+      recordFilteredWord(filteredExamples, entry.lemma, 'phrase', 'kelly');
       continue;
     }
 
     const wordEntry: WordEntry = {
       word: entry.lemma,
       raw: entry.lemma,
-      source: "kelly",
+      source: 'kelly',
     };
     const result = filterWordEntry(wordEntry, {
       minLength: 3,
@@ -755,7 +727,7 @@ function filterKellyToCommon(
     });
 
     if (!result.ok) {
-      recordFilteredWord(filteredExamples, entry.lemma, result.reason, "kelly");
+      recordFilteredWord(filteredExamples, entry.lemma, result.reason, 'kelly');
       continue;
     }
 
@@ -777,7 +749,7 @@ function filterKellyToCommon(
   }
 
   return {
-    commonWords: words.sort((a, b) => a.localeCompare(b, "sv-SE")),
+    commonWords: words.sort((a, b) => a.localeCompare(b, 'sv-SE')),
     kellyMetadata: seen,
   };
 }
@@ -790,9 +762,8 @@ function buildSeedCandidates(
   const playableWordPool = mergeUniqueWords(commonWords, allowedWords).filter(
     (word) => word.length >= 3 && word.length <= 6,
   );
-  const seedSource: SeedSource =
-    commonWords.length > 0 ? "common" : "allowed_fallback";
-  const sourceWords = seedSource === "common" ? commonWords : allowedWords;
+  const seedSource: SeedSource = commonWords.length > 0 ? 'common' : 'allowed_fallback';
+  const sourceWords = seedSource === 'common' ? commonWords : allowedWords;
   const commonSet = new Set(commonWords);
   const candidates: SeedCandidate[] = [];
   const filteredSeedExamples: SeedFilteredExample[] = [];
@@ -800,38 +771,38 @@ function buildSeedCandidates(
 
   for (const word of sourceWords) {
     if (word.length !== 6) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "not_six_letters");
+      recordSeedFilteredExample(filteredSeedExamples, word, 'not_six_letters');
       continue;
     }
 
     seedCandidatesBeforeFilter += 1;
 
     if (isPlaceholderSeed(word)) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "placeholder");
+      recordSeedFilteredExample(filteredSeedExamples, word, 'placeholder');
       continue;
     }
 
     if (NEVER_SEED_WORDS.has(word)) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "blocked_manual");
+      recordSeedFilteredExample(filteredSeedExamples, word, 'blocked_manual');
       continue;
     }
 
     if (!SWEDISH_WORD_PATTERN.test(word)) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "not_swedish_letters");
+      recordSeedFilteredExample(filteredSeedExamples, word, 'not_swedish_letters');
       continue;
     }
 
-    if (seedSource === "common" && !commonSet.has(word)) {
+    if (seedSource === 'common' && !commonSet.has(word)) {
       continue;
     }
 
-    if (seedSource === "allowed_fallback" && looksLikeProperNoun(word)) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "proper_noun");
+    if (seedSource === 'allowed_fallback' && looksLikeProperNoun(word)) {
+      recordSeedFilteredExample(filteredSeedExamples, word, 'proper_noun');
       continue;
     }
 
-    if (seedSource === "allowed_fallback" && isVerbLikeSeed(word)) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "verb_like");
+    if (seedSource === 'allowed_fallback' && isVerbLikeSeed(word)) {
+      recordSeedFilteredExample(filteredSeedExamples, word, 'verb_like');
       continue;
     }
 
@@ -840,16 +811,18 @@ function buildSeedCandidates(
     );
 
     if (playableWords.length < MINIMUM_SEED_PLAYABLE_WORDS) {
-      recordSeedFilteredExample(filteredSeedExamples, word, "low_playability");
+      recordSeedFilteredExample(filteredSeedExamples, word, 'low_playability');
       continue;
     }
 
     const metadata = kellyMetadata.get(word);
-    const source = PREFERRED_SEED_WORDS.has(word) ? "preferred" : "generated";
+    const source = PREFERRED_SEED_WORDS.has(word) ? 'preferred' : 'generated';
     const seedCandidate: SeedCandidate = {
       word,
       playableWordCount: playableWords.length,
-      playableWords: playableWords.sort((a, b) => b.length - a.length || a.localeCompare(b, "sv-SE")),
+      playableWords: playableWords.sort(
+        (a, b) => b.length - a.length || a.localeCompare(b, 'sv-SE'),
+      ),
       kellyRank: metadata?.rank ?? null,
       cefr: metadata?.cefr ?? null,
       wpm: metadata?.wpm ?? null,
@@ -873,14 +846,14 @@ function buildSeedCandidates(
 
 function formatArrayExport(exportName: string, values: string[]) {
   const lines = values.map((value) => `  "${value}",`);
-  return `// This file is generated by scripts/build-wordlists.ts\nexport const ${exportName} = [\n${lines.join("\n")}\n] as const;\n`;
+  return `// This file is generated by scripts/build-wordlists.ts\nexport const ${exportName} = [\n${lines.join('\n')}\n] as const;\n`;
 }
 
 function writeGeneratedFiles(allowedWords: string[], commonWords: string[], seeds: string[]) {
   fs.mkdirSync(GENERATED_DIR, { recursive: true });
-  fs.writeFileSync(ALLOWED_OUTPUT, formatArrayExport("allowedSvGeneratedWords", allowedWords));
-  fs.writeFileSync(COMMON_OUTPUT, formatArrayExport("commonSvGeneratedWords", commonWords));
-  fs.writeFileSync(SEED_OUTPUT, formatArrayExport("seedWordsSvGenerated", seeds));
+  fs.writeFileSync(ALLOWED_OUTPUT, formatArrayExport('allowedSvGeneratedWords', allowedWords));
+  fs.writeFileSync(COMMON_OUTPUT, formatArrayExport('commonSvGeneratedWords', commonWords));
+  fs.writeFileSync(SEED_OUTPUT, formatArrayExport('seedWordsSvGenerated', seeds));
 }
 
 function buildReport(
@@ -924,7 +897,7 @@ function formatCefrDistribution(label: string, distribution: Partial<Record<Cefr
 }
 
 function printReport(report: BuildWordlistsReport) {
-  console.log("Wordlist build report");
+  console.log('Wordlist build report');
   console.log(`- Kelly words: ${report.kellyWords}`);
   console.log(`- raw Hunspell words: ${report.rawWords}`);
   console.log(
@@ -935,28 +908,28 @@ function printReport(report: BuildWordlistsReport) {
     `- filtered abbreviations/acronyms: ${report.abbreviationFilter.filteredAbbreviations}`,
   );
   if (report.abbreviationFilter.filteredAbbreviations > 0) {
-    console.log("- filtered abbreviation examples:");
+    console.log('- filtered abbreviation examples:');
     for (const example of report.abbreviationFilter.filteredAbbrevExamples) {
       console.log(`  - ${example.word} (${example.reason})`);
     }
   }
   if (report.abbreviationFilter.keptAllowlistedAbbreviations.length > 0) {
     console.log(
-      `- kept allowlisted abbreviations: ${report.abbreviationFilter.keptAllowlistedAbbreviations.join(", ")}`,
+      `- kept allowlisted abbreviations: ${report.abbreviationFilter.keptAllowlistedAbbreviations.join(', ')}`,
     );
   }
   console.log(`- filtered never-allow words: ${report.neverAllowFilter.filteredNeverAllow}`);
   if (report.neverAllowFilter.filteredNeverAllow > 0) {
-    console.log("- filtered never-allow examples:");
+    console.log('- filtered never-allow examples:');
     for (const example of report.neverAllowFilter.filteredNeverAllowExamples) {
       console.log(`  - ${example.word}`);
     }
   }
-  formatCefrDistribution("CEFR distribution (all Kelly)", report.cefrDistribution.all);
-  formatCefrDistribution("CEFR distribution (common)", report.cefrDistribution.common);
+  formatCefrDistribution('CEFR distribution (all Kelly)', report.cefrDistribution.all);
+  formatCefrDistribution('CEFR distribution (common)', report.cefrDistribution.common);
   console.log(`- seed source: ${report.seedSource}`);
-  if (report.seedSource === "allowed_fallback") {
-    console.log("- seed source note: common words missing, using allowed fallback");
+  if (report.seedSource === 'allowed_fallback') {
+    console.log('- seed source note: common words missing, using allowed fallback');
   }
   console.log(`- seed candidates before filter: ${report.seedCandidatesBeforeFilter}`);
   console.log(`- seed candidates after filter: ${report.seedCandidates}`);
@@ -965,23 +938,23 @@ function printReport(report: BuildWordlistsReport) {
       `- seed warning: no seed words reached the minimum threshold of ${MINIMUM_SEED_PLAYABLE_WORDS} playable allowed words`,
     );
   }
-  console.log("- top 20 prioritized seed words:");
+  console.log('- top 20 prioritized seed words:');
   for (const seed of report.topSeeds) {
-    const rankLabel = seed.kellyRank ? `rank ${seed.kellyRank}` : "no Kelly rank";
-    const cefrLabel = seed.cefr ?? "no CEFR";
+    const rankLabel = seed.kellyRank ? `rank ${seed.kellyRank}` : 'no Kelly rank';
+    const cefrLabel = seed.cefr ?? 'no CEFR';
     console.log(
       `  - ${seed.word}: ${seed.playableWordCount} playable, ${rankLabel}, ${cefrLabel}, score ${Math.round(seed.score)} [${seed.source}]`,
     );
   }
-  console.log("- 20 random accepted seeds:");
+  console.log('- 20 random accepted seeds:');
   for (const seed of report.randomAcceptedSeeds) {
     console.log(`  - ${seed.word}: ${seed.playableWordCount} [${seed.source}]`);
   }
-  console.log("- 20 rejected seed examples:");
+  console.log('- 20 rejected seed examples:');
   for (const example of report.filteredSeedExamples) {
     console.log(`  - ${example.word} (${example.reason})`);
   }
-  console.log("- filtered examples:");
+  console.log('- filtered examples:');
   for (const example of report.filteredExamples) {
     console.log(`  - ${example.word} (${example.reason}, ${example.source})`);
   }
@@ -992,12 +965,11 @@ function main() {
   const kellyEntries = loadKellyEntries();
   const filteredExamples: FilteredWordExample[] = [];
   const cefrDistribution: CefrDistribution = { all: {}, common: {} };
-  const allowedWordsBeforeNeverAllow = filterAllowedWords(
-    hunspellEntries,
+  const allowedWordsBeforeNeverAllow = filterAllowedWords(hunspellEntries, filteredExamples);
+  const { report: neverAllowFilter, words: allowedWordsBeforeAbbrevFilter } = filterNeverAllowWords(
+    allowedWordsBeforeNeverAllow,
     filteredExamples,
   );
-  const { report: neverAllowFilter, words: allowedWordsBeforeAbbrevFilter } =
-    filterNeverAllowWords(allowedWordsBeforeNeverAllow, filteredExamples);
   const kellyLemmas = buildKellyLemmaSet(kellyEntries);
   const { report: abbreviationFilter, words: allowedWords } = filterAllowedAbbreviations(
     allowedWordsBeforeAbbrevFilter,
@@ -1009,12 +981,8 @@ function main() {
     filteredExamples,
     cefrDistribution,
   );
-  const {
-    seedSource,
-    seedCandidatesBeforeFilter,
-    seedCandidates,
-    filteredSeedExamples,
-  } = buildSeedCandidates(commonWords, allowedWords, kellyMetadata);
+  const { seedSource, seedCandidatesBeforeFilter, seedCandidates, filteredSeedExamples } =
+    buildSeedCandidates(commonWords, allowedWords, kellyMetadata);
   writeGeneratedFiles(
     allowedWords,
     commonWords,

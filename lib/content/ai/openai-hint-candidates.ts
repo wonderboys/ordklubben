@@ -1,15 +1,15 @@
 import {
   parseHintCandidatesResponse,
   type ParseHintCandidatesResult,
-} from "@/lib/content/ai/parse-hint-candidates-response";
+} from '@/lib/content/ai/parse-hint-candidates-response';
 import type {
   GenerateHintCandidatesInput,
   GenerateHintCandidatesResult,
-} from "@/lib/content/ai/types";
+} from '@/lib/content/ai/types';
 
-export const HINT_CANDIDATES_PROMPT_VERSION = "hint-candidates-v3";
+export const HINT_CANDIDATES_PROMPT_VERSION = 'hint-candidates-v3';
 
-const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 
 type OpenAiChatResponse = {
   choices?: Array<{
@@ -106,24 +106,24 @@ export async function requestOpenAiHintCandidates(
   const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY saknas.");
+    throw new Error('OPENAI_API_KEY saknas.');
   }
 
   const model = getOpenAiModel();
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model,
       temperature: 0.8,
-      response_format: { type: "json_object" },
+      response_format: { type: 'json_object' },
       messages: [
-        { role: "system", content: buildSystemPrompt() },
-        { role: "user", content: buildUserPrompt(input.answer) },
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: buildUserPrompt(input.answer) },
       ],
     }),
   });
@@ -131,9 +131,7 @@ export async function requestOpenAiHintCandidates(
   const payload = (await response.json()) as OpenAiChatResponse;
 
   if (!response.ok) {
-    const message =
-      payload.error?.message ??
-      `OpenAI svarade med status ${response.status}.`;
+    const message = payload.error?.message ?? `OpenAI svarade med status ${response.status}.`;
 
     throw new Error(message);
   }
@@ -141,7 +139,7 @@ export async function requestOpenAiHintCandidates(
   const rawContent = payload.choices?.[0]?.message?.content;
 
   if (!rawContent) {
-    throw new Error("OpenAI returnerade inget innehåll.");
+    throw new Error('OpenAI returnerade inget innehåll.');
   }
 
   const parsed: ParseHintCandidatesResult = parseHintCandidatesResponse({
@@ -152,9 +150,7 @@ export async function requestOpenAiHintCandidates(
   });
 
   if (parsed.candidates.length === 0) {
-    throw new Error(
-      "AI returnerade inga giltiga nyckelförslag. Inga förslag skapades.",
-    );
+    throw new Error('AI returnerade inga giltiga nyckelförslag. Inga förslag skapades.');
   }
 
   return {

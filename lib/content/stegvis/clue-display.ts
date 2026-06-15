@@ -1,12 +1,12 @@
-import type { WordBankClue } from "@/lib/content/word-bank/types";
+import type { WordBankClue } from '@/lib/content/word-bank/types';
 
 const PREFERRED_CLUE_TYPES = [
-  "DEFINITION",
-  "ASSOCIATION",
-  "SYNONYM",
-  "WORDPLAY",
-  "OTHER",
-  "THEME",
+  'DEFINITION',
+  'ASSOCIATION',
+  'SYNONYM',
+  'WORDPLAY',
+  'OTHER',
+  'THEME',
 ] as const;
 
 export function pickPrimaryClue(clues: WordBankClue[]): WordBankClue | null {
@@ -37,7 +37,7 @@ export function formatStegvisEndpointClue(options: {
   }
 
   if (options.wordId) {
-    return "Nyckel saknas";
+    return 'Nyckel saknas';
   }
 
   return options.answer;

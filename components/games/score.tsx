@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 
 type ScoreProps = {
   score: number;
@@ -18,7 +18,7 @@ export function Score({ score, wordsFound }: ScoreProps) {
             key={score}
             initial={{ opacity: 0.6, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="text-3xl font-black tabular-nums"
           >
             {score}

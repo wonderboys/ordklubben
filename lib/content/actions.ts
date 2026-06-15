@@ -1,16 +1,16 @@
-"use server";
+'use server';
 
-import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { generateHintCandidates } from "@/lib/content/ai/generate-hint-candidates";
-import { generateMediaSuggestion } from "@/lib/content/ai/generate-media-suggestion";
-import { partitionDuplicateHintCandidateDrafts } from "@/lib/content/ai/filter-hint-candidate-drafts";
-import { logSkippedHintCandidates } from "@/lib/content/ai/hint-candidate-skip-log";
-import { AiHintGenerationError } from "@/lib/content/ai/parse-hint-candidates-response";
-import { AiMediaGenerationError } from "@/lib/content/ai/parse-media-suggestion-response";
-import { approveCandidateAsHint } from "@/lib/content/hint-candidate";
-import { normalizeHintText, trimHintText } from "@/lib/content/normalize-hint";
+import { Prisma } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { generateHintCandidates } from '@/lib/content/ai/generate-hint-candidates';
+import { generateMediaSuggestion } from '@/lib/content/ai/generate-media-suggestion';
+import { partitionDuplicateHintCandidateDrafts } from '@/lib/content/ai/filter-hint-candidate-drafts';
+import { logSkippedHintCandidates } from '@/lib/content/ai/hint-candidate-skip-log';
+import { AiHintGenerationError } from '@/lib/content/ai/parse-hint-candidates-response';
+import { AiMediaGenerationError } from '@/lib/content/ai/parse-media-suggestion-response';
+import { approveCandidateAsHint } from '@/lib/content/hint-candidate';
+import { normalizeHintText, trimHintText } from '@/lib/content/normalize-hint';
 import {
   addThemeToWordSchema,
   approveEditedHintCandidateSchema,
@@ -42,50 +42,41 @@ import {
   updateWordRelationSchema,
   updateWordSchema,
   upsertWordLanguageDataSchema,
-} from "@/lib/content/validators";
+} from '@/lib/content/validators';
 import {
   normalizeApprovedHintMetadata,
   normalizeHintSource,
-} from "@/lib/content/normalize-hint-metadata";
+} from '@/lib/content/normalize-hint-metadata';
 import {
   buildWordInflectionsFromForm,
   serializeWordInflections,
-} from "@/lib/content/word-language";
-import { getPrisma } from "@/lib/db/prisma";
+} from '@/lib/content/word-language';
+import { getPrisma } from '@/lib/db/prisma';
 import {
   isValidAnswerFormat,
   isValidNormalizedAnswer,
   normalizeAnswer,
   normalizeNormalizedAnswerInput,
   slugifyThemeName,
-} from "@/lib/content/normalize-answer";
-import {
-  normalizeWordSource,
-} from "@/lib/content/normalize-word-source";
-import { importContent } from "@/lib/content/import-content";
-import { importLexicon } from "@/lib/content/import-lexicon";
-import {
-  deleteMediaImageFile,
-  saveMediaImageUpload,
-} from "@/lib/content/media-upload";
-import { wordDetailPathFromForm } from "@/lib/content/word-detail-path";
+} from '@/lib/content/normalize-answer';
+import { normalizeWordSource } from '@/lib/content/normalize-word-source';
+import { importContent } from '@/lib/content/import-content';
+import { importLexicon } from '@/lib/content/import-lexicon';
+import { deleteMediaImageFile, saveMediaImageUpload } from '@/lib/content/media-upload';
+import { wordDetailPathFromForm } from '@/lib/content/word-detail-path';
 
 function redirectToWord(
   wordId: string,
   formData: FormData,
-  type: "error" | "success",
+  type: 'error' | 'success',
   message: string,
 ): never {
   redirectWithMessage(wordDetailPathFromForm(wordId, formData), type, message);
 }
 
-function redirectWithMessage(
-  pathname: string,
-  type: "error" | "success",
-  message: string,
-): never {
-  const [basePath, queryString] = pathname.split("?");
-  const searchParams = new URLSearchParams(queryString ?? "");
+function redirectWithMessage(pathname: string, type: 'error' | 'success', message: string): never {
+  const [basePath, queryString] = pathname.split('?');
+  const searchParams = new URLSearchParams(queryString ?? '');
   searchParams.set(type, message);
 
   redirect(`${basePath}?${searchParams.toString()}`);
@@ -106,7 +97,7 @@ function getFormValues(formData: FormData) {
 }
 
 function getMediaImageUploadFile(formData: FormData) {
-  const value = formData.get("image");
+  const value = formData.get('image');
 
   if (!(value instanceof File) || value.size === 0) {
     return null;
@@ -116,50 +107,48 @@ function getMediaImageUploadFile(formData: FormData) {
 }
 
 function getWordIdsFromForm(formData: FormData) {
-  return formData.getAll("wordIds").map(String).filter(Boolean);
+  return formData.getAll('wordIds').map(String).filter(Boolean);
 }
 
 function getBulkReturnTo(formData: FormData) {
-  const returnTo = String(formData.get("returnTo") ?? "").trim();
-  return returnTo.startsWith("/admin/words") ? returnTo : "/admin/words";
+  const returnTo = String(formData.get('returnTo') ?? '').trim();
+  return returnTo.startsWith('/admin/words') ? returnTo : '/admin/words';
 }
 
 function redirectToWordsList(
   formData: FormData,
-  type: "error" | "success",
+  type: 'error' | 'success',
   message: string,
 ): never {
   redirectWithMessage(getBulkReturnTo(formData), type, message);
 }
 
 function revalidateWordListPaths() {
-  revalidatePath("/admin/words");
-  revalidatePath("/admin/review");
-  revalidatePath("/admin/themes");
+  revalidatePath('/admin/words');
+  revalidatePath('/admin/review');
+  revalidatePath('/admin/themes');
 }
 
 function getValidationErrorMessage() {
-  return "Kunde inte spara formuläret. Kontrollera fälten och försök igen.";
+  return 'Kunde inte spara formuläret. Kontrollera fälten och försök igen.';
 }
 
 function isUniqueConstraintError(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
-  );
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 }
 
 export async function createWord(formData: FormData) {
   const parsed = createWordSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
-    redirectWithMessage("/admin/words/new", "error", getValidationErrorMessage());
+    redirectWithMessage('/admin/words/new', 'error', getValidationErrorMessage());
   }
 
   if (!isValidAnswerFormat(parsed.data.answer)) {
     redirectWithMessage(
-      "/admin/words/new",
-      "error",
-      "Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.",
+      '/admin/words/new',
+      'error',
+      'Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.',
     );
   }
 
@@ -172,25 +161,21 @@ export async function createWord(formData: FormData) {
         answer: normalized.answer,
         normalizedAnswer: normalized.normalizedAnswer,
         length: normalized.length,
-        language: "sv",
+        language: 'sv',
         status: parsed.data.status,
-        source: "manual",
+        source: 'manual',
         notes: parsed.data.notes,
       },
     });
 
-    revalidatePath("/admin/words");
-    redirectWithMessage(
-      `/admin/words/${word.id}`,
-      "success",
-      "Ordet skapades.",
-    );
+    revalidatePath('/admin/words');
+    redirectWithMessage(`/admin/words/${word.id}`, 'success', 'Ordet skapades.');
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       redirectWithMessage(
-        "/admin/words/new",
-        "error",
-        "Det finns redan ett ord med samma normaliserade form.",
+        '/admin/words/new',
+        'error',
+        'Det finns redan ett ord med samma normaliserade form.',
       );
     }
 
@@ -203,9 +188,9 @@ export async function updateWord(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("id") ?? ""),
+      String(formData.get('id') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -214,8 +199,8 @@ export async function updateWord(formData: FormData) {
     redirectToWord(
       parsed.data.id,
       formData,
-      "error",
-      "Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.",
+      'error',
+      'Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.',
     );
   }
 
@@ -228,8 +213,8 @@ export async function updateWord(formData: FormData) {
     redirectToWord(
       parsed.data.id,
       formData,
-      "error",
-      "Normaliserat ord måste bestå av svenska bokstäver utan mellanslag eller skiljetecken.",
+      'error',
+      'Normaliserat ord måste bestå av svenska bokstäver utan mellanslag eller skiljetecken.',
     );
   }
 
@@ -253,17 +238,17 @@ export async function updateWord(formData: FormData) {
       redirectToWord(
         parsed.data.id,
         formData,
-        "error",
-        "Det finns redan ett ord med samma normaliserade form.",
+        'error',
+        'Det finns redan ett ord med samma normaliserade form.',
       );
     }
 
     throw error;
   }
 
-  revalidatePath("/admin/words");
+  revalidatePath('/admin/words');
   revalidatePath(`/admin/words/${parsed.data.id}`);
-  redirectToWord(parsed.data.id, formData, "success", "Ordet uppdaterades.");
+  redirectToWord(parsed.data.id, formData, 'success', 'Ordet uppdaterades.');
 }
 
 export async function archiveWord(formData: FormData) {
@@ -271,9 +256,9 @@ export async function archiveWord(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -285,21 +270,21 @@ export async function archiveWord(formData: FormData) {
   });
 
   if (!word) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Ordet kunde inte hittas.');
   }
 
-  if (word.status === "ARCHIVED") {
-    redirectToWord(parsed.data.wordId, formData, "error", "Ordet är redan arkiverat.");
+  if (word.status === 'ARCHIVED') {
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Ordet är redan arkiverat.');
   }
 
   await prisma.word.update({
     where: { id: parsed.data.wordId },
-    data: { status: "ARCHIVED" },
+    data: { status: 'ARCHIVED' },
   });
 
-  revalidatePath("/admin/words");
+  revalidatePath('/admin/words');
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  redirectWithMessage("/admin/words", "success", "Ordet arkiverades.");
+  redirectWithMessage('/admin/words', 'success', 'Ordet arkiverades.');
 }
 
 export async function createLexicalEntry(formData: FormData) {
@@ -307,14 +292,14 @@ export async function createLexicalEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
 
-  const value = parsed.data.value.trim().replace(/\s+/g, " ");
+  const value = parsed.data.value.trim().replace(/\s+/g, ' ');
   const prisma = getPrisma();
 
   try {
@@ -332,8 +317,8 @@ export async function createLexicalEntry(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "En lexikal post med samma typ och värde finns redan.",
+        'error',
+        'En lexikal post med samma typ och värde finns redan.',
       );
     }
 
@@ -341,7 +326,7 @@ export async function createLexicalEntry(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post skapades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Lexikal post skapades.');
 }
 
 export async function updateLexicalEntry(formData: FormData) {
@@ -349,14 +334,14 @@ export async function updateLexicalEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
 
-  const value = parsed.data.value.trim().replace(/\s+/g, " ");
+  const value = parsed.data.value.trim().replace(/\s+/g, ' ');
   const prisma = getPrisma();
 
   try {
@@ -374,8 +359,8 @@ export async function updateLexicalEntry(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "En lexikal post med samma typ och värde finns redan.",
+        'error',
+        'En lexikal post med samma typ och värde finns redan.',
       );
     }
 
@@ -383,7 +368,7 @@ export async function updateLexicalEntry(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post uppdaterades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Lexikal post uppdaterades.');
 }
 
 export async function deleteLexicalEntry(formData: FormData) {
@@ -391,9 +376,9 @@ export async function deleteLexicalEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -405,7 +390,7 @@ export async function deleteLexicalEntry(formData: FormData) {
   });
 
   if (!entry || entry.wordId !== parsed.data.wordId) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Posten kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Posten kunde inte hittas.');
   }
 
   await prisma.wordLexicalEntry.delete({
@@ -413,7 +398,7 @@ export async function deleteLexicalEntry(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post togs bort.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Lexikal post togs bort.');
 }
 
 export async function upsertWordLanguageData(formData: FormData) {
@@ -421,9 +406,9 @@ export async function upsertWordLanguageData(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -456,7 +441,7 @@ export async function upsertWordLanguageData(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Språkdata sparades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Språkdata sparades.');
 }
 
 export async function createWordRelation(formData: FormData) {
@@ -464,9 +449,9 @@ export async function createWordRelation(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -475,8 +460,8 @@ export async function createWordRelation(formData: FormData) {
     redirectToWord(
       parsed.data.wordId,
       formData,
-      "error",
-      "Ett ord kan inte relateras till sig självt.",
+      'error',
+      'Ett ord kan inte relateras till sig självt.',
     );
   }
 
@@ -498,8 +483,8 @@ export async function createWordRelation(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "Relationen finns redan för det här ordparet.",
+        'error',
+        'Relationen finns redan för det här ordparet.',
       );
     }
 
@@ -507,7 +492,7 @@ export async function createWordRelation(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Relationen skapades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Relationen skapades.');
 }
 
 export async function updateWordRelation(formData: FormData) {
@@ -515,9 +500,9 @@ export async function updateWordRelation(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -526,8 +511,8 @@ export async function updateWordRelation(formData: FormData) {
     redirectToWord(
       parsed.data.wordId,
       formData,
-      "error",
-      "Ett ord kan inte relateras till sig självt.",
+      'error',
+      'Ett ord kan inte relateras till sig självt.',
     );
   }
 
@@ -541,7 +526,7 @@ export async function updateWordRelation(formData: FormData) {
   });
 
   if (!relation) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Relationen kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Relationen kunde inte hittas.');
   }
 
   try {
@@ -560,8 +545,8 @@ export async function updateWordRelation(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "Relationen finns redan för det här ordparet.",
+        'error',
+        'Relationen finns redan för det här ordparet.',
       );
     }
 
@@ -569,7 +554,7 @@ export async function updateWordRelation(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Relationen uppdaterades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Relationen uppdaterades.');
 }
 
 export async function deleteWordRelation(formData: FormData) {
@@ -577,9 +562,9 @@ export async function deleteWordRelation(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -594,7 +579,7 @@ export async function deleteWordRelation(formData: FormData) {
   });
 
   if (!relation) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Relationen kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Relationen kunde inte hittas.');
   }
 
   await prisma.wordRelation.delete({
@@ -602,7 +587,7 @@ export async function deleteWordRelation(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Relationen togs bort.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Relationen togs bort.');
 }
 
 export async function createRebusEntry(formData: FormData) {
@@ -610,9 +595,9 @@ export async function createRebusEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -637,8 +622,8 @@ export async function createRebusEntry(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "En rebus med samma värde finns redan för ordet.",
+        'error',
+        'En rebus med samma värde finns redan för ordet.',
       );
     }
 
@@ -646,7 +631,7 @@ export async function createRebusEntry(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen skapades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Rebusen skapades.');
 }
 
 export async function updateRebusEntry(formData: FormData) {
@@ -654,9 +639,9 @@ export async function updateRebusEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -681,8 +666,8 @@ export async function updateRebusEntry(formData: FormData) {
       redirectToWord(
         parsed.data.wordId,
         formData,
-        "error",
-        "En rebus med samma värde finns redan för ordet.",
+        'error',
+        'En rebus med samma värde finns redan för ordet.',
       );
     }
 
@@ -690,7 +675,7 @@ export async function updateRebusEntry(formData: FormData) {
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen uppdaterades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Rebusen uppdaterades.');
 }
 
 export async function deleteRebusEntry(formData: FormData) {
@@ -698,9 +683,9 @@ export async function deleteRebusEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -711,7 +696,7 @@ export async function deleteRebusEntry(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen togs bort.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Rebusen togs bort.');
 }
 
 export async function createMediaAsset(formData: FormData) {
@@ -719,16 +704,16 @@ export async function createMediaAsset(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
 
   let filePath: string | undefined;
 
-  if (parsed.data.mediaType === "IMAGE") {
+  if (parsed.data.mediaType === 'IMAGE') {
     const imageFile = getMediaImageUploadFile(formData);
 
     if (imageFile) {
@@ -738,8 +723,8 @@ export async function createMediaAsset(formData: FormData) {
         redirectToWord(
           parsed.data.wordId,
           formData,
-          "error",
-          error instanceof Error ? error.message : "Bilduppladdningen misslyckades.",
+          'error',
+          error instanceof Error ? error.message : 'Bilduppladdningen misslyckades.',
         );
       }
     }
@@ -764,7 +749,7 @@ export async function createMediaAsset(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet skapades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Mediaobjektet skapades.');
 }
 
 export async function updateMediaAsset(formData: FormData) {
@@ -772,9 +757,9 @@ export async function updateMediaAsset(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -786,12 +771,12 @@ export async function updateMediaAsset(formData: FormData) {
   });
 
   if (!existing) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Mediaobjektet hittades inte.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Mediaobjektet hittades inte.');
   }
 
   let nextFilePath = existing.filePath;
 
-  if (parsed.data.mediaType === "IMAGE") {
+  if (parsed.data.mediaType === 'IMAGE') {
     const imageFile = getMediaImageUploadFile(formData);
 
     if (imageFile) {
@@ -807,8 +792,8 @@ export async function updateMediaAsset(formData: FormData) {
         redirectToWord(
           parsed.data.wordId,
           formData,
-          "error",
-          error instanceof Error ? error.message : "Bilduppladdningen misslyckades.",
+          'error',
+          error instanceof Error ? error.message : 'Bilduppladdningen misslyckades.',
         );
       }
     }
@@ -832,7 +817,7 @@ export async function updateMediaAsset(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet uppdaterades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Mediaobjektet uppdaterades.');
 }
 
 export async function deleteMediaAsset(formData: FormData) {
@@ -840,9 +825,9 @@ export async function deleteMediaAsset(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -860,7 +845,7 @@ export async function deleteMediaAsset(formData: FormData) {
   await deleteMediaImageFile(existing?.filePath);
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet togs bort.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Mediaobjektet togs bort.');
 }
 
 export async function createHint(formData: FormData) {
@@ -868,9 +853,9 @@ export async function createHint(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -890,14 +875,14 @@ export async function createHint(formData: FormData) {
       status: parsed.data.status,
       difficulty: metadata.difficulty,
       tone: metadata.tone,
-      source: normalizeHintSource(parsed.data.source, "manual"),
+      source: normalizeHintSource(parsed.data.source, 'manual'),
       notes: parsed.data.notes,
     },
   });
 
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  revalidatePath("/admin/words");
-  redirectToWord(parsed.data.wordId, formData, "success", "Nyckeln skapades.");
+  revalidatePath('/admin/words');
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Nyckeln skapades.');
 }
 
 export async function updateHintStatus(formData: FormData) {
@@ -905,9 +890,9 @@ export async function updateHintStatus(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -921,8 +906,8 @@ export async function updateHintStatus(formData: FormData) {
   });
 
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  revalidatePath("/admin/words");
-  redirectToWord(parsed.data.wordId, formData, "success", "Nyckelstatus uppdaterades.");
+  revalidatePath('/admin/words');
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Nyckelstatus uppdaterades.');
 }
 
 export async function updateHint(formData: FormData) {
@@ -930,9 +915,9 @@ export async function updateHint(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -956,25 +941,21 @@ export async function updateHint(formData: FormData) {
   });
 
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  revalidatePath("/admin/words");
-  redirectToWord(parsed.data.wordId, formData, "success", "Nyckeln uppdaterades.");
+  revalidatePath('/admin/words');
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Nyckeln uppdaterades.');
 }
 
 export async function createTheme(formData: FormData) {
   const parsed = createThemeSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
-    redirectWithMessage("/admin/themes", "error", getValidationErrorMessage());
+    redirectWithMessage('/admin/themes', 'error', getValidationErrorMessage());
   }
 
   const slug = slugifyThemeName(parsed.data.slug ?? parsed.data.name);
 
   if (slug.length === 0) {
-    redirectWithMessage(
-      "/admin/themes",
-      "error",
-      "Temat behöver ett giltigt slugvärde.",
-    );
+    redirectWithMessage('/admin/themes', 'error', 'Temat behöver ett giltigt slugvärde.');
   }
 
   try {
@@ -987,15 +968,11 @@ export async function createTheme(formData: FormData) {
       },
     });
 
-    revalidatePath("/admin/themes");
-    redirectWithMessage("/admin/themes", "success", "Temat skapades.");
+    revalidatePath('/admin/themes');
+    redirectWithMessage('/admin/themes', 'success', 'Temat skapades.');
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      redirectWithMessage(
-        "/admin/themes",
-        "error",
-        "Det finns redan ett tema med samma slug.",
-      );
+      redirectWithMessage('/admin/themes', 'error', 'Det finns redan ett tema med samma slug.');
     }
 
     throw error;
@@ -1006,20 +983,20 @@ export async function importContentAction(formData: FormData) {
   const parsed = importContentSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
-    redirectWithMessage("/admin/import", "error", getValidationErrorMessage());
+    redirectWithMessage('/admin/import', 'error', getValidationErrorMessage());
   }
 
-  const file = formData.get("file");
+  const file = formData.get('file');
 
   if (!(file instanceof File) || file.size === 0) {
-    redirectWithMessage("/admin/import", "error", "Välj en CSV-fil att importera.");
+    redirectWithMessage('/admin/import', 'error', 'Välj en CSV-fil att importera.');
   }
 
   const csvText = await file.text();
   const prisma = getPrisma();
 
   const result =
-    parsed.data.importType === "LEXICON"
+    parsed.data.importType === 'LEXICON'
       ? await importLexicon({
           prisma,
           csvText,
@@ -1030,20 +1007,18 @@ export async function importContentAction(formData: FormData) {
           csvText,
           filename: file.name,
           importType: parsed.data.importType,
-          defaultWordStatus: parsed.data.wordStatus ?? "DRAFT",
-          defaultHintStatus: parsed.data.hintStatus ?? "DRAFT",
+          defaultWordStatus: parsed.data.wordStatus ?? 'DRAFT',
+          defaultHintStatus: parsed.data.hintStatus ?? 'DRAFT',
         });
 
-  revalidatePath("/admin/import");
-  revalidatePath("/admin/words");
-  revalidatePath("/admin/themes");
+  revalidatePath('/admin/import');
+  revalidatePath('/admin/words');
+  revalidatePath('/admin/themes');
 
   redirectWithMessage(
     `/admin/import?batchId=${result.batchId}`,
-    result.status === "FAILED" ? "error" : "success",
-    result.status === "FAILED"
-      ? "Importen slutfördes med fel."
-      : "Importen är klar.",
+    result.status === 'FAILED' ? 'error' : 'success',
+    result.status === 'FAILED' ? 'Importen slutfördes med fel.' : 'Importen är klar.',
   );
 }
 
@@ -1052,9 +1027,9 @@ export async function addThemeToWord(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1081,15 +1056,15 @@ export async function addThemeToWord(formData: FormData) {
   ]);
 
   if (!word) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Ordet kunde inte hittas.');
   }
 
   if (!theme) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Temat kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Temat kunde inte hittas.');
   }
 
   if (existingRelation) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Temat är redan kopplat till ordet.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Temat är redan kopplat till ordet.');
   }
 
   await prisma.wordTheme.create({
@@ -1102,10 +1077,10 @@ export async function addThemeToWord(formData: FormData) {
   const themeSlug = theme.slug;
 
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  revalidatePath("/admin/words");
-  revalidatePath("/admin/themes");
+  revalidatePath('/admin/words');
+  revalidatePath('/admin/themes');
   revalidatePath(`/admin/themes/${themeSlug}`);
-  redirectToWord(parsed.data.wordId, formData, "success", "Temat lades till på ordet.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Temat lades till på ordet.');
 }
 
 export async function removeThemeFromWord(formData: FormData) {
@@ -1113,9 +1088,9 @@ export async function removeThemeFromWord(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1132,7 +1107,7 @@ export async function removeThemeFromWord(formData: FormData) {
   });
 
   if (!relation) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Temakopplingen finns inte längre.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Temakopplingen finns inte längre.');
   }
 
   const theme = await prisma.theme.findUnique({
@@ -1150,17 +1125,17 @@ export async function removeThemeFromWord(formData: FormData) {
   });
 
   revalidatePath(`/admin/words/${parsed.data.wordId}`);
-  revalidatePath("/admin/words");
-  revalidatePath("/admin/themes");
+  revalidatePath('/admin/words');
+  revalidatePath('/admin/themes');
   if (theme?.slug) {
     revalidatePath(`/admin/themes/${theme.slug}`);
   }
-  redirectToWord(parsed.data.wordId, formData, "success", "Temat togs bort från ordet.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Temat togs bort från ordet.');
 }
 
 function revalidateWordPage(wordId: string) {
   revalidatePath(`/admin/words/${wordId}`);
-  revalidatePath("/admin/words");
+  revalidatePath('/admin/words');
 }
 
 export async function createHintCandidate(formData: FormData) {
@@ -1168,9 +1143,9 @@ export async function createHintCandidate(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1190,12 +1165,12 @@ export async function createHintCandidate(formData: FormData) {
       difficulty: metadata.difficulty,
       tone: metadata.tone,
       notes: parsed.data.notes,
-      source: "manual",
+      source: 'manual',
     },
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Nyckelförslaget sparades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Nyckelförslaget sparades.');
 }
 
 export async function approveHintCandidate(formData: FormData) {
@@ -1203,9 +1178,9 @@ export async function approveHintCandidate(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1227,7 +1202,7 @@ export async function approveHintCandidate(formData: FormData) {
   });
 
   if (!candidate) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Förslaget kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Förslaget kunde inte hittas.');
   }
 
   const result = await approveCandidateAsHint(prisma, {
@@ -1242,11 +1217,16 @@ export async function approveHintCandidate(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectToWord(parsed.data.wordId, formData, "error", result.error);
+    redirectToWord(parsed.data.wordId, formData, 'error', result.error);
   }
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Förslaget godkändes och blev en nyckel.");
+  redirectToWord(
+    parsed.data.wordId,
+    formData,
+    'success',
+    'Förslaget godkändes och blev en nyckel.',
+  );
 }
 
 export async function approveEditedHintCandidate(formData: FormData) {
@@ -1254,9 +1234,9 @@ export async function approveEditedHintCandidate(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1271,7 +1251,7 @@ export async function approveEditedHintCandidate(formData: FormData) {
   });
 
   if (!candidate) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Förslaget kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Förslaget kunde inte hittas.');
   }
 
   const result = await approveCandidateAsHint(prisma, {
@@ -1286,15 +1266,15 @@ export async function approveEditedHintCandidate(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectToWord(parsed.data.wordId, formData, "error", result.error);
+    redirectToWord(parsed.data.wordId, formData, 'error', result.error);
   }
 
   revalidateWordPage(parsed.data.wordId);
   redirectToWord(
     parsed.data.wordId,
     formData,
-    "success",
-    "Förslaget redigerades och godkändes som nyckel.",
+    'success',
+    'Förslaget redigerades och godkändes som nyckel.',
   );
 }
 
@@ -1303,9 +1283,9 @@ export async function rejectHintCandidate(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1320,23 +1300,23 @@ export async function rejectHintCandidate(formData: FormData) {
   });
 
   if (!candidate) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Förslaget kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Förslaget kunde inte hittas.');
   }
 
-  if (candidate.status !== "PENDING") {
-    redirectToWord(parsed.data.wordId, formData, "error", "Förslaget är redan granskat.");
+  if (candidate.status !== 'PENDING') {
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Förslaget är redan granskat.');
   }
 
   await prisma.hintCandidate.update({
     where: { id: parsed.data.candidateId },
     data: {
-      status: "REJECTED",
+      status: 'REJECTED',
       reviewedAt: new Date(),
     },
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Förslaget avvisades.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Förslaget avvisades.');
 }
 
 export async function deleteHintCandidate(formData: FormData) {
@@ -1344,9 +1324,9 @@ export async function deleteHintCandidate(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1361,11 +1341,11 @@ export async function deleteHintCandidate(formData: FormData) {
   });
 
   if (!candidate) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Förslaget kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Förslaget kunde inte hittas.');
   }
 
-  if (candidate.status === "APPROVED") {
-    redirectToWord(parsed.data.wordId, formData, "error", "Godkända förslag kan inte tas bort.");
+  if (candidate.status === 'APPROVED') {
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Godkända förslag kan inte tas bort.');
   }
 
   await prisma.hintCandidate.delete({
@@ -1373,7 +1353,7 @@ export async function deleteHintCandidate(formData: FormData) {
   });
 
   revalidateWordPage(parsed.data.wordId);
-  redirectToWord(parsed.data.wordId, formData, "success", "Förslaget togs bort.");
+  redirectToWord(parsed.data.wordId, formData, 'success', 'Förslaget togs bort.');
 }
 
 async function loadExistingHintTextKeys(wordId: string) {
@@ -1384,7 +1364,7 @@ async function loadExistingHintTextKeys(wordId: string) {
       select: { text: true },
     }),
     prisma.hintCandidate.findMany({
-      where: { wordId, status: "PENDING" },
+      where: { wordId, status: 'PENDING' },
       select: { text: true },
     }),
   ]);
@@ -1395,15 +1375,12 @@ async function loadExistingHintTextKeys(wordId: string) {
   ];
 }
 
-function buildHintGenerationSuccessMessage(
-  createdCount: number,
-  skippedCount: number,
-) {
-  const countLabel = createdCount === 1 ? "förslag" : "förslag";
+function buildHintGenerationSuccessMessage(createdCount: number, skippedCount: number) {
+  const countLabel = createdCount === 1 ? 'förslag' : 'förslag';
   let message = `${createdCount} ${countLabel} skapades.`;
 
   if (skippedCount > 0) {
-    const skippedLabel = skippedCount === 1 ? "förslag" : "förslag";
+    const skippedLabel = skippedCount === 1 ? 'förslag' : 'förslag';
     message += ` ${skippedCount} ${skippedLabel} hoppades över eftersom de var ogiltiga eller dubbletter.`;
   }
 
@@ -1415,9 +1392,9 @@ export async function generateHintCandidatesAction(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1434,7 +1411,7 @@ export async function generateHintCandidatesAction(formData: FormData) {
   });
 
   if (!word) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Ordet kunde inte hittas.');
   }
 
   let generated;
@@ -1452,20 +1429,16 @@ export async function generateHintCandidatesAction(formData: FormData) {
         ? error.message
         : error instanceof Error
           ? error.message
-          : "AI-generering misslyckades. Inga förslag skapades.";
+          : 'AI-generering misslyckades. Inga förslag skapades.';
 
-    redirectToWord(parsed.data.wordId, formData, "error", message);
+    redirectToWord(parsed.data.wordId, formData, 'error', message);
   }
 
   const existingTexts = await loadExistingHintTextKeys(word.id);
   const { accepted: uniqueCandidates, skipped: skippedDuplicates } =
     partitionDuplicateHintCandidateDrafts(generated.candidates, existingTexts);
 
-  logSkippedHintCandidates(
-    "Filtrerade befintliga dubbletter",
-    word.answer,
-    skippedDuplicates,
-  );
+  logSkippedHintCandidates('Filtrerade befintliga dubbletter', word.answer, skippedDuplicates);
 
   const skippedDuplicate = skippedDuplicates.length;
   const skippedInvalid = generated.stats?.skippedInvalid ?? 0;
@@ -1475,10 +1448,10 @@ export async function generateHintCandidatesAction(formData: FormData) {
     redirectToWord(
       parsed.data.wordId,
       formData,
-      "error",
+      'error',
       skippedTotal > 0
-        ? "AI-generering gav inga nya förslag. Alla ledtrådar var ogiltiga eller fanns redan."
-        : "AI skapade inga nya förslag.",
+        ? 'AI-generering gav inga nya förslag. Alla ledtrådar var ogiltiga eller fanns redan.'
+        : 'AI skapade inga nya förslag.',
     );
   }
 
@@ -1500,7 +1473,7 @@ export async function generateHintCandidatesAction(formData: FormData) {
   redirectToWord(
     parsed.data.wordId,
     formData,
-    "success",
+    'success',
     buildHintGenerationSuccessMessage(uniqueCandidates.length, skippedTotal),
   );
 }
@@ -1510,9 +1483,9 @@ export async function generateMediaSuggestionAction(formData: FormData) {
 
   if (!parsed.success) {
     redirectToWord(
-      String(formData.get("wordId") ?? ""),
+      String(formData.get('wordId') ?? ''),
       formData,
-      "error",
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -1529,7 +1502,7 @@ export async function generateMediaSuggestionAction(formData: FormData) {
   });
 
   if (!word) {
-    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+    redirectToWord(parsed.data.wordId, formData, 'error', 'Ordet kunde inte hittas.');
   }
 
   let generated;
@@ -1547,9 +1520,9 @@ export async function generateMediaSuggestionAction(formData: FormData) {
         ? error.message
         : error instanceof Error
           ? error.message
-          : "AI-generering misslyckades. Inget mediaförslag skapades.";
+          : 'AI-generering misslyckades. Inget mediaförslag skapades.';
 
-    redirectToWord(parsed.data.wordId, formData, "error", message);
+    redirectToWord(parsed.data.wordId, formData, 'error', message);
   }
 
   const { suggestion } = generated;
@@ -1557,10 +1530,10 @@ export async function generateMediaSuggestionAction(formData: FormData) {
   await prisma.mediaAsset.create({
     data: {
       wordId: word.id,
-      mediaType: "IMAGE",
-      status: "DRAFT",
-      source: "ai",
-      sourceReference: "openai",
+      mediaType: 'IMAGE',
+      status: 'DRAFT',
+      source: 'ai',
+      sourceReference: 'openai',
       title: suggestion.title,
       altText: suggestion.altText,
       prompt: suggestion.prompt,
@@ -1572,68 +1545,60 @@ export async function generateMediaSuggestionAction(formData: FormData) {
   redirectToWord(
     parsed.data.wordId,
     formData,
-    "success",
-    "Ett AI-genererat mediaförslag skapades som utkast.",
+    'success',
+    'Ett AI-genererat mediaförslag skapades som utkast.',
   );
 }
 
 export async function bulkApproveWords(formData: FormData) {
   const parsed = bulkWordActionSchema.safeParse({
     wordIds: getWordIdsFromForm(formData),
-    returnTo: formData.get("returnTo"),
+    returnTo: formData.get('returnTo'),
   });
 
   if (!parsed.success) {
-    redirectToWordsList(formData, "error", getValidationErrorMessage());
+    redirectToWordsList(formData, 'error', getValidationErrorMessage());
   }
 
   const prisma = getPrisma();
   const result = await prisma.word.updateMany({
     where: { id: { in: parsed.data.wordIds } },
-    data: { status: "APPROVED" },
+    data: { status: 'APPROVED' },
   });
 
   revalidateWordListPaths();
-  redirectToWordsList(
-    formData,
-    "success",
-    `${result.count} ord godkändes.`,
-  );
+  redirectToWordsList(formData, 'success', `${result.count} ord godkändes.`);
 }
 
 export async function bulkDraftWords(formData: FormData) {
   const parsed = bulkWordActionSchema.safeParse({
     wordIds: getWordIdsFromForm(formData),
-    returnTo: formData.get("returnTo"),
+    returnTo: formData.get('returnTo'),
   });
 
   if (!parsed.success) {
-    redirectToWordsList(formData, "error", getValidationErrorMessage());
+    redirectToWordsList(formData, 'error', getValidationErrorMessage());
   }
 
   const prisma = getPrisma();
   const result = await prisma.word.updateMany({
     where: { id: { in: parsed.data.wordIds } },
-    data: { status: "DRAFT" },
+    data: { status: 'DRAFT' },
   });
 
   revalidateWordListPaths();
-  redirectToWordsList(
-    formData,
-    "success",
-    `${result.count} ord sattes som utkast.`,
-  );
+  redirectToWordsList(formData, 'success', `${result.count} ord sattes som utkast.`);
 }
 
 export async function bulkAddThemeToWords(formData: FormData) {
   const parsed = bulkWordThemeActionSchema.safeParse({
     wordIds: getWordIdsFromForm(formData),
-    themeId: formData.get("themeId"),
-    returnTo: formData.get("returnTo"),
+    themeId: formData.get('themeId'),
+    returnTo: formData.get('returnTo'),
   });
 
   if (!parsed.success) {
-    redirectToWordsList(formData, "error", getValidationErrorMessage());
+    redirectToWordsList(formData, 'error', getValidationErrorMessage());
   }
 
   const prisma = getPrisma();
@@ -1643,7 +1608,7 @@ export async function bulkAddThemeToWords(formData: FormData) {
   });
 
   if (!theme) {
-    redirectToWordsList(formData, "error", "Temat kunde inte hittas.");
+    redirectToWordsList(formData, 'error', 'Temat kunde inte hittas.');
   }
 
   const result = await prisma.wordTheme.createMany({
@@ -1656,22 +1621,18 @@ export async function bulkAddThemeToWords(formData: FormData) {
 
   revalidateWordListPaths();
   revalidatePath(`/admin/themes/${theme.slug}`);
-  redirectToWordsList(
-    formData,
-    "success",
-    `Tema lades till på ${result.count} ord.`,
-  );
+  redirectToWordsList(formData, 'success', `Tema lades till på ${result.count} ord.`);
 }
 
 export async function bulkRemoveThemeFromWords(formData: FormData) {
   const parsed = bulkWordThemeActionSchema.safeParse({
     wordIds: getWordIdsFromForm(formData),
-    themeId: formData.get("themeId"),
-    returnTo: formData.get("returnTo"),
+    themeId: formData.get('themeId'),
+    returnTo: formData.get('returnTo'),
   });
 
   if (!parsed.success) {
-    redirectToWordsList(formData, "error", getValidationErrorMessage());
+    redirectToWordsList(formData, 'error', getValidationErrorMessage());
   }
 
   const prisma = getPrisma();
@@ -1681,7 +1642,7 @@ export async function bulkRemoveThemeFromWords(formData: FormData) {
   });
 
   if (!theme) {
-    redirectToWordsList(formData, "error", "Temat kunde inte hittas.");
+    redirectToWordsList(formData, 'error', 'Temat kunde inte hittas.');
   }
 
   const result = await prisma.wordTheme.deleteMany({
@@ -1693,24 +1654,16 @@ export async function bulkRemoveThemeFromWords(formData: FormData) {
 
   revalidateWordListPaths();
   revalidatePath(`/admin/themes/${theme.slug}`);
-  redirectToWordsList(
-    formData,
-    "success",
-    `Tema togs bort från ${result.count} ord.`,
-  );
+  redirectToWordsList(formData, 'success', `Tema togs bort från ${result.count} ord.`);
 }
 
 export async function approveAllDraftWords() {
   const prisma = getPrisma();
   const result = await prisma.word.updateMany({
-    where: { status: "DRAFT" },
-    data: { status: "APPROVED" },
+    where: { status: 'DRAFT' },
+    data: { status: 'APPROVED' },
   });
 
   revalidateWordListPaths();
-  redirectWithMessage(
-    "/admin/review",
-    "success",
-    `${result.count} utkast godkändes.`,
-  );
+  redirectWithMessage('/admin/review', 'success', `${result.count} utkast godkändes.`);
 }

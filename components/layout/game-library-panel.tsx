@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { GameLibraryTile } from "@/components/games/game-library-tile";
-import { MonoLabel, SectionTitle } from "@/components/ui/typography";
-import { libraryGames, testGames } from "@/lib/games/registry";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { GameLibraryTile } from '@/components/games/game-library-tile';
+import { MonoLabel, SectionTitle } from '@/components/ui/typography';
+import { libraryGames, testGames } from '@/lib/games/registry';
+import { cn } from '@/lib/utils';
 
 type AccountNavItem = {
   id: string;
@@ -12,8 +12,8 @@ type AccountNavItem = {
 };
 
 const accountItems: AccountNavItem[] = [
-  { id: "profile", label: "Profil", href: "/profile" },
-  { id: "stats", label: "Statistik", disabled: true },
+  { id: 'profile', label: 'Profil', href: '/profile' },
+  { id: 'stats', label: 'Statistik', disabled: true },
 ];
 
 type GameLibraryPanelProps = {
@@ -29,8 +29,8 @@ export function GameLibraryPanel({ id, open, onClose }: GameLibraryPanelProps) {
       aria-hidden={!open}
       aria-label="Spelbibliotek"
       className={cn(
-        "absolute inset-x-0 top-[47px] z-50 border-b border-print-ink/10 bg-print-bg shadow-[0_12px_40px_rgba(0,0,0,0.06)]",
-        !open && "hidden",
+        'absolute inset-x-0 top-[47px] z-50 border-b border-print-ink/10 bg-print-bg shadow-[0_12px_40px_rgba(0,0,0,0.06)]',
+        !open && 'hidden',
       )}
     >
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -69,10 +69,7 @@ export function GameLibraryPanel({ id, open, onClose }: GameLibraryPanelProps) {
               {accountItems.map((item) => (
                 <li key={item.id}>
                   {item.disabled || !item.href ? (
-                    <span
-                      aria-disabled="true"
-                      className="block py-2 text-sm text-print-muted"
-                    >
+                    <span aria-disabled="true" className="block py-2 text-sm text-print-muted">
                       {item.label}
                     </span>
                   ) : (

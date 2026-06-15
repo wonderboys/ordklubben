@@ -1,30 +1,30 @@
-import { config } from "dotenv";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import type { WordBankWordWithClues } from "../lib/content/word-bank/types.ts";
-import type { StegvisGeneratedPuzzle } from "../lib/content/stegvis/generator/types.ts";
+import { config } from 'dotenv';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import type { WordBankWordWithClues } from '../lib/content/word-bank/types.ts';
+import type { StegvisGeneratedPuzzle } from '../lib/content/stegvis/generator/types.ts';
 import {
   buildStegvisGeneratorCorpus,
   generateStegvisPuzzleFromCorpus,
-} from "./stegvis-generator-corpus.ts";
+} from './stegvis-generator-corpus.ts';
 
 config();
 
-type HintType = "DEFINITION" | "ASSOCIATION" | "SYNONYM" | "WORDPLAY" | "OTHER" | "THEME";
+type HintType = 'DEFINITION' | 'ASSOCIATION' | 'SYNONYM' | 'WORDPLAY' | 'OTHER' | 'THEME';
 
 function createMockWord(
   answer: string,
   clueText: string | null,
-  clueType: HintType = "DEFINITION",
+  clueType: HintType = 'DEFINITION',
 ): WordBankWordWithClues {
-  const normalizedAnswer = answer.toLocaleUpperCase("sv-SE");
+  const normalizedAnswer = answer.toLocaleUpperCase('sv-SE');
 
   return {
     id: `mock-${normalizedAnswer.toLowerCase()}`,
     answer: normalizedAnswer,
     normalizedAnswer,
     length: normalizedAnswer.length,
-    language: "sv",
+    language: 'sv',
     difficulty: 2,
     frequency: 0.6,
     crosswordScore: 70,
@@ -36,7 +36,7 @@ function createMockWord(
             wordId: `mock-${normalizedAnswer.toLowerCase()}`,
             text: clueText,
             type: clueType,
-            status: "APPROVED",
+            status: 'APPROVED',
             difficulty: 2,
             tone: null,
             source: null,
@@ -48,47 +48,43 @@ function createMockWord(
 
 function createOfflineCorpus(): WordBankWordWithClues[] {
   return [
-    createMockWord("HORN", "Sitter på vissa djur"),
-    createMockWord("KORN", "Odlas på åkern"),
-    createMockWord("KORT", "Liten pappersbit"),
-    createMockWord("FORT", "Skyddad plats"),
-    createMockWord("PORT", "Ingång i staket"),
-    createMockWord("FART", "Hastighet"),
-    createMockWord("MARS", "Fjärde planeten"),
-    createMockWord("MAKT", "Styrka att bestämma"),
-    createMockWord("MAKA", "Partner i äktenskap"),
-    createMockWord("MARA", "Besvärande dröm"),
-    createMockWord("HAND", "Kroppsdel längst ut"),
-    createMockWord("BAND", "Smalt streck eller grupp"),
-    createMockWord("LAND", "Territorium med gränser"),
-    createMockWord("SAND", "Fint material på strand"),
-    createMockWord("SKAL", "Skydd runt ägg", null),
+    createMockWord('HORN', 'Sitter på vissa djur'),
+    createMockWord('KORN', 'Odlas på åkern'),
+    createMockWord('KORT', 'Liten pappersbit'),
+    createMockWord('FORT', 'Skyddad plats'),
+    createMockWord('PORT', 'Ingång i staket'),
+    createMockWord('FART', 'Hastighet'),
+    createMockWord('MARS', 'Fjärde planeten'),
+    createMockWord('MAKT', 'Styrka att bestämma'),
+    createMockWord('MAKA', 'Partner i äktenskap'),
+    createMockWord('MARA', 'Besvärande dröm'),
+    createMockWord('HAND', 'Kroppsdel längst ut'),
+    createMockWord('BAND', 'Smalt streck eller grupp'),
+    createMockWord('LAND', 'Territorium med gränser'),
+    createMockWord('SAND', 'Fint material på strand'),
+    createMockWord('SKAL', 'Skydd runt ägg', null),
   ];
 }
 
-function formatClue(slot: StegvisGeneratedPuzzle["start"]): string {
-  return slot.hasClue && slot.clue ? slot.clue : "Nyckel saknas";
+function formatClue(slot: StegvisGeneratedPuzzle['start']): string {
+  return slot.hasClue && slot.clue ? slot.clue : 'Nyckel saknas';
 }
 
 function printGeneratedPuzzle(puzzle: StegvisGeneratedPuzzle, label: string) {
   console.log(`\n${label}`);
-  console.log("");
-  console.log(
-    `Start: ${puzzle.start.answer} — ${formatClue(puzzle.start)}`,
-  );
-  console.log(
-    `Target: ${puzzle.target.answer} — ${formatClue(puzzle.target)}`,
-  );
-  console.log("");
-  console.log("Path:");
-  console.log(puzzle.path.map((slot) => slot.answer).join(" → "));
-  console.log("");
-  console.log("Clues:");
+  console.log('');
+  console.log(`Start: ${puzzle.start.answer} — ${formatClue(puzzle.start)}`);
+  console.log(`Target: ${puzzle.target.answer} — ${formatClue(puzzle.target)}`);
+  console.log('');
+  console.log('Path:');
+  console.log(puzzle.path.map((slot) => slot.answer).join(' → '));
+  console.log('');
+  console.log('Clues:');
   for (const slot of puzzle.path) {
     console.log(`${slot.answer}: ${formatClue(slot)}`);
   }
-  console.log("");
-  console.log("Stats:");
+  console.log('');
+  console.log('Stats:');
   console.log(`  length: ${puzzle.stats.length}`);
   console.log(`  steps: ${puzzle.stats.steps}`);
   console.log(`  candidates: ${puzzle.stats.candidates}`);
@@ -101,7 +97,7 @@ function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL saknas.");
+    throw new Error('DATABASE_URL saknas.');
   }
 
   return new PrismaClient({
@@ -109,15 +105,13 @@ function createPrismaClient() {
   });
 }
 
-async function loadApprovedWordsFromDatabase(
-  length: number,
-): Promise<WordBankWordWithClues[]> {
+async function loadApprovedWordsFromDatabase(length: number): Promise<WordBankWordWithClues[]> {
   const prisma = createPrismaClient();
 
   try {
     const rows = await prisma.word.findMany({
       where: {
-        status: "APPROVED",
+        status: 'APPROVED',
         length,
       },
       select: {
@@ -142,7 +136,7 @@ async function loadApprovedWordsFromDatabase(
         },
         hints: {
           where: {
-            status: "APPROVED",
+            status: 'APPROVED',
           },
           select: {
             id: true,
@@ -154,10 +148,10 @@ async function loadApprovedWordsFromDatabase(
             tone: true,
             source: true,
           },
-          orderBy: [{ difficulty: "asc" }, { type: "asc" }, { text: "asc" }],
+          orderBy: [{ difficulty: 'asc' }, { type: 'asc' }, { text: 'asc' }],
         },
       },
-      orderBy: [{ length: "asc" }, { answer: "asc" }],
+      orderBy: [{ length: 'asc' }, { answer: 'asc' }],
     });
 
     return rows.map((row) => ({
@@ -196,31 +190,26 @@ const offlineResult = generateStegvisPuzzleFromCorpus(offlineCorpus, {
   seed: 42,
 });
 
-assert(offlineResult.ok, "offline corpus generates a puzzle");
+assert(offlineResult.ok, 'offline corpus generates a puzzle');
 
 if (offlineResult.ok) {
-  printGeneratedPuzzle(offlineResult.puzzle, "Generated Stegvis puzzle (offline demo)");
+  printGeneratedPuzzle(offlineResult.puzzle, 'Generated Stegvis puzzle (offline demo)');
 
   assert(
     offlineResult.puzzle.path.every(
-      (slot, index, path) =>
-        index === 0 ||
-        slot.answer.length === path[index - 1].answer.length,
+      (slot, index, path) => index === 0 || slot.answer.length === path[index - 1].answer.length,
     ),
-    "all path words share length",
+    'all path words share length',
   );
 
-  assert(
-    offlineResult.puzzle.stats.steps >= 3,
-    "offline puzzle meets minimum steps",
-  );
+  assert(offlineResult.puzzle.stats.steps >= 3, 'offline puzzle meets minimum steps');
 } else {
   console.error(`Offline generation failed: ${offlineResult.reason}`);
   hasErrors = true;
 }
 
 if (process.env.DATABASE_URL) {
-  console.log("\nLoading approved words from ordbanken...");
+  console.log('\nLoading approved words from ordbanken...');
 
   try {
     const bankWords = await loadApprovedWordsFromDatabase(4);
@@ -233,15 +222,10 @@ if (process.env.DATABASE_URL) {
     });
 
     if (bankResult.ok) {
-      printGeneratedPuzzle(
-        bankResult.puzzle,
-        "Generated Stegvis puzzle (ordbanken)",
-      );
-      assert(true, "ordbanken corpus generates a puzzle");
+      printGeneratedPuzzle(bankResult.puzzle, 'Generated Stegvis puzzle (ordbanken)');
+      assert(true, 'ordbanken corpus generates a puzzle');
     } else {
-      console.warn(
-        `Ordbanken: kunde inte generera pussel (${bankResult.reason}).`,
-      );
+      console.warn(`Ordbanken: kunde inte generera pussel (${bankResult.reason}).`);
       console.warn(
         `  candidates: ${bankResult.stats.candidates}, pathsTried: ${bankResult.stats.pathsTried}`,
       );
@@ -255,36 +239,27 @@ if (process.env.DATABASE_URL) {
         });
 
         if (relaxed.ok) {
-          printGeneratedPuzzle(
-            relaxed.puzzle,
-            "Generated Stegvis puzzle (ordbanken, relaxed)",
-          );
-          assert(true, "ordbanken generates puzzle with relaxed steps");
+          printGeneratedPuzzle(relaxed.puzzle, 'Generated Stegvis puzzle (ordbanken, relaxed)');
+          assert(true, 'ordbanken generates puzzle with relaxed steps');
         } else {
-          console.warn(
-            `Ordbanken: inget pussel med nuvarande ordmängd (${relaxed.reason}).`,
-          );
-          console.warn(
-            "  Lägg till fler APPROVED 4-bokstavsord med grannar för full validering.",
-          );
+          console.warn(`Ordbanken: inget pussel med nuvarande ordmängd (${relaxed.reason}).`);
+          console.warn('  Lägg till fler APPROVED 4-bokstavsord med grannar för full validering.');
         }
       } else {
-        console.warn(
-          `Ordbanken: för få ord (${bankResult.stats.candidates}) för generering.`,
-        );
+        console.warn(`Ordbanken: för få ord (${bankResult.stats.candidates}) för generering.`);
       }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`Ordbankstest misslyckades: ${message}`);
-    console.warn("Offline-demo räcker för denna körning.");
+    console.warn('Offline-demo räcker för denna körning.');
   }
 } else {
-  console.log("\nDATABASE_URL saknas — hoppar över ordbankstest.");
+  console.log('\nDATABASE_URL saknas — hoppar över ordbankstest.');
 }
 
 if (hasErrors) {
   process.exit(1);
 }
 
-console.log("\nStegvis-generatorkontroll klar.");
+console.log('\nStegvis-generatorkontroll klar.');

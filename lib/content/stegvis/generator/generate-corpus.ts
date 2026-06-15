@@ -1,13 +1,13 @@
-import type { WordBankWordWithClues } from "@/lib/content/word-bank/types";
-import { buildWordGraph, findShortestPath } from "../word-graph";
-import { scoreStegvisPuzzle, toWordSlot } from "./score";
+import type { WordBankWordWithClues } from '@/lib/content/word-bank/types';
+import { buildWordGraph, findShortestPath } from '../word-graph';
+import { scoreStegvisPuzzle, toWordSlot } from './score';
 import {
   DEFAULT_STEGVIS_GENERATOR_OPTIONS,
   type GenerateStegvisPuzzleOptions,
   type GenerateStegvisPuzzleResult,
   type StegvisGeneratedPuzzle,
   type StegvisGeneratorCorpus,
-} from "./types";
+} from './types';
 
 function createRandom(seed?: number) {
   if (seed === undefined) {
@@ -39,9 +39,7 @@ export function buildStegvisGeneratorCorpus(
   words: WordBankWordWithClues[],
 ): StegvisGeneratorCorpus {
   const graph = buildWordGraph(words.map((word) => word.normalizedAnswer));
-  const wordsByAnswer = new Map(
-    words.map((word) => [word.normalizedAnswer, word]),
-  );
+  const wordsByAnswer = new Map(words.map((word) => [word.normalizedAnswer, word]));
 
   const connectedWords = words.filter((word) => graph.has(word.normalizedAnswer));
 
@@ -114,8 +112,7 @@ export function generateStegvisPuzzleFromCorpus(
   const minSteps = options.minSteps ?? DEFAULT_STEGVIS_GENERATOR_OPTIONS.minSteps;
   const maxSteps = options.maxSteps ?? DEFAULT_STEGVIS_GENERATOR_OPTIONS.maxSteps;
   const requiredMiddleCount = options.requiredMiddleCount;
-  const maxAttempts =
-    options.maxAttempts ?? DEFAULT_STEGVIS_GENERATOR_OPTIONS.maxAttempts;
+  const maxAttempts = options.maxAttempts ?? DEFAULT_STEGVIS_GENERATOR_OPTIONS.maxAttempts;
   const random = createRandom(options.seed);
 
   const eligible = orderCandidates(getEligibleWords(corpus), random);
@@ -123,7 +120,7 @@ export function generateStegvisPuzzleFromCorpus(
   if (eligible.length < 2) {
     return {
       ok: false,
-      reason: "För få ord med giltiga grannar i ordgrafen.",
+      reason: 'För få ord med giltiga grannar i ordgrafen.',
       stats: {
         length,
         candidates: eligible.length,
@@ -164,10 +161,7 @@ export function generateStegvisPuzzleFromCorpus(
       const steps = path.length - 1;
       const middleCount = path.length - 2;
 
-      if (
-        requiredMiddleCount !== undefined &&
-        middleCount !== requiredMiddleCount
-      ) {
+      if (requiredMiddleCount !== undefined && middleCount !== requiredMiddleCount) {
         continue;
       }
 
@@ -175,13 +169,7 @@ export function generateStegvisPuzzleFromCorpus(
         continue;
       }
 
-      const puzzle = buildPuzzleFromPath(
-        path,
-        corpus,
-        length,
-        pathsTried,
-        eligible.length,
-      );
+      const puzzle = buildPuzzleFromPath(path, corpus, length, pathsTried, eligible.length);
 
       if (!puzzle) {
         continue;
@@ -210,7 +198,7 @@ export function generateStegvisPuzzleFromCorpus(
   if (!bestPuzzle) {
     return {
       ok: false,
-      reason: "Ingen kedja hittades inom steg-intervallet.",
+      reason: 'Ingen kedja hittades inom steg-intervallet.',
       stats: {
         length,
         candidates: eligible.length,

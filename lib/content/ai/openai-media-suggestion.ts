@@ -1,11 +1,11 @@
-import { parseMediaSuggestionResponse } from "@/lib/content/ai/parse-media-suggestion-response";
+import { parseMediaSuggestionResponse } from '@/lib/content/ai/parse-media-suggestion-response';
 import type {
   GenerateMediaSuggestionInput,
   GenerateMediaSuggestionResult,
-} from "@/lib/content/ai/types";
-import { getOpenAiApiKey, getOpenAiModel } from "@/lib/content/ai/openai-hint-candidates";
+} from '@/lib/content/ai/types';
+import { getOpenAiApiKey, getOpenAiModel } from '@/lib/content/ai/openai-hint-candidates';
 
-export const MEDIA_SUGGESTION_PROMPT_VERSION = "media-suggestion-v1";
+export const MEDIA_SUGGESTION_PROMPT_VERSION = 'media-suggestion-v1';
 
 type OpenAiChatResponse = {
   choices?: Array<{
@@ -66,24 +66,24 @@ export async function requestOpenAiMediaSuggestion(
   const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY saknas.");
+    throw new Error('OPENAI_API_KEY saknas.');
   }
 
   const model = getOpenAiModel();
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model,
       temperature: 0.7,
-      response_format: { type: "json_object" },
+      response_format: { type: 'json_object' },
       messages: [
-        { role: "system", content: buildSystemPrompt() },
-        { role: "user", content: buildUserPrompt(input.answer) },
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: buildUserPrompt(input.answer) },
       ],
     }),
   });
@@ -91,9 +91,7 @@ export async function requestOpenAiMediaSuggestion(
   const payload = (await response.json()) as OpenAiChatResponse;
 
   if (!response.ok) {
-    const message =
-      payload.error?.message ??
-      `OpenAI svarade med status ${response.status}.`;
+    const message = payload.error?.message ?? `OpenAI svarade med status ${response.status}.`;
 
     throw new Error(message);
   }
@@ -101,7 +99,7 @@ export async function requestOpenAiMediaSuggestion(
   const rawContent = payload.choices?.[0]?.message?.content;
 
   if (!rawContent) {
-    throw new Error("OpenAI returnerade inget innehåll.");
+    throw new Error('OpenAI returnerade inget innehåll.');
   }
 
   const suggestion = parseMediaSuggestionResponse({

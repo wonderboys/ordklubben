@@ -1,5 +1,1 @@
-export const neverSeedSvWords = [
-  "arkvis",
-  "iransk",
-  "parisk",
-] as const;
+export const neverSeedSvWords = ['arkvis', 'iransk', 'parisk'] as const;

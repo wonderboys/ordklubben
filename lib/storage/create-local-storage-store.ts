@@ -9,7 +9,7 @@ type CreateLocalStorageStoreOptions<T> = {
 };
 
 function getStorage() {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return null;
   }
 
@@ -43,12 +43,12 @@ export function createLocalStorageStore<T>({
   parse = defaultParse,
   serialize = defaultSerialize,
   shouldLogWarning = false,
-  logLabel = "LocalStorageStore",
+  logLabel = 'LocalStorageStore',
 }: CreateLocalStorageStoreOptions<T>) {
   let cachedRawValue: string | null = null;
   let cachedValue: T = defaultValue;
 
-  function logStorageWarning(action: "load" | "save", error: unknown) {
+  function logStorageWarning(action: 'load' | 'save', error: unknown) {
     if (!shouldLogWarning) {
       return;
     }
@@ -74,7 +74,7 @@ export function createLocalStorageStore<T>({
       cachedValue = parse(rawValue, defaultValue);
       return cachedValue;
     } catch (error) {
-      logStorageWarning("load", error);
+      logStorageWarning('load', error);
       cachedRawValue = null;
       cachedValue = defaultValue;
       return defaultValue;
@@ -95,7 +95,7 @@ export function createLocalStorageStore<T>({
     try {
       storage.setItem(storageKey, rawValue);
     } catch (error) {
-      logStorageWarning("save", error);
+      logStorageWarning('save', error);
       return;
     }
 
@@ -103,7 +103,7 @@ export function createLocalStorageStore<T>({
   }
 
   function subscribe(onStoreChange: () => void) {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return () => undefined;
     }
 
@@ -113,11 +113,11 @@ export function createLocalStorageStore<T>({
       }
     };
 
-    window.addEventListener("storage", onStorage);
+    window.addEventListener('storage', onStorage);
     window.addEventListener(changeEvent, onStoreChange);
 
     return () => {
-      window.removeEventListener("storage", onStorage);
+      window.removeEventListener('storage', onStorage);
       window.removeEventListener(changeEvent, onStoreChange);
     };
   }

@@ -4,9 +4,9 @@ import {
   AdminPanel,
   DatabaseNotice,
   FeedbackMessage,
-} from "@/components/admin/admin-ui";
-import { PuzzleCreateView } from "@/components/admin/puzzle/puzzle-create-view";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/admin-ui';
+import { PuzzleCreateView } from '@/components/admin/puzzle/puzzle-create-view';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   error?: string;
@@ -14,11 +14,7 @@ type SearchParams = Promise<{
   mode?: string;
 }>;
 
-export default async function NewPuzzlePage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function NewPuzzlePage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   if (!isDatabaseConfigured()) {
@@ -41,10 +37,10 @@ export default async function NewPuzzlePage({
         },
       },
     },
-    orderBy: [{ name: "asc" }],
+    orderBy: [{ name: 'asc' }],
   });
 
-  const defaultMode = params.mode === "manual" ? "manual" : "generated";
+  const defaultMode = params.mode === 'manual' ? 'manual' : 'generated';
 
   return (
     <AdminPage

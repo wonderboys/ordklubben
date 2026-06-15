@@ -1,16 +1,16 @@
-import Link from "next/link";
-import { GameLibraryIcon } from "@/components/games/game-library-icon";
-import { Badge } from "@/components/ui/badge";
-import { BodyText, PageTitle } from "@/components/ui/typography";
-import type { GameDefinition, GameId } from "@/lib/games/registry";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { GameLibraryIcon } from '@/components/games/game-library-icon';
+import { Badge } from '@/components/ui/badge';
+import { BodyText, PageTitle } from '@/components/ui/typography';
+import type { GameDefinition, GameId } from '@/lib/games/registry';
+import { cn } from '@/lib/utils';
 
 function badgeVariant(label: string) {
-  if (label === "Beta" || label === "Kommer snart") {
-    return "default" as const;
+  if (label === 'Beta' || label === 'Kommer snart') {
+    return 'default' as const;
   }
 
-  return "green" as const;
+  return 'green' as const;
 }
 
 type GameLibraryTileProps = {
@@ -24,21 +24,17 @@ export function GameLibraryTile({
   onNavigate,
   showDescription = false,
 }: GameLibraryTileProps) {
-  const badges = [game.badgeLabel, game.secondaryBadgeLabel].filter(
-    (label): label is string => Boolean(label),
+  const badges = [game.badgeLabel, game.secondaryBadgeLabel].filter((label): label is string =>
+    Boolean(label),
   );
   const description = game.libraryDescription ?? game.description;
 
   return (
-    <Link
-      href={game.href}
-      className="group block min-h-[88px]"
-      onClick={onNavigate}
-    >
+    <Link href={game.href} className="group block min-h-[88px]" onClick={onNavigate}>
       <div
         className={cn(
-          "shell-card flex h-full flex-col gap-3 p-4 transition-transform duration-300",
-          "sm:group-hover:-translate-y-0.5",
+          'shell-card flex h-full flex-col gap-3 p-4 transition-transform duration-300',
+          'sm:group-hover:-translate-y-0.5',
         )}
       >
         <div className="flex items-start gap-3">

@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { GameCard } from "@/components/games/game-card";
-import { OrdflataBetaCard } from "@/components/games/ordflata-beta-card";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BodyText, PageTitle, SectionTitle } from "@/components/ui/typography";
-import { homeGames, ordflataBetaGame } from "@/lib/games/registry";
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { GameCard } from '@/components/games/game-card';
+import { OrdflataBetaCard } from '@/components/games/ordflata-beta-card';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { BodyText, PageTitle, SectionTitle } from '@/components/ui/typography';
+import { homeGames, ordflataBetaGame } from '@/lib/games/registry';
 
 export default function Home() {
   return (
@@ -21,9 +21,8 @@ export default function Home() {
                   För dig som gillar språk, spel, logik och mönster
                 </PageTitle>
                 <BodyText className="max-w-none sm:text-lg">
-                  Dagliga ordspel, språkutmaningar och nya sätt att utforska
-                  svenska. Ordklubben växer steg för steg — fler spel, fler
-                  format och fler sätt att tänka med ord.
+                  Dagliga ordspel, språkutmaningar och nya sätt att utforska svenska. Ordklubben
+                  växer steg för steg — fler spel, fler format och fler sätt att tänka med ord.
                 </BodyText>
               </div>
             </div>
@@ -68,8 +67,8 @@ export default function Home() {
           <div className="space-y-1">
             <SectionTitle>På väg in i klubben</SectionTitle>
             <BodyText variant="card" className="max-w-2xl">
-              Här testar vi nya idéer innan de blir en del av Ordklubben. Spelbara
-              redan nu — men fortfarande under utveckling.
+              Här testar vi nya idéer innan de blir en del av Ordklubben. Spelbara redan nu — men
+              fortfarande under utveckling.
             </BodyText>
           </div>
           <OrdflataBetaCard
@@ -77,7 +76,7 @@ export default function Home() {
             title={ordflataBetaGame.title}
             description={ordflataBetaGame.description}
             primaryBadge={ordflataBetaGame.badgeLabel}
-            secondaryBadge={ordflataBetaGame.secondaryBadgeLabel ?? "Dagligt"}
+            secondaryBadge={ordflataBetaGame.secondaryBadgeLabel ?? 'Dagligt'}
             ctaLabel="Testa Ordfläta"
           />
         </section>

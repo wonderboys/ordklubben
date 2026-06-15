@@ -7,8 +7,8 @@ import type {
   MediaType,
   PartOfSpeech,
   WordRelationType,
-} from "@prisma/client";
-import type { WordNounInflections } from "@/lib/content/word-language";
+} from '@prisma/client';
+import type { WordNounInflections } from '@/lib/content/word-language';
 
 export type WordDetailLanguageData = {
   partOfSpeech: PartOfSpeech | null;

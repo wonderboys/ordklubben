@@ -219,8 +219,18 @@ Vanliga verifieringar:
 
 ```bash
 npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
 npm run build
 ```
+
+Git hooks:
+
+- `npm install` kör `prepare` och aktiverar repo:ts Husky-hooks lokalt
+- `pre-commit` kör `lint-staged`
+- staged kod- och textfiler formatteras med Prettier
+- staged `js`/`ts`-filer lintas sedan med autofix och commiten stoppas vid kvarvarande warnings eller fel
 
 När du arbetar med orddata:
 

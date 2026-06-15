@@ -1,5 +1,5 @@
-import type { PrismaClient } from "@prisma/client";
-import { mapWordBankClue, mapWordBankWord } from "@/lib/content/word-bank/mappers";
+import type { PrismaClient } from '@prisma/client';
+import { mapWordBankClue, mapWordBankWord } from '@/lib/content/word-bank/mappers';
 import {
   buildActiveWordWhere,
   fetchActiveWordById,
@@ -8,14 +8,14 @@ import {
   fetchActiveWordWithCluesByNormalizedAnswer,
   fetchActiveWordWithCluesRow,
   wordBankWordSelect,
-} from "@/lib/content/word-bank/queries";
+} from '@/lib/content/word-bank/queries';
 import type {
   WordBankClue,
   WordBankQueryFilters,
   WordBankWord,
   WordBankWordWithClues,
-} from "@/lib/content/word-bank/types";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/lib/content/word-bank/types';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type WordBankClient = PrismaClient;
 
@@ -26,7 +26,7 @@ function resolveClient(client?: WordBankClient) {
 
   if (!isDatabaseConfigured()) {
     throw new Error(
-      "Ordbanken kräver DATABASE_URL. Konfigurera databasen innan word-bank API anropas.",
+      'Ordbanken kräver DATABASE_URL. Konfigurera databasen innan word-bank API anropas.',
     );
   }
 
@@ -37,10 +37,7 @@ function resolveClient(client?: WordBankClient) {
  * Hämta ett godkänt ord från ordbanken.
  * Returnerar null om ordet saknas eller inte är aktivt (APPROVED).
  */
-export async function getWord(
-  id: string,
-  client?: WordBankClient,
-): Promise<WordBankWord | null> {
+export async function getWord(id: string, client?: WordBankClient): Promise<WordBankWord | null> {
   const prisma = resolveClient(client);
   const word = await fetchActiveWordById(prisma, id);
 
@@ -55,10 +52,7 @@ export async function getWord(
  * Hämta godkända textnycklar för ett ord.
  * Returnerar tom lista om ordet saknas eller inte är aktivt.
  */
-export async function getWordClues(
-  id: string,
-  client?: WordBankClient,
-): Promise<WordBankClue[]> {
+export async function getWordClues(id: string, client?: WordBankClient): Promise<WordBankClue[]> {
   const prisma = resolveClient(client);
   const word = await fetchActiveWordById(prisma, id);
 
@@ -100,10 +94,7 @@ export async function getWordWithCluesByNormalizedAnswer(
   client?: WordBankClient,
 ): Promise<WordBankWordWithClues | null> {
   const prisma = resolveClient(client);
-  const row = await fetchActiveWordWithCluesByNormalizedAnswer(
-    prisma,
-    normalizedAnswer,
-  );
+  const row = await fetchActiveWordWithCluesByNormalizedAnswer(prisma, normalizedAnswer);
 
   if (!row) {
     return null;
@@ -145,7 +136,7 @@ export async function listActiveWords(
   const words = await prisma.word.findMany({
     where: buildActiveWordWhere(filters),
     select: wordBankWordSelect,
-    orderBy: [{ length: "asc" }, { answer: "asc" }],
+    orderBy: [{ length: 'asc' }, { answer: 'asc' }],
   });
 
   return words.map(mapWordBankWord);

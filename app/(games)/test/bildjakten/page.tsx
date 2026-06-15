@@ -1,7 +1,7 @@
-import { BildjaktenGame } from "@/components/games/bildjakten/bildjakten-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { getBildjaktPuzzles } from "@/lib/game/bildjakten/provider";
+import { BildjaktenGame } from '@/components/games/bildjakten/bildjakten-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { getBildjaktPuzzles } from '@/lib/game/bildjakten/provider';
 
 export default async function BildjaktenPage() {
   const puzzles = await getBildjaktPuzzles();

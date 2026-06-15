@@ -1,15 +1,11 @@
-import {
-  AdminActionGroup,
-  AdminLinkButton,
-  SelectInput,
-} from "@/components/admin/admin-ui";
+import { AdminActionGroup, AdminLinkButton, SelectInput } from '@/components/admin/admin-ui';
 import {
   ADMIN_PAGE_SIZES,
   buildAdminListHref,
   getAdminPageCount,
   getAdminPageRange,
   type AdminPageSize,
-} from "@/lib/content/admin-list";
+} from '@/lib/content/admin-list';
 
 export function AdminStatGrid({
   items,
@@ -29,9 +25,7 @@ export function AdminStatGrid({
           <dt className="text-[11px] font-medium uppercase tracking-[0.04em] text-print-muted">
             {item.label}
           </dt>
-          <dd className="mt-0.5 text-lg font-semibold tabular-nums text-print-ink">
-            {item.value}
-          </dd>
+          <dd className="mt-0.5 text-lg font-semibold tabular-nums text-print-ink">{item.value}</dd>
         </div>
       ))}
     </dl>
@@ -46,13 +40,7 @@ type AdminPaginationProps = {
   query: Record<string, string | undefined>;
 };
 
-export function AdminPagination({
-  pathname,
-  page,
-  pageSize,
-  total,
-  query,
-}: AdminPaginationProps) {
+export function AdminPagination({ pathname, page, pageSize, total, query }: AdminPaginationProps) {
   const pageCount = getAdminPageCount(total, pageSize);
   const currentPage = Math.min(page, pageCount);
   const { start, end } = getAdminPageRange(currentPage, pageSize, total);
@@ -80,7 +68,7 @@ export function AdminPagination({
     <div className="mt-4 flex flex-col gap-3 border-t border-print-ink/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-print-muted">
         {total === 0 ? (
-          "Inga träffar"
+          'Inga träffar'
         ) : (
           <>
             Visar {start}–{end} av {total}
@@ -117,7 +105,7 @@ export function AdminPagination({
 }
 
 export function AdminPageSizeSelect({
-  name = "pageSize",
+  name = 'pageSize',
   defaultValue,
   className,
 }: {

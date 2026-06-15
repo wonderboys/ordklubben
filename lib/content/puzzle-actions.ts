@@ -1,12 +1,12 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import {
   computeStartCellNumbers,
   getOccupiedCells,
   validatePuzzlePlacement,
-} from "@/lib/content/puzzle/grid";
+} from '@/lib/content/puzzle/grid';
 import {
   addPuzzleEntrySchema,
   createGeneratedPuzzleSchema,
@@ -14,27 +14,23 @@ import {
   removePuzzleEntrySchema,
   togglePuzzleBlockedCellSchema,
   updatePuzzleEntryHintSchema,
-} from "@/lib/content/validators";
-import { generatePuzzle } from "@/lib/content/puzzle/generate-puzzle";
-import { getPrisma } from "@/lib/db/prisma";
+} from '@/lib/content/validators';
+import { generatePuzzle } from '@/lib/content/puzzle/generate-puzzle';
+import { getPrisma } from '@/lib/db/prisma';
 
 function getFormValues(formData: FormData) {
   return Object.fromEntries(formData.entries());
 }
 
-function redirectWithMessage(
-  pathname: string,
-  type: "error" | "success",
-  message: string,
-): never {
-  const [basePath, queryString] = pathname.split("?");
-  const searchParams = new URLSearchParams(queryString ?? "");
+function redirectWithMessage(pathname: string, type: 'error' | 'success', message: string): never {
+  const [basePath, queryString] = pathname.split('?');
+  const searchParams = new URLSearchParams(queryString ?? '');
   searchParams.set(type, message);
   redirect(`${basePath}?${searchParams.toString()}`);
 }
 
 function getValidationErrorMessage() {
-  return "Kunde inte spara formuläret. Kontrollera fälten och försök igen.";
+  return 'Kunde inte spara formuläret. Kontrollera fälten och försök igen.';
 }
 
 function puzzleDetailPath(puzzleId: string) {
@@ -42,7 +38,7 @@ function puzzleDetailPath(puzzleId: string) {
 }
 
 function revalidatePuzzle(puzzleId: string) {
-  revalidatePath("/admin/puzzles");
+  revalidatePath('/admin/puzzles');
   revalidatePath(puzzleDetailPath(puzzleId));
 }
 
@@ -66,7 +62,7 @@ async function syncPuzzleEntryNumbers(
     id: string;
     row: number;
     col: number;
-    direction: "ACROSS" | "DOWN";
+    direction: 'ACROSS' | 'DOWN';
     answerSnapshot: string;
   }>,
 ) {
@@ -93,11 +89,7 @@ export async function createPuzzle(formData: FormData) {
   const parsed = createPuzzleSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
-    redirectWithMessage(
-      "/admin/puzzles/new?mode=manual",
-      "error",
-      getValidationErrorMessage(),
-    );
+    redirectWithMessage('/admin/puzzles/new?mode=manual', 'error', getValidationErrorMessage());
   }
 
   const prisma = getPrisma();
@@ -115,7 +107,7 @@ export async function createPuzzle(formData: FormData) {
     },
   });
 
-  revalidatePath("/admin/puzzles");
+  revalidatePath('/admin/puzzles');
   redirect(puzzleDetailPath(puzzle.id));
 }
 
@@ -159,7 +151,7 @@ function puzzleGenerationReportPath(
   },
 ) {
   const searchParams = new URLSearchParams({
-    generated: "1",
+    generated: '1',
     genCandidates: String(report.candidateCount),
     genPlaced: String(report.placedCount),
     genFailed: String(report.failedCount),
@@ -188,21 +180,21 @@ function puzzleGenerationReportPath(
     genIsolatedRegions: String(report.isolatedRegions),
     genEmptyBlocked: String(report.emptyCellsBlocked),
     genRemainingEmpty: String(report.remainingEmptyCount),
-    genValidationOk: report.finalValidationOk ? "1" : "0",
+    genValidationOk: report.finalValidationOk ? '1' : '0',
     genWidth: String(report.width),
     genHeight: String(report.height),
   });
 
   if (report.themeName) {
-    searchParams.set("genTheme", report.themeName);
+    searchParams.set('genTheme', report.themeName);
   }
 
   if (report.optimizationImprovements) {
-    searchParams.set("genOptimization", report.optimizationImprovements);
+    searchParams.set('genOptimization', report.optimizationImprovements);
   }
 
   if (report.summaryNote) {
-    searchParams.set("genSummary", report.summaryNote);
+    searchParams.set('genSummary', report.summaryNote);
   }
 
   return `${puzzleDetailPath(puzzleId)}?${searchParams.toString()}`;
@@ -212,11 +204,7 @@ export async function createAndGeneratePuzzle(formData: FormData) {
   const parsed = createGeneratedPuzzleSchema.safeParse(getFormValues(formData));
 
   if (!parsed.success) {
-    redirectWithMessage(
-      "/admin/puzzles/new?mode=generated",
-      "error",
-      getValidationErrorMessage(),
-    );
+    redirectWithMessage('/admin/puzzles/new?mode=generated', 'error', getValidationErrorMessage());
   }
 
   let result;
@@ -226,13 +214,13 @@ export async function createAndGeneratePuzzle(formData: FormData) {
     result = await generatePuzzle(prisma, parsed.data);
   } catch (error) {
     redirectWithMessage(
-      "/admin/puzzles/new?mode=generated",
-      "error",
-      error instanceof Error ? error.message : "Genereringen misslyckades.",
+      '/admin/puzzles/new?mode=generated',
+      'error',
+      error instanceof Error ? error.message : 'Genereringen misslyckades.',
     );
   }
 
-  revalidatePath("/admin/puzzles");
+  revalidatePath('/admin/puzzles');
   revalidatePath(puzzleDetailPath(result.puzzleId));
   redirect(puzzleGenerationReportPath(result.puzzleId, result.report));
 }
@@ -242,8 +230,8 @@ export async function addPuzzleEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectWithMessage(
-      puzzleDetailPath(String(formData.get("puzzleId") ?? "")),
-      "error",
+      puzzleDetailPath(String(formData.get('puzzleId') ?? '')),
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -258,7 +246,7 @@ export async function addPuzzleEntry(formData: FormData) {
   });
 
   if (!puzzle) {
-    redirectWithMessage("/admin/puzzles", "error", "Pusslet hittades inte.");
+    redirectWithMessage('/admin/puzzles', 'error', 'Pusslet hittades inte.');
   }
 
   const word = await prisma.word.findUnique({
@@ -267,7 +255,7 @@ export async function addPuzzleEntry(formData: FormData) {
       hints: {
         where: {
           status: {
-            in: ["DRAFT", "APPROVED"],
+            in: ['DRAFT', 'APPROVED'],
           },
         },
       },
@@ -277,16 +265,16 @@ export async function addPuzzleEntry(formData: FormData) {
   if (!word) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Ordet hittades inte i ordbanken.",
+      'error',
+      'Ordet hittades inte i ordbanken.',
     );
   }
 
   if (puzzle.entries.some((entry) => entry.wordId === word.id)) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Samma ord är redan placerat i detta pussel.",
+      'error',
+      'Samma ord är redan placerat i detta pussel.',
     );
   }
 
@@ -297,8 +285,8 @@ export async function addPuzzleEntry(formData: FormData) {
   if (parsed.data.hintId && !hint) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Nyckeln måste tillhöra ordet och vara utkast eller godkänd.",
+      'error',
+      'Nyckeln måste tillhöra ordet och vara utkast eller godkänd.',
     );
   }
 
@@ -326,7 +314,7 @@ export async function addPuzzleEntry(formData: FormData) {
   });
 
   if (!validation.ok) {
-    redirectWithMessage(puzzleDetailPath(parsed.data.puzzleId), "error", validation.message);
+    redirectWithMessage(puzzleDetailPath(parsed.data.puzzleId), 'error', validation.message);
   }
 
   await prisma.puzzleEntry.create({
@@ -357,8 +345,8 @@ export async function addPuzzleEntry(formData: FormData) {
   revalidatePuzzle(puzzle.id);
   redirectWithMessage(
     puzzleDetailPath(parsed.data.puzzleId),
-    "success",
-    "Ordet placerades i rutnätet.",
+    'success',
+    'Ordet placerades i rutnätet.',
   );
 }
 
@@ -367,8 +355,8 @@ export async function removePuzzleEntry(formData: FormData) {
 
   if (!parsed.success) {
     redirectWithMessage(
-      puzzleDetailPath(String(formData.get("puzzleId") ?? "")),
-      "error",
+      puzzleDetailPath(String(formData.get('puzzleId') ?? '')),
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -383,8 +371,8 @@ export async function removePuzzleEntry(formData: FormData) {
   if (!entry || entry.puzzleId !== parsed.data.puzzleId) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Placeringen hittades inte.",
+      'error',
+      'Placeringen hittades inte.',
     );
   }
 
@@ -405,11 +393,7 @@ export async function removePuzzleEntry(formData: FormData) {
 
   await syncPuzzleEntryNumbers(parsed.data.puzzleId, remainingEntries);
   revalidatePuzzle(parsed.data.puzzleId);
-  redirectWithMessage(
-    puzzleDetailPath(parsed.data.puzzleId),
-    "success",
-    "Placeringen togs bort.",
-  );
+  redirectWithMessage(puzzleDetailPath(parsed.data.puzzleId), 'success', 'Placeringen togs bort.');
 }
 
 export async function updatePuzzleEntryHint(formData: FormData) {
@@ -417,8 +401,8 @@ export async function updatePuzzleEntryHint(formData: FormData) {
 
   if (!parsed.success) {
     redirectWithMessage(
-      puzzleDetailPath(String(formData.get("puzzleId") ?? "")),
-      "error",
+      puzzleDetailPath(String(formData.get('puzzleId') ?? '')),
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -433,7 +417,7 @@ export async function updatePuzzleEntryHint(formData: FormData) {
           hints: {
             where: {
               status: {
-                in: ["DRAFT", "APPROVED"],
+                in: ['DRAFT', 'APPROVED'],
               },
             },
           },
@@ -445,8 +429,8 @@ export async function updatePuzzleEntryHint(formData: FormData) {
   if (!entry || entry.puzzleId !== parsed.data.puzzleId) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Placeringen hittades inte.",
+      'error',
+      'Placeringen hittades inte.',
     );
   }
 
@@ -457,8 +441,8 @@ export async function updatePuzzleEntryHint(formData: FormData) {
   if (parsed.data.hintId && !hint) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Nyckeln måste tillhöra ordet och vara utkast eller godkänd.",
+      'error',
+      'Nyckeln måste tillhöra ordet och vara utkast eller godkänd.',
     );
   }
 
@@ -473,8 +457,8 @@ export async function updatePuzzleEntryHint(formData: FormData) {
   revalidatePuzzle(parsed.data.puzzleId);
   redirectWithMessage(
     puzzleDetailPath(parsed.data.puzzleId),
-    "success",
-    hint ? "Nyckeln uppdaterades." : "Nyckeln togs bort från placeringen.",
+    'success',
+    hint ? 'Nyckeln uppdaterades.' : 'Nyckeln togs bort från placeringen.',
   );
 }
 
@@ -483,8 +467,8 @@ export async function togglePuzzleBlockedCell(formData: FormData) {
 
   if (!parsed.success) {
     redirectWithMessage(
-      puzzleDetailPath(String(formData.get("puzzleId") ?? "")),
-      "error",
+      puzzleDetailPath(String(formData.get('puzzleId') ?? '')),
+      'error',
       getValidationErrorMessage(),
     );
   }
@@ -499,7 +483,7 @@ export async function togglePuzzleBlockedCell(formData: FormData) {
   });
 
   if (!puzzle) {
-    redirectWithMessage("/admin/puzzles", "error", "Pusslet hittades inte.");
+    redirectWithMessage('/admin/puzzles', 'error', 'Pusslet hittades inte.');
   }
 
   if (
@@ -510,8 +494,8 @@ export async function togglePuzzleBlockedCell(formData: FormData) {
   ) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
-      "Cellen ligger utanför rutnätet.",
+      'error',
+      'Cellen ligger utanför rutnätet.',
     );
   }
 
@@ -535,15 +519,15 @@ export async function togglePuzzleBlockedCell(formData: FormData) {
     revalidatePuzzle(puzzle.id);
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "success",
-      "Blockeringen togs bort.",
+      'success',
+      'Blockeringen togs bort.',
     );
   }
 
   if (occupied.has(key)) {
     redirectWithMessage(
       puzzleDetailPath(parsed.data.puzzleId),
-      "error",
+      'error',
       `Cellen vid rad ${parsed.data.row + 1}, kolumn ${parsed.data.col + 1} används redan av ett ord.`,
     );
   }
@@ -557,9 +541,5 @@ export async function togglePuzzleBlockedCell(formData: FormData) {
   });
 
   revalidatePuzzle(puzzle.id);
-  redirectWithMessage(
-    puzzleDetailPath(parsed.data.puzzleId),
-    "success",
-    "Cellen blockerades.",
-  );
+  redirectWithMessage(puzzleDetailPath(parsed.data.puzzleId), 'success', 'Cellen blockerades.');
 }

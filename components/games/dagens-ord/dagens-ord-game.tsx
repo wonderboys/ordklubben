@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { LetterTile } from "@/components/games/letter-tile";
-import { DagensOrdKeyboard } from "@/components/games/dagens-ord/dagens-ord-keyboard";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { LetterTile } from '@/components/games/letter-tile';
+import { DagensOrdKeyboard } from '@/components/games/dagens-ord/dagens-ord-keyboard';
 import {
   DAGENS_ORD_BOARD_WIDTH_CLASS,
   DAGENS_ORD_PLAY_COLUMN_CLASS,
-} from "@/components/games/dagens-ord/dagens-ord-layout";
+} from '@/components/games/dagens-ord/dagens-ord-layout';
 import {
   DagensOrdResultModal,
   type DagensOrdResultData,
-} from "@/components/games/dagens-ord/dagens-ord-result-modal";
-import { Button } from "@/components/ui/button";
+} from '@/components/games/dagens-ord/dagens-ord-result-modal';
+import { Button } from '@/components/ui/button';
 import {
   DAGENS_ORD_MAX_GUESSES,
   DAGENS_ORD_REVEAL_ANIMATION_MS,
@@ -26,30 +26,26 @@ import {
   type DagensOrdGuess,
   type DagensOrdLetterFeedback,
   type DagensOrdRound,
-} from "@/lib/game/dagens-ord";
+} from '@/lib/game/dagens-ord';
 import {
   loadOrCreateDailyRound,
   persistDailyRound,
   resolveDailyStatus,
-} from "@/lib/game/dagens-ord-daily-session";
-import {
-  GAME_TOAST_MESSAGES,
-  GameToast,
-  useGameToast,
-} from "@/components/games/game-toast";
-import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
+} from '@/lib/game/dagens-ord-daily-session';
+import { GAME_TOAST_MESSAGES, GameToast, useGameToast } from '@/components/games/game-toast';
+import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
-const ROW_SHAKE_TRANSITION = { duration: 0.46, ease: "easeInOut" as const };
+const ROW_SHAKE_TRANSITION = { duration: 0.46, ease: 'easeInOut' as const };
 const ROW_SHAKE_OFFSETS = [0, -6, 6, -5, 5, -3, 3, 0];
 
 const SWEDISH_LETTER_PATTERN = /^[a-zåäö]$/;
-const TILE_SHELL_CLASS = "aspect-square w-full";
+const TILE_SHELL_CLASS = 'aspect-square w-full';
 const TILE_CLASS =
-  "!size-full !h-full !w-full max-w-none text-[1.12rem] leading-none md:text-[1.5rem]";
+  '!size-full !h-full !w-full max-w-none text-[1.12rem] leading-none md:text-[1.5rem]';
 const ACTIVE_EMPTY_TILE_CLASS =
-  "rounded-none border border-print-ink bg-print-surface shadow-[var(--print-shadow-soft)]";
+  'rounded-none border border-print-ink bg-print-surface shadow-[var(--print-shadow-soft)]';
 const INACTIVE_EMPTY_TILE_CLASS =
-  "rounded-none border border-print-ink/25 bg-print-surface shadow-[var(--print-shadow-soft)]";
+  'rounded-none border border-print-ink/25 bg-print-surface shadow-[var(--print-shadow-soft)]';
 
 type RevealingGuess = {
   word: string;
@@ -58,16 +54,14 @@ type RevealingGuess = {
 };
 
 function tileClassName(...classes: string[]) {
-  return [TILE_CLASS, ...classes].join(" ");
+  return [TILE_CLASS, ...classes].join(' ');
 }
 
 function EmptyTile({ active = false }: { active?: boolean }) {
   return (
     <div className={TILE_SHELL_CLASS}>
       <div
-        className={tileClassName(
-          active ? ACTIVE_EMPTY_TILE_CLASS : INACTIVE_EMPTY_TILE_CLASS,
-        )}
+        className={tileClassName(active ? ACTIVE_EMPTY_TILE_CLASS : INACTIVE_EMPTY_TILE_CLASS)}
       />
     </div>
   );
@@ -80,7 +74,7 @@ function GridCell({
   active,
 }: {
   letter?: string;
-  state?: "idle" | DagensOrdLetterFeedback;
+  state?: 'idle' | DagensOrdLetterFeedback;
   reveal?: boolean;
   active?: boolean;
 }) {
@@ -93,14 +87,14 @@ function GridCell({
       <LetterTile
         letter={letter}
         size="xs"
-        state={state === "idle" || !state ? "idle" : state}
+        state={state === 'idle' || !state ? 'idle' : state}
         disableEntryAnimation
-        className={tileClassName("transition-colors duration-150")}
+        className={tileClassName('transition-colors duration-150')}
       />
     </div>
   );
 
-  if (!reveal || state === "idle" || !state) {
+  if (!reveal || state === 'idle' || !state) {
     return tile;
   }
 
@@ -108,16 +102,16 @@ function GridCell({
     <motion.div
       initial={{ rotateX: -90, opacity: 0.4 }}
       animate={{ rotateX: 0, opacity: 1 }}
-      transition={{ duration: DAGENS_ORD_REVEAL_ANIMATION_MS / 1000, ease: "easeOut" }}
+      transition={{ duration: DAGENS_ORD_REVEAL_ANIMATION_MS / 1000, ease: 'easeOut' }}
       className={`${TILE_SHELL_CLASS} [perspective:600px]`}
-      style={{ transformStyle: "preserve-3d" }}
+      style={{ transformStyle: 'preserve-3d' }}
     >
       <LetterTile
         letter={letter}
         size="xs"
         state={state}
         disableEntryAnimation
-        className={tileClassName("transition-colors duration-150")}
+        className={tileClassName('transition-colors duration-150')}
       />
     </motion.div>
   );
@@ -135,12 +129,9 @@ export function DagensOrdGame() {
 
   useEffect(() => {
     const loadedRound = loadOrCreateDailyRound();
-    const status = resolveDailyStatus(
-      loadedRound.guesses,
-      loadedRound.targetWord,
-    );
+    const status = resolveDailyStatus(loadedRound.guesses, loadedRound.targetWord);
 
-    if (status === "won" || status === "lost") {
+    if (status === 'won' || status === 'lost') {
       wasFinishedRef.current = true;
     }
 
@@ -171,7 +162,7 @@ export function DagensOrdGame() {
     }
 
     return {
-      outcome: won ? "won" : "lost",
+      outcome: won ? 'won' : 'lost',
       targetWord: round.targetWord,
       attemptCount: won ? round.guesses.length : undefined,
     };
@@ -191,7 +182,7 @@ export function DagensOrdGame() {
       current
         ? {
             ...current,
-            currentInput: "",
+            currentInput: '',
           }
         : current,
     );
@@ -219,7 +210,7 @@ export function DagensOrdGame() {
     }
 
     if (!isValidDagensOrdGuess(guess)) {
-      showToast(GAME_TOAST_MESSAGES.invalidWord, "error");
+      showToast(GAME_TOAST_MESSAGES.invalidWord, 'error');
       shouldClearRowAfterShakeRef.current = true;
       setIsRowShaking(true);
       setRowShakeNonce((current) => current + 1);
@@ -232,7 +223,7 @@ export function DagensOrdGame() {
       current
         ? {
             ...current,
-            currentInput: "",
+            currentInput: '',
           }
         : current,
     );
@@ -302,10 +293,7 @@ export function DagensOrdGame() {
             ...current,
             guesses: [...current.guesses, completedGuess],
           };
-          const status = resolveDailyStatus(
-            nextRound.guesses,
-            nextRound.targetWord,
-          );
+          const status = resolveDailyStatus(nextRound.guesses, nextRound.targetWord);
           persistDailyRound(nextRound, status);
           return nextRound;
         });
@@ -328,13 +316,13 @@ export function DagensOrdGame() {
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         event.preventDefault();
         submitGuess();
         return;
       }
 
-      if (event.key === "Backspace") {
+      if (event.key === 'Backspace') {
         event.preventDefault();
         removeLetter();
         return;
@@ -348,16 +336,14 @@ export function DagensOrdGame() {
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [addLetter, canEdit, removeLetter, submitGuess]);
 
   if (!round) {
     return (
       <div className={`mx-auto py-4 md:py-8 ${DAGENS_ORD_BOARD_WIDTH_CLASS}`}>
-        <p className="print-mono text-center text-sm text-print-muted">
-          Laddar dagens ord…
-        </p>
+        <p className="print-mono text-center text-sm text-print-muted">Laddar dagens ord…</p>
       </div>
     );
   }
@@ -367,32 +353,22 @@ export function DagensOrdGame() {
       <div
         className={`mx-auto flex w-full flex-col gap-1.5 max-md:min-h-0 max-md:flex-1 md:gap-0 ${DAGENS_ORD_PLAY_COLUMN_CLASS}`}
       >
-        <div
-          className={`relative space-y-1 md:space-y-1.5 ${DAGENS_ORD_BOARD_WIDTH_CLASS}`}
-        >
-          <GameToast
-            message={toast?.message ?? null}
-            tone={toast?.tone}
-            toastId={toast?.id}
-          />
+        <div className={`relative space-y-1 md:space-y-1.5 ${DAGENS_ORD_BOARD_WIDTH_CLASS}`}>
+          <GameToast message={toast?.message ?? null} tone={toast?.tone} toastId={toast?.id} />
 
           {Array.from({ length: DAGENS_ORD_MAX_GUESSES }, (_, rowIndex) => {
             const guess = round.guesses[rowIndex];
-            const isRevealingRow =
-              revealing !== null && rowIndex === round.guesses.length;
-            const isCurrentRow =
-              !isRevealingRow && rowIndex === round.guesses.length;
+            const isRevealingRow = revealing !== null && rowIndex === round.guesses.length;
+            const isCurrentRow = !isRevealingRow && rowIndex === round.guesses.length;
 
-            const rowClassName = "grid grid-cols-5 gap-1.5";
+            const rowClassName = 'grid grid-cols-5 gap-1.5';
 
             if (isCurrentRow) {
               return (
                 <motion.div
                   key={`current-row-${rowShakeNonce}`}
                   className={rowClassName}
-                  animate={
-                    isRowShaking ? { x: ROW_SHAKE_OFFSETS } : { x: 0 }
-                  }
+                  animate={isRowShaking ? { x: ROW_SHAKE_OFFSETS } : { x: 0 }}
                   transition={ROW_SHAKE_TRANSITION}
                   onAnimationComplete={handleRowShakeComplete}
                 >
@@ -402,7 +378,7 @@ export function DagensOrdGame() {
                     return (
                       <GridCell
                         key={columnIndex}
-                        letter={letter?.toLocaleUpperCase("sv-SE")}
+                        letter={letter?.toLocaleUpperCase('sv-SE')}
                         state="idle"
                         active={!letter && columnIndex === activeCellIndex}
                       />
@@ -419,27 +395,21 @@ export function DagensOrdGame() {
                     return (
                       <GridCell
                         key={columnIndex}
-                        letter={guess.word[columnIndex]?.toLocaleUpperCase("sv-SE")}
+                        letter={guess.word[columnIndex]?.toLocaleUpperCase('sv-SE')}
                         state={guess.feedback[columnIndex]}
                       />
                     );
                   }
 
                   if (isRevealingRow && revealing) {
-                    const letter = revealing.word[columnIndex]?.toLocaleUpperCase(
-                      "sv-SE",
-                    );
+                    const letter = revealing.word[columnIndex]?.toLocaleUpperCase('sv-SE');
                     const isRevealed = columnIndex < revealing.revealedCount;
 
                     return (
                       <GridCell
                         key={columnIndex}
                         letter={letter}
-                        state={
-                          isRevealed
-                            ? revealing.feedback[columnIndex]
-                            : "idle"
-                        }
+                        state={isRevealed ? revealing.feedback[columnIndex] : 'idle'}
                         reveal={isRevealed}
                       />
                     );

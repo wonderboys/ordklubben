@@ -1,5 +1,5 @@
-import type { LexicalEntryType } from "@prisma/client";
-import { ChevronDown } from "lucide-react";
+import type { LexicalEntryType } from '@prisma/client';
+import { ChevronDown } from 'lucide-react';
 import {
   AdminActionGroup,
   AdminPanel,
@@ -12,12 +12,8 @@ import {
   TextArea,
   TextInput,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
-import {
-  createLexicalEntry,
-  deleteLexicalEntry,
-  updateLexicalEntry,
-} from "@/lib/content/actions";
+} from '@/components/admin/admin-ui';
+import { createLexicalEntry, deleteLexicalEntry, updateLexicalEntry } from '@/lib/content/actions';
 import {
   LEXICAL_ENTRY_TYPES,
   LEXICAL_ENTRY_TYPE_LABELS,
@@ -25,20 +21,14 @@ import {
   WORD_SOURCE_LABELS,
   formatLexicalEntryType,
   formatWordSourceWithReference,
-} from "@/lib/content/constants";
-import type { WordDetailData, WordDetailLexicalEntry } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData, WordDetailLexicalEntry } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-const KEYS_TAB = "lexicon";
-const NEW_ENTRY_FORM_ID = "new-lexical-entry";
+const KEYS_TAB = 'lexicon';
+const NEW_ENTRY_FORM_ID = 'new-lexical-entry';
 
-function LexicalEntryCard({
-  wordId,
-  entry,
-}: {
-  wordId: string;
-  entry: WordDetailLexicalEntry;
-}) {
+function LexicalEntryCard({ wordId, entry }: { wordId: string; entry: WordDetailLexicalEntry }) {
   const editFormId = `lexical-edit-${entry.id}`;
 
   return (
@@ -53,16 +43,14 @@ function LexicalEntryCard({
           </span>
         </div>
         <p className="mt-2 text-base font-medium leading-snug text-print-ink">{entry.value}</p>
-        {entry.notes ? (
-          <p className="mt-2 text-sm text-print-muted">{entry.notes}</p>
-        ) : null}
+        {entry.notes ? <p className="mt-2 text-sm text-print-muted">{entry.notes}</p> : null}
       </div>
 
       <input id={editFormId} type="checkbox" className="peer/edit sr-only" />
       <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
         <label
           htmlFor={editFormId}
-          className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+          className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
         >
           <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
           Redigera
@@ -75,11 +63,7 @@ function LexicalEntryCard({
           <input type="hidden" name="tab" value={KEYS_TAB} />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Typ" htmlFor={`lexical-type-${entry.id}`}>
-              <SelectInput
-                id={`lexical-type-${entry.id}`}
-                name="type"
-                defaultValue={entry.type}
-              >
+              <SelectInput id={`lexical-type-${entry.id}`} name="type" defaultValue={entry.type}>
                 {LEXICAL_ENTRY_TYPES.map((value) => (
                   <option key={value} value={value}>
                     {LEXICAL_ENTRY_TYPE_LABELS[value]}
@@ -113,7 +97,7 @@ function LexicalEntryCard({
             <TextArea
               id={`lexical-notes-${entry.id}`}
               name="notes"
-              defaultValue={entry.notes ?? ""}
+              defaultValue={entry.notes ?? ''}
               className="min-h-16"
             />
           </Field>
@@ -163,7 +147,7 @@ export function WordLexiconSection({
             <form method="get">
               <AdminActionGroup>
                 <input type="hidden" name="tab" value={KEYS_TAB} />
-                <SelectInput name="entryType" defaultValue={entryType ?? ""} className="min-w-44">
+                <SelectInput name="entryType" defaultValue={entryType ?? ''} className="min-w-44">
                   <option value="">Alla typer</option>
                   {LEXICAL_ENTRY_TYPES.map((value) => (
                     <option key={value} value={value}>
@@ -240,9 +224,7 @@ export function WordLexiconPanel({
   return (
     <AdminPanel title="Lexikon">
       <div className="mb-4 text-sm leading-relaxed text-print-muted">
-        <p>
-          Lexikon beskriver ordets betydelse, relationer och användning.
-        </p>
+        <p>Lexikon beskriver ordets betydelse, relationer och användning.</p>
         <p className="mt-2">Exempel:</p>
         <ul className="mt-1 list-inside list-disc text-sm">
           <li>definitioner</li>
@@ -252,8 +234,8 @@ export function WordLexiconPanel({
           <li>närliggande ord</li>
         </ul>
         <p className="mt-2 text-xs">
-          Lexikondata används som grund för framtida spel, nycklar och AI-generering.
-          Det är inte samma sak som spelnycklar.
+          Lexikondata används som grund för framtida spel, nycklar och AI-generering. Det är inte
+          samma sak som spelnycklar.
         </p>
       </div>
       <WordLexiconSection word={word} entryType={entryType} />

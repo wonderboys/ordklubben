@@ -1,11 +1,11 @@
-import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
+import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 export type LetterPool = Record<string, number>;
 
 export function createLetterPool(letters: string[] | string) {
   const normalizedLetters = Array.isArray(letters)
     ? letters.map((letter) => normalizeSwedish(letter))
-    : normalizeSwedish(letters).split("");
+    : normalizeSwedish(letters).split('');
 
   return normalizedLetters.reduce<LetterPool>((pool, letter) => {
     if (!letter) {

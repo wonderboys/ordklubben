@@ -1,13 +1,13 @@
-import { generatedPuzzleToBundle } from "@/lib/content/stegvis/generated-puzzle-to-bundle";
-import { generateStegvisPuzzle } from "@/lib/content/stegvis/generator";
+import { generatedPuzzleToBundle } from '@/lib/content/stegvis/generated-puzzle-to-bundle';
+import { generateStegvisPuzzle } from '@/lib/content/stegvis/generator';
 import {
   chainMeetsPlayRequirement,
   extendBundleToPlayChain,
   STEGVIS_MIDDLE_STEP_COUNT,
-} from "@/lib/content/stegvis/play-chain";
-import type { StegvisPuzzleBundle } from "@/lib/content/stegvis/types";
-import { buildStegvisGeneratorCorpus } from "@/lib/content/stegvis/generator/generate-corpus";
-import { isWordBankAvailable, listActiveWordsWithClues } from "@/lib/content/word-bank";
+} from '@/lib/content/stegvis/play-chain';
+import type { StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
+import { buildStegvisGeneratorCorpus } from '@/lib/content/stegvis/generator/generate-corpus';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
 
 const GENERATOR_RETRY_ATTEMPTS = 5;
 
@@ -15,9 +15,7 @@ export function isPlayReadyBundle(bundle: StegvisPuzzleBundle): boolean {
   return chainMeetsPlayRequirement(bundle.chain);
 }
 
-export async function tryGeneratePlayBundle(
-  seed?: number,
-): Promise<StegvisPuzzleBundle | null> {
+export async function tryGeneratePlayBundle(seed?: number): Promise<StegvisPuzzleBundle | null> {
   if (!isWordBankAvailable()) {
     return null;
   }

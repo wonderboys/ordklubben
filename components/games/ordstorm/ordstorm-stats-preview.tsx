@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { OrdstormStatBox } from "@/components/games/ordstorm/ordstorm-stat-box";
-import { type OrdstormStats } from "@/lib/game/ordstorm";
-import { MonoLabel } from "@/components/ui/typography";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { OrdstormStatBox } from '@/components/games/ordstorm/ordstorm-stat-box';
+import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { MonoLabel } from '@/components/ui/typography';
 
 type OrdstormStatsPreviewProps = {
   stats: OrdstormStats;

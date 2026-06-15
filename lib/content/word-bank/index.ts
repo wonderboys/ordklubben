@@ -6,7 +6,7 @@ export {
   isWordBankAvailable,
   listActiveWords,
   listActiveWordsWithClues,
-} from "@/lib/content/word-bank/api";
+} from '@/lib/content/word-bank/api';
 
 export type {
   WordBankClue,
@@ -14,9 +14,6 @@ export type {
   WordBankThemeRef,
   WordBankWord,
   WordBankWordWithClues,
-} from "@/lib/content/word-bank/types";
+} from '@/lib/content/word-bank/types';
 
-export {
-  ACTIVE_CLUE_STATUS,
-  ACTIVE_WORD_STATUS,
-} from "@/lib/content/word-bank/types";
+export { ACTIVE_CLUE_STATUS, ACTIVE_WORD_STATUS } from '@/lib/content/word-bank/types';

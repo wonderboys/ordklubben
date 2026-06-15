@@ -1,6 +1,6 @@
-import type { ContentStatus } from "@prisma/client";
-import { AdminPageSizeSelect, AdminStatGrid } from "@/components/admin/admin-list-ui";
-import { WordsBulkTable } from "@/components/admin/words-bulk-table";
+import type { ContentStatus } from '@prisma/client';
+import { AdminPageSizeSelect, AdminStatGrid } from '@/components/admin/admin-list-ui';
+import { WordsBulkTable } from '@/components/admin/words-bulk-table';
 import {
   AdminActionGroup,
   AdminFilterToolbar,
@@ -12,7 +12,7 @@ import {
   SelectInput,
   SubmitButton,
   TextInput,
-} from "@/components/admin/admin-ui";
+} from '@/components/admin/admin-ui';
 import {
   buildAdminListHref,
   buildWordListQuery,
@@ -21,13 +21,13 @@ import {
   getAdminPagination,
   hasActiveWordListFilters,
   parseWordListFilters,
-} from "@/lib/content/admin-list";
-import { CONTENT_STATUSES, STATUS_LABELS } from "@/lib/content/constants";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/lib/content/admin-list';
+import { CONTENT_STATUSES, STATUS_LABELS } from '@/lib/content/constants';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   q?: string;
-  status?: ContentStatus | "";
+  status?: ContentStatus | '';
   themeId?: string;
   withoutHint?: string;
   withoutTheme?: string;
@@ -37,11 +37,7 @@ type SearchParams = Promise<{
   success?: string;
 }>;
 
-export default async function AdminWordsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function AdminWordsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const filters = parseWordListFilters(params, CONTENT_STATUSES);
   const pagination = getAdminPagination(params);
@@ -67,12 +63,12 @@ export default async function AdminWordsPage({
     withThemeCount,
   ] = await Promise.all([
     prisma.theme.findMany({
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true },
     }),
     prisma.word.count({ where }),
-    prisma.word.count({ where: { ...where, status: "APPROVED" } }),
-    prisma.word.count({ where: { ...where, status: "DRAFT" } }),
+    prisma.word.count({ where: { ...where, status: 'APPROVED' } }),
+    prisma.word.count({ where: { ...where, status: 'DRAFT' } }),
     prisma.word.count({ where: { ...where, hints: { none: {} } } }),
     prisma.word.count({ where: { ...where, themes: { none: {} } } }),
     prisma.word.count({ where: { ...where, themes: { some: {} } } }),
@@ -96,14 +92,14 @@ export default async function AdminWordsPage({
         },
       },
     },
-    orderBy: [{ updatedAt: "desc" }, { answer: "asc" }],
+    orderBy: [{ updatedAt: 'desc' }, { answer: 'asc' }],
     skip,
     take: pagination.pageSize,
   });
 
   const listQuery = buildWordListQuery(filters);
   const filtersActive = hasActiveWordListFilters(filters, page);
-  const returnTo = buildAdminListHref("/admin/words", {
+  const returnTo = buildAdminListHref('/admin/words', {
     ...listQuery,
     page,
     pageSize: pagination.pageSize,
@@ -136,7 +132,7 @@ export default async function AdminWordsPage({
               placeholder="Sök ord"
               className="min-w-48 flex-1"
             />
-            <SelectInput name="status" defaultValue={filters.status ?? ""} className="min-w-40">
+            <SelectInput name="status" defaultValue={filters.status ?? ''} className="min-w-40">
               <option value="">Alla statusar</option>
               {CONTENT_STATUSES.map((value) => (
                 <option key={value} value={value}>
@@ -144,7 +140,7 @@ export default async function AdminWordsPage({
                 </option>
               ))}
             </SelectInput>
-            <SelectInput name="themeId" defaultValue={filters.themeId ?? ""} className="min-w-40">
+            <SelectInput name="themeId" defaultValue={filters.themeId ?? ''} className="min-w-40">
               <option value="">Alla teman</option>
               {themes.map((theme) => (
                 <option key={theme.id} value={theme.id}>
@@ -164,12 +160,12 @@ export default async function AdminWordsPage({
 
         <AdminStatGrid
           items={[
-            { label: "Totalt", value: total },
-            { label: "Godkända", value: approvedCount },
-            { label: "Utkast", value: draftCount },
-            { label: "Saknar nyckel", value: withoutHintCount },
-            { label: "Saknar tema", value: withoutThemeCount },
-            { label: "Med tema", value: withThemeCount },
+            { label: 'Totalt', value: total },
+            { label: 'Godkända', value: approvedCount },
+            { label: 'Utkast', value: draftCount },
+            { label: 'Saknar nyckel', value: withoutHintCount },
+            { label: 'Saknar tema', value: withoutThemeCount },
+            { label: 'Med tema', value: withThemeCount },
           ]}
         />
 

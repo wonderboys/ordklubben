@@ -1,6 +1,6 @@
-import { GameShell } from "@/components/games/game-shell";
-import { OrdstormGame } from "@/components/games/ordstorm/ordstorm-game";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
+import { GameShell } from '@/components/games/game-shell';
+import { OrdstormGame } from '@/components/games/ordstorm/ordstorm-game';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 
 export default function OrdstormPage() {
   return (

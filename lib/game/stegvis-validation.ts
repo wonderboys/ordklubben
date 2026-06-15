@@ -1,4 +1,4 @@
-import { hasOnlySwedishLetters, normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
+import { hasOnlySwedishLetters, normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 export type StegvisPuzzleForValidation = {
   start: string;
@@ -8,12 +8,12 @@ export type StegvisPuzzleForValidation = {
 };
 
 export type StegvisValidationReason =
-  | "empty"
-  | "invalid_characters"
-  | "wrong_length"
-  | "not_one_letter_diff"
-  | "not_in_dictionary"
-  | "already_used";
+  | 'empty'
+  | 'invalid_characters'
+  | 'wrong_length'
+  | 'not_one_letter_diff'
+  | 'not_in_dictionary'
+  | 'already_used';
 
 export type StegvisValidationContext = {
   letterDifferences?: number;
@@ -58,15 +58,15 @@ export function validateStegvisStep(
   const next = normalizeStegvisWord(nextWord);
 
   if (!next) {
-    return { valid: false, reason: "empty" };
+    return { valid: false, reason: 'empty' };
   }
 
   if (!hasOnlySwedishLetters(next)) {
-    return { valid: false, reason: "invalid_characters" };
+    return { valid: false, reason: 'invalid_characters' };
   }
 
   if (next.length !== current.length) {
-    return { valid: false, reason: "wrong_length", wordLength: current.length };
+    return { valid: false, reason: 'wrong_length', wordLength: current.length };
   }
 
   const letterDifferences = countLetterDifferences(current, next);
@@ -74,19 +74,19 @@ export function validateStegvisStep(
   if (letterDifferences !== 1) {
     return {
       valid: false,
-      reason: "not_one_letter_diff",
+      reason: 'not_one_letter_diff',
       letterDifferences: letterDifferences ?? undefined,
     };
   }
 
   if (!allowedWords.has(next)) {
-    return { valid: false, reason: "not_in_dictionary" };
+    return { valid: false, reason: 'not_in_dictionary' };
   }
 
   const usedWords = new Set(chain.map((word) => normalizeStegvisWord(word)));
 
   if (usedWords.has(next)) {
-    return { valid: false, reason: "already_used" };
+    return { valid: false, reason: 'already_used' };
   }
 
   return { valid: true, normalizedWord: next };
@@ -97,37 +97,37 @@ export function getStegvisValidationMessage(
   context: StegvisValidationContext = {},
 ) {
   switch (reason) {
-    case "empty":
-      return "Skriv nästa ord.";
-    case "invalid_characters":
-      return "Endast svenska bokstäver.";
-    case "wrong_length":
+    case 'empty':
+      return 'Skriv nästa ord.';
+    case 'invalid_characters':
+      return 'Endast svenska bokstäver.';
+    case 'wrong_length':
       return context.wordLength
         ? `Ordet måste vara ${context.wordLength} bokstäver långt.`
-        : "Ordet har fel längd.";
-    case "not_one_letter_diff":
+        : 'Ordet har fel längd.';
+    case 'not_one_letter_diff':
       if (context.letterDifferences === 0) {
-        return "Du ändrade inga bokstäver. Ändra bara 1.";
+        return 'Du ändrade inga bokstäver. Ändra bara 1.';
       }
 
       if (context.letterDifferences && context.letterDifferences > 1) {
         return `Du ändrade ${context.letterDifferences} bokstäver. Ändra bara 1.`;
       }
 
-      return "Ändra bara en bokstav.";
-    case "not_in_dictionary":
-      return "Ordet finns inte i ordlistan.";
-    case "already_used":
-      return "Det ordet finns redan i kedjan.";
+      return 'Ändra bara en bokstav.';
+    case 'not_in_dictionary':
+      return 'Ordet finns inte i ordlistan.';
+    case 'already_used':
+      return 'Det ordet finns redan i kedjan.';
   }
 }
 
 export type StegvisSampleSolutionIssue =
-  | "missing_solution"
-  | "wrong_start"
-  | "wrong_target"
-  | "invalid_step"
-  | "minimum_steps_mismatch";
+  | 'missing_solution'
+  | 'wrong_start'
+  | 'wrong_target'
+  | 'invalid_step'
+  | 'minimum_steps_mismatch';
 
 export type StegvisSampleSolutionValidation =
   | { valid: true }
@@ -146,8 +146,8 @@ export function validateStegvisSampleSolution(
   if (!puzzle.sampleSolution || puzzle.sampleSolution.length < 2) {
     return {
       valid: false,
-      issue: "missing_solution",
-      message: "sampleSolution saknas eller är för kort",
+      issue: 'missing_solution',
+      message: 'sampleSolution saknas eller är för kort',
     };
   }
 
@@ -158,7 +158,7 @@ export function validateStegvisSampleSolution(
   if (solution[0] !== start) {
     return {
       valid: false,
-      issue: "wrong_start",
+      issue: 'wrong_start',
       message: `första ordet är "${solution[0]}", förväntat "${start}"`,
     };
   }
@@ -166,7 +166,7 @@ export function validateStegvisSampleSolution(
   if (solution[solution.length - 1] !== target) {
     return {
       valid: false,
-      issue: "wrong_target",
+      issue: 'wrong_target',
       message: `sista ordet är "${solution[solution.length - 1]}", förväntat "${target}"`,
     };
   }
@@ -174,23 +174,21 @@ export function validateStegvisSampleSolution(
   const chain: string[] = [solution[0]];
 
   for (let index = 1; index < solution.length; index += 1) {
-    const step = validateStegvisStep(
-      chain[chain.length - 1],
-      solution[index],
-      chain,
-      allowedWords,
-    );
+    const step = validateStegvisStep(chain[chain.length - 1], solution[index], chain, allowedWords);
 
     if (!step.valid) {
       return {
         valid: false,
-        issue: "invalid_step",
+        issue: 'invalid_step',
         stepIndex: index,
         reason: step.reason,
-        message: `${chain[chain.length - 1]} → ${solution[index]}: ${getStegvisValidationMessage(step.reason, {
-          letterDifferences: step.letterDifferences,
-          wordLength: step.wordLength,
-        })}`,
+        message: `${chain[chain.length - 1]} → ${solution[index]}: ${getStegvisValidationMessage(
+          step.reason,
+          {
+            letterDifferences: step.letterDifferences,
+            wordLength: step.wordLength,
+          },
+        )}`,
       };
     }
 
@@ -199,13 +197,10 @@ export function validateStegvisSampleSolution(
 
   const steps = solution.length - 1;
 
-  if (
-    puzzle.minimumSteps !== undefined &&
-    puzzle.minimumSteps !== steps
-  ) {
+  if (puzzle.minimumSteps !== undefined && puzzle.minimumSteps !== steps) {
     return {
       valid: false,
-      issue: "minimum_steps_mismatch",
+      issue: 'minimum_steps_mismatch',
       message: `minimumSteps är ${puzzle.minimumSteps}, kedjan har ${steps} steg`,
     };
   }

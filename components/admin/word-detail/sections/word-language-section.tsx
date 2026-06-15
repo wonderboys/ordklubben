@@ -5,8 +5,8 @@ import {
   SelectInput,
   SubmitButton,
   TextInput,
-} from "@/components/admin/admin-ui";
-import { upsertWordLanguageData } from "@/lib/content/actions";
+} from '@/components/admin/admin-ui';
+import { upsertWordLanguageData } from '@/lib/content/actions';
 import {
   GRAMMATICAL_GENDERS,
   GRAMMATICAL_GENDER_LABELS,
@@ -14,11 +14,11 @@ import {
   PART_OF_SPEECH_VALUES,
   formatGrammaticalGender,
   formatPartOfSpeech,
-} from "@/lib/content/constants";
-import type { WordDetailData } from "@/components/admin/word-detail/types";
-import { WORD_LANGUAGE_INFLECTION_GROUPS } from "@/lib/content/word-language";
+} from '@/lib/content/constants';
+import type { WordDetailData } from '@/components/admin/word-detail/types';
+import { WORD_LANGUAGE_INFLECTION_GROUPS } from '@/lib/content/word-language';
 
-const LANGUAGE_TAB = "language";
+const LANGUAGE_TAB = 'language';
 
 function LanguageInfoBox() {
   return (
@@ -44,20 +44,20 @@ function LanguageDisplay({ word }: { word: WordDetailData }) {
   const inflections = data?.inflections ?? {};
 
   const coreItems = [
-    { label: "Ordklass", value: formatPartOfSpeech(data?.partOfSpeech) },
-    { label: "Genus", value: formatGrammaticalGender(data?.gender) },
-    { label: "Lemma", value: data?.lemma?.trim() || "—" },
-    { label: "Uttal", value: data?.pronunciation?.trim() || "—" },
+    { label: 'Ordklass', value: formatPartOfSpeech(data?.partOfSpeech) },
+    { label: 'Genus', value: formatGrammaticalGender(data?.gender) },
+    { label: 'Lemma', value: data?.lemma?.trim() || '—' },
+    { label: 'Uttal', value: data?.pronunciation?.trim() || '—' },
   ];
 
   const inflectionItems = WORD_LANGUAGE_INFLECTION_GROUPS.flatMap((group) =>
     group.fields.map((field) => ({
       label: field.label,
-      value: inflections[field.key]?.trim() || "—",
+      value: inflections[field.key]?.trim() || '—',
     })),
   );
 
-  const hasAnyData = [...coreItems, ...inflectionItems].some((item) => item.value !== "—");
+  const hasAnyData = [...coreItems, ...inflectionItems].some((item) => item.value !== '—');
 
   if (!hasAnyData) {
     return (
@@ -76,7 +76,7 @@ function LanguageDisplay({ word }: { word: WordDetailData }) {
         </p>
         <AdminDefinitionList items={coreItems} />
       </div>
-      {inflectionItems.some((item) => item.value !== "—") ? (
+      {inflectionItems.some((item) => item.value !== '—') ? (
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.04em] text-print-muted">
             Böjningar
@@ -104,7 +104,7 @@ function LanguageEditForm({ word }: { word: WordDetailData }) {
             <SelectInput
               id="language-partOfSpeech"
               name="partOfSpeech"
-              defaultValue={data?.partOfSpeech ?? ""}
+              defaultValue={data?.partOfSpeech ?? ''}
             >
               <option value="">Ej satt</option>
               {PART_OF_SPEECH_VALUES.map((value) => (
@@ -115,7 +115,7 @@ function LanguageEditForm({ word }: { word: WordDetailData }) {
             </SelectInput>
           </Field>
           <Field label="Genus" htmlFor="language-gender">
-            <SelectInput id="language-gender" name="gender" defaultValue={data?.gender ?? ""}>
+            <SelectInput id="language-gender" name="gender" defaultValue={data?.gender ?? ''}>
               <option value="">Ej satt</option>
               {GRAMMATICAL_GENDERS.map((value) => (
                 <option key={value} value={value}>
@@ -128,15 +128,15 @@ function LanguageEditForm({ word }: { word: WordDetailData }) {
             <TextInput
               id="language-lemma"
               name="lemma"
-              defaultValue={data?.lemma ?? ""}
-              placeholder={word.answer.toLocaleLowerCase("sv-SE")}
+              defaultValue={data?.lemma ?? ''}
+              placeholder={word.answer.toLocaleLowerCase('sv-SE')}
             />
           </Field>
           <Field label="Uttal" htmlFor="language-pronunciation" hint="Valfritt">
             <TextInput
               id="language-pronunciation"
               name="pronunciation"
-              defaultValue={data?.pronunciation ?? ""}
+              defaultValue={data?.pronunciation ?? ''}
             />
           </Field>
         </div>
@@ -151,7 +151,7 @@ function LanguageEditForm({ word }: { word: WordDetailData }) {
                 <TextInput
                   id={`language-${field.key}`}
                   name={field.key}
-                  defaultValue={inflections[field.key] ?? ""}
+                  defaultValue={inflections[field.key] ?? ''}
                 />
               </Field>
             ))}

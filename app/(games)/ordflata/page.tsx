@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
-import { OrdflataGame } from "@/components/games/ordflata/ordflata-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { BodyText } from "@/components/ui/typography";
-import { loadOrdflataAlphaPuzzle } from "@/lib/content/ordflata-alpha";
-import { isDatabaseConfigured } from "@/lib/db/prisma";
+import { notFound } from 'next/navigation';
+import { OrdflataGame } from '@/components/games/ordflata/ordflata-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { BodyText } from '@/components/ui/typography';
+import { loadOrdflataAlphaPuzzle } from '@/lib/content/ordflata-alpha';
+import { isDatabaseConfigured } from '@/lib/db/prisma';
 
 export default async function OrdflataPage() {
   if (!isDatabaseConfigured()) {

@@ -1,37 +1,32 @@
 import {
   buildStegvisGeneratorCorpus,
   generateStegvisPuzzleFromCorpus,
-} from "@/lib/content/stegvis/generator/generate-corpus";
+} from '@/lib/content/stegvis/generator/generate-corpus';
 import {
   DEFAULT_STEGVIS_GENERATOR_OPTIONS,
   type GenerateStegvisPuzzleOptions,
   type GenerateStegvisPuzzleResult,
   type StegvisDifficultyBand,
-} from "@/lib/content/stegvis/generator/types";
-import {
-  isWordBankAvailable,
-  listActiveWordsWithClues,
-} from "@/lib/content/word-bank";
-import type { WordBankQueryFilters } from "@/lib/content/word-bank/types";
+} from '@/lib/content/stegvis/generator/types';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
+import type { WordBankQueryFilters } from '@/lib/content/word-bank/types';
 
 function difficultyBandToFilters(
   difficulty?: StegvisDifficultyBand,
-): Pick<WordBankQueryFilters, "minDifficulty" | "maxDifficulty"> {
+): Pick<WordBankQueryFilters, 'minDifficulty' | 'maxDifficulty'> {
   switch (difficulty) {
-    case "EASY":
+    case 'EASY':
       return { minDifficulty: 1, maxDifficulty: 2 };
-    case "MEDIUM":
+    case 'MEDIUM':
       return { minDifficulty: 2, maxDifficulty: 3 };
-    case "HARD":
+    case 'HARD':
       return { minDifficulty: 3, maxDifficulty: 5 };
     default:
       return {};
   }
 }
 
-function resolveGenerationFilters(
-  options: GenerateStegvisPuzzleOptions,
-): WordBankQueryFilters {
+function resolveGenerationFilters(options: GenerateStegvisPuzzleOptions): WordBankQueryFilters {
   const length = options.length ?? DEFAULT_STEGVIS_GENERATOR_OPTIONS.length;
 
   return {
@@ -53,7 +48,7 @@ export async function generateStegvisPuzzle(
   if (!isWordBankAvailable()) {
     return {
       ok: false,
-      reason: "Ordbanken är inte tillgänglig (DATABASE_URL saknas).",
+      reason: 'Ordbanken är inte tillgänglig (DATABASE_URL saknas).',
       stats: {
         length,
         candidates: 0,
@@ -67,7 +62,7 @@ export async function generateStegvisPuzzle(
   if (words.length < 2) {
     return {
       ok: false,
-      reason: "För få godkända ord matchar filtren.",
+      reason: 'För få godkända ord matchar filtren.',
       stats: {
         length,
         candidates: words.length,
@@ -83,4 +78,4 @@ export async function generateStegvisPuzzle(
 export {
   buildStegvisGeneratorCorpus,
   generateStegvisPuzzleFromCorpus,
-} from "@/lib/content/stegvis/generator/generate-corpus";
+} from '@/lib/content/stegvis/generator/generate-corpus';

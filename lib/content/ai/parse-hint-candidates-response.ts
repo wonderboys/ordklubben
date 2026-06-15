@@ -1,28 +1,28 @@
-import { z } from "zod";
-import type { HintType } from "@prisma/client";
-import { applyHintCandidateDefaults } from "@/lib/content/ai/hint-candidate-defaults";
-import { getClueTextSkipReason } from "@/lib/content/ai/filter-hint-candidate-drafts";
+import { z } from 'zod';
+import type { HintType } from '@prisma/client';
+import { applyHintCandidateDefaults } from '@/lib/content/ai/hint-candidate-defaults';
+import { getClueTextSkipReason } from '@/lib/content/ai/filter-hint-candidate-drafts';
 import {
   logSkippedHintCandidates,
   type SkippedHintCandidate,
-} from "@/lib/content/ai/hint-candidate-skip-log";
-import type { HintCandidateDraft } from "@/lib/content/ai/types";
-import { trimHintText } from "@/lib/content/normalize-hint";
+} from '@/lib/content/ai/hint-candidate-skip-log';
+import type { HintCandidateDraft } from '@/lib/content/ai/types';
+import { trimHintText } from '@/lib/content/normalize-hint';
 
 export class AiHintGenerationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "AiHintGenerationError";
+    this.name = 'AiHintGenerationError';
   }
 }
 
 const AI_HINT_TYPES = [
-  "DEFINITION",
-  "PARAPHRASE",
-  "ASSOCIATION",
-  "SYNONYM",
-  "WORDPLAY",
-  "EXAMPLE",
+  'DEFINITION',
+  'PARAPHRASE',
+  'ASSOCIATION',
+  'SYNONYM',
+  'WORDPLAY',
+  'EXAMPLE',
 ] as const satisfies readonly HintType[];
 
 const aiHintCandidateSchema = z.object({
@@ -52,26 +52,22 @@ export function parseHintCandidatesResponse(options: {
   try {
     parsedJson = JSON.parse(options.rawContent);
   } catch {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[ai-hint-candidates] Ogiltig JSON:", options.rawContent);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[ai-hint-candidates] Ogiltig JSON:', options.rawContent);
     }
 
-    throw new AiHintGenerationError(
-      "AI returnerade ogiltig JSON. Inga förslag skapades.",
-    );
+    throw new AiHintGenerationError('AI returnerade ogiltig JSON. Inga förslag skapades.');
   }
 
   const parsed = aiResponseSchema.safeParse(parsedJson);
 
   if (!parsed.success) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[ai-hint-candidates] JSON validerades inte:", parsed.error);
-      console.error("[ai-hint-candidates] Råsvar:", options.rawContent);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[ai-hint-candidates] JSON validerades inte:', parsed.error);
+      console.error('[ai-hint-candidates] Råsvar:', options.rawContent);
     }
 
-    throw new AiHintGenerationError(
-      "AI returnerade ett ogiltigt svar. Inga förslag skapades.",
-    );
+    throw new AiHintGenerationError('AI returnerade ett ogiltigt svar. Inga förslag skapades.');
   }
 
   const drafts: HintCandidateDraft[] = [];
@@ -83,7 +79,7 @@ export function parseHintCandidatesResponse(options: {
       skipped.push({
         text: candidate.text,
         type: candidate.type,
-        reason: "duplicate_type",
+        reason: 'duplicate_type',
       });
       continue;
     }
@@ -109,7 +105,7 @@ export function parseHintCandidatesResponse(options: {
       skipped.push({
         text,
         type: candidate.type,
-        reason: "invalid_defaults",
+        reason: 'invalid_defaults',
       });
       continue;
     }
@@ -118,7 +114,7 @@ export function parseHintCandidatesResponse(options: {
     drafts.push(draft);
   }
 
-  logSkippedHintCandidates("Filtrerade AI-förslag", options.answer, skipped);
+  logSkippedHintCandidates('Filtrerade AI-förslag', options.answer, skipped);
 
   return {
     candidates: drafts,

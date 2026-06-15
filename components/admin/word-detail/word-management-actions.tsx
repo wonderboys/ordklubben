@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   AdminActionGroup,
   Field,
@@ -10,33 +10,33 @@ import {
   TextInput,
   adminButtonSecondaryClass,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
-import { archiveWord, updateWord } from "@/lib/content/actions";
+} from '@/components/admin/admin-ui';
+import { archiveWord, updateWord } from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
   STATUS_LABELS,
   WORD_SOURCES,
   WORD_SOURCE_LABELS,
-} from "@/lib/content/constants";
-import type { WordDetailData } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-type PanelMode = "closed" | "edit" | "archive";
+type PanelMode = 'closed' | 'edit' | 'archive';
 
 export function WordManagementActions({ word }: { word: WordDetailData }) {
-  const [mode, setMode] = useState<PanelMode>("closed");
+  const [mode, setMode] = useState<PanelMode>('closed');
   const { relationCounts } = word;
 
   function closePanel() {
-    setMode("closed");
+    setMode('closed');
   }
 
   function openEdit() {
-    setMode((current) => (current === "edit" ? "closed" : "edit"));
+    setMode((current) => (current === 'edit' ? 'closed' : 'edit'));
   }
 
   function openArchive() {
-    setMode((current) => (current === "archive" ? "closed" : "archive"));
+    setMode((current) => (current === 'archive' ? 'closed' : 'archive'));
   }
 
   return (
@@ -45,28 +45,28 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
         <button
           type="button"
           onClick={openEdit}
-          aria-expanded={mode === "edit"}
+          aria-expanded={mode === 'edit'}
           className={cn(
             adminButtonSecondaryClass,
-            mode === "edit" && "border-print-ink/30 bg-print-ink/[0.06]",
+            mode === 'edit' && 'border-print-ink/30 bg-print-ink/[0.06]',
           )}
         >
-          {mode === "edit" ? "Stäng redigering" : "Redigera ord"}
+          {mode === 'edit' ? 'Stäng redigering' : 'Redigera ord'}
         </button>
         <button
           type="button"
           onClick={openArchive}
-          aria-expanded={mode === "archive"}
+          aria-expanded={mode === 'archive'}
           className={cn(
             adminButtonTertiaryClass,
-            mode === "archive" && "bg-print-ink/[0.04] text-print-ink",
+            mode === 'archive' && 'bg-print-ink/[0.04] text-print-ink',
           )}
         >
-          {mode === "archive" ? "Avbryt" : "Arkivera ord…"}
+          {mode === 'archive' ? 'Avbryt' : 'Arkivera ord…'}
         </button>
       </AdminActionGroup>
 
-      {mode === "edit" ? (
+      {mode === 'edit' ? (
         <div className="mt-3 rounded-sm border border-print-ink/10 bg-print-ink/[0.02] p-3">
           <form action={updateWord} className="grid gap-3">
             <input type="hidden" name="id" value={word.id} />
@@ -90,17 +90,17 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
               </Field>
               <Field label="Status" htmlFor="status">
                 <SelectInput id="status" name="status" defaultValue={word.status}>
-                  {CONTENT_STATUSES.filter((value) => value !== "ARCHIVED").map((value) => (
+                  {CONTENT_STATUSES.filter((value) => value !== 'ARCHIVED').map((value) => (
                     <option key={value} value={value}>
                       {STATUS_LABELS[value]}
                     </option>
                   ))}
                 </SelectInput>
               </Field>
-                <Field label="Språk" htmlFor="language">
-                  <TextInput id="language" name="language" defaultValue={word.language} required />
-                </Field>
-                <div className="sm:col-span-2">
+              <Field label="Språk" htmlFor="language">
+                <TextInput id="language" name="language" defaultValue={word.language} required />
+              </Field>
+              <div className="sm:col-span-2">
                 <Field label="Källa" htmlFor="source">
                   <SelectInput id="source" name="source" defaultValue={word.source}>
                     {WORD_SOURCES.map((value) => (
@@ -121,7 +121,12 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
               Regenerera normaliserat ord från ordet vid sparning
             </label>
             <Field label="Anteckningar" htmlFor="notes">
-              <TextArea id="notes" name="notes" defaultValue={word.notes ?? ""} className="min-h-20" />
+              <TextArea
+                id="notes"
+                name="notes"
+                defaultValue={word.notes ?? ''}
+                className="min-h-20"
+              />
             </Field>
             <AdminActionGroup>
               <SubmitButton variant="primary">Spara ändringar</SubmitButton>
@@ -133,19 +138,19 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
         </div>
       ) : null}
 
-      {mode === "archive" ? (
+      {mode === 'archive' ? (
         <div className="mt-3 rounded-sm border border-print-ink/15 bg-print-ink/[0.02] p-3">
           <p className="text-sm font-medium text-print-ink">Arkivera ord</p>
           <p className="mt-1.5 text-sm leading-relaxed text-print-muted">
             Ordet försvinner från ordlistan. Nycklar, lexikon och teman behålls.
           </p>
           <p className="mt-2 text-xs text-print-muted">
-            {relationCounts.hints} nycklar · {relationCounts.hintCandidates} förslag ·{" "}
-            {relationCounts.lexicalEntries} lexikonposter · {relationCounts.wordRelations} relationer ·{" "}
-            {relationCounts.themes} teman
+            {relationCounts.hints} nycklar · {relationCounts.hintCandidates} förslag ·{' '}
+            {relationCounts.lexicalEntries} lexikonposter · {relationCounts.wordRelations}{' '}
+            relationer · {relationCounts.themes} teman
             {relationCounts.puzzleEntries > 0
               ? ` · ${relationCounts.puzzleEntries} pusselplaceringar`
-              : ""}
+              : ''}
           </p>
           {relationCounts.puzzleEntries > 0 ? (
             <p className="mt-2 text-xs text-print-muted">

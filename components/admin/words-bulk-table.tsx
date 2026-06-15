@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { ContentStatus } from "@prisma/client";
-import { AdminPagination } from "@/components/admin/admin-list-ui";
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import type { ContentStatus } from '@prisma/client';
+import { AdminPagination } from '@/components/admin/admin-list-ui';
 import {
   AdminActionGroup,
   SelectInput,
   StatusBadge,
   SubmitButton,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
+} from '@/components/admin/admin-ui';
 import {
   bulkAddThemeToWords,
   bulkApproveWords,
   bulkDraftWords,
   bulkRemoveThemeFromWords,
-} from "@/lib/content/actions";
-import type { AdminPageSize } from "@/lib/content/admin-list";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/actions';
+import type { AdminPageSize } from '@/lib/content/admin-list';
+import { cn } from '@/lib/utils';
 
 type WordRow = {
   id: string;
@@ -45,15 +45,9 @@ type WordsBulkTableProps = {
   listQuery: Record<string, string | undefined>;
 };
 
-const adminCheckboxClass = "relative top-0.5 size-4 rounded-sm border border-print-ink/20";
+const adminCheckboxClass = 'relative top-0.5 size-4 rounded-sm border border-print-ink/20';
 
-function HiddenBulkFields({
-  wordIds,
-  returnTo,
-}: {
-  wordIds: string[];
-  returnTo: string;
-}) {
+function HiddenBulkFields({ wordIds, returnTo }: { wordIds: string[]; returnTo: string }) {
   return (
     <>
       <input type="hidden" name="returnTo" value={returnTo} />
@@ -78,12 +72,12 @@ function WordsBulkActionBar({
   onClear: () => void;
 }) {
   const countLabel =
-    selectedIds.length === 1 ? "1 ord markerat" : `${selectedIds.length} ord markerade`;
+    selectedIds.length === 1 ? '1 ord markerat' : `${selectedIds.length} ord markerade`;
 
   const allApproved =
-    selectedWords.length > 0 && selectedWords.every((word) => word.status === "APPROVED");
+    selectedWords.length > 0 && selectedWords.every((word) => word.status === 'APPROVED');
   const allDraft =
-    selectedWords.length > 0 && selectedWords.every((word) => word.status === "DRAFT");
+    selectedWords.length > 0 && selectedWords.every((word) => word.status === 'DRAFT');
 
   return (
     <div className="mb-4 rounded-sm border border-print-ink/15 bg-print-ink/[0.03] px-3 py-2.5">
@@ -153,14 +147,13 @@ export function WordsBulkTable({
   const selectedIds = useMemo(() => [...selectedById.keys()], [selectedById]);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
-  const allPageSelected =
-    words.length > 0 && words.every((word) => selectedSet.has(word.id));
+  const allPageSelected = words.length > 0 && words.every((word) => selectedSet.has(word.id));
 
   const selectedWords = useMemo(
     () =>
       selectedIds.map((id) => ({
         id,
-        status: selectedById.get(id) ?? "DRAFT",
+        status: selectedById.get(id) ?? 'DRAFT',
       })),
     [selectedById, selectedIds],
   );
@@ -228,7 +221,7 @@ export function WordsBulkTable({
                   className={adminCheckboxClass}
                 />
               </th>
-              {["Ord", "Status", "Nycklar", "Förslag", "Teman", "Uppdaterad"].map((header) => (
+              {['Ord', 'Status', 'Nycklar', 'Förslag', 'Teman', 'Uppdaterad'].map((header) => (
                 <th
                   key={header}
                   className="px-2.5 py-2 text-xs font-medium uppercase tracking-[0.04em] text-print-muted"
@@ -246,8 +239,8 @@ export function WordsBulkTable({
                 <tr
                   key={word.id}
                   className={cn(
-                    "border-b border-print-ink/10 align-top",
-                    isSelected ? "bg-print-ink/[0.03]" : null,
+                    'border-b border-print-ink/10 align-top',
+                    isSelected ? 'bg-print-ink/[0.03]' : null,
                   )}
                 >
                   <td className="px-2.5 py-2 align-middle">
@@ -274,7 +267,7 @@ export function WordsBulkTable({
                   <td className="px-2.5 py-2">{word.candidateCount}</td>
                   <td className="px-2.5 py-2">{word.themeCount}</td>
                   <td className="px-2.5 py-2 text-print-muted">
-                    {new Date(word.updatedAt).toLocaleDateString("sv-SE")}
+                    {new Date(word.updatedAt).toLocaleDateString('sv-SE')}
                   </td>
                 </tr>
               );

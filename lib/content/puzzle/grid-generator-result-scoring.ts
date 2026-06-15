@@ -4,16 +4,16 @@ import {
   countGridCrossings,
   scoreBlockPattern,
   type BlockedCell,
-} from "@/lib/content/puzzle/grid-generator-blocks";
-import { computeGridConnectivityMetrics } from "@/lib/content/puzzle/grid-generator-connectivity";
+} from '@/lib/content/puzzle/grid-generator-blocks';
+import { computeGridConnectivityMetrics } from '@/lib/content/puzzle/grid-generator-connectivity';
 import {
   computeLayoutCompactness,
   computeWordLengthStats,
   scoreLengthDistribution,
   type GridSizeProfile,
-} from "@/lib/content/puzzle/grid-generator-scoring";
-import { scoreGridThemeQuality } from "@/lib/content/puzzle/grid-generator-quality";
-import { getAnswerLength } from "@/lib/content/puzzle/grid";
+} from '@/lib/content/puzzle/grid-generator-scoring';
+import { scoreGridThemeQuality } from '@/lib/content/puzzle/grid-generator-quality';
+import { getAnswerLength } from '@/lib/content/puzzle/grid';
 
 export type GridAttemptScore = {
   total: number;
@@ -42,7 +42,7 @@ export type GridAttemptScore = {
 };
 
 export function scoreGridAttempt(options: {
-  entries: import("@/lib/content/puzzle/grid").PuzzlePlacementInput[];
+  entries: import('@/lib/content/puzzle/grid').PuzzlePlacementInput[];
   blockedCells: BlockedCell[];
   width: number;
   height: number;
@@ -118,8 +118,7 @@ export function scoreGridAttempt(options: {
   const gapFillScore = gapsFilled * 32;
   const lengthMixScore = scoreLengthDistribution(lengthStats, profile, entries.length);
   const openConnectionScore = connectivity.openConnections * 10;
-  const isolatedRegionPenalty =
-    connectivity.isolatedEmptyRegions * 110 + clusterPenalty;
+  const isolatedRegionPenalty = connectivity.isolatedEmptyRegions * 110 + clusterPenalty;
   const themeQualityScore = scoreGridThemeQuality({
     themeHitCount,
     themeSelected,
@@ -192,10 +191,7 @@ export function scoreGridAttempt(options: {
   };
 }
 
-export function compareGridAttempts(
-  left: GridAttemptScore,
-  right: GridAttemptScore,
-) {
+export function compareGridAttempts(left: GridAttemptScore, right: GridAttemptScore) {
   if (left.finalValidationOk !== right.finalValidationOk) {
     return left.finalValidationOk ? -1 : 1;
   }
@@ -223,4 +219,4 @@ export function compareGridAttempts(
   return right.total - left.total;
 }
 
-export { getAnswerLetters } from "@/lib/content/puzzle/grid-generator-scoring";
+export { getAnswerLetters } from '@/lib/content/puzzle/grid-generator-scoring';

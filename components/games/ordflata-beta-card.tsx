@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { BodyText, PageTitle } from "@/components/ui/typography";
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { BodyText, PageTitle } from '@/components/ui/typography';
 
 type OrdflataBetaCardProps = {
   href: string;

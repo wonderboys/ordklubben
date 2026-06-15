@@ -1,15 +1,11 @@
-import type { WordGraph } from "@/lib/content/stegvis/word-graph/types";
-import { normalizeGraphWord } from "@/lib/content/stegvis/word-graph/utils";
+import type { WordGraph } from '@/lib/content/stegvis/word-graph/types';
+import { normalizeGraphWord } from '@/lib/content/stegvis/word-graph/utils';
 
 /**
  * Finds the shortest path between start and target using BFS.
  * Returns normalized uppercase words, or null when no path exists.
  */
-export function findShortestPath(
-  start: string,
-  target: string,
-  graph: WordGraph,
-): string[] | null {
+export function findShortestPath(start: string, target: string, graph: WordGraph): string[] | null {
   const startWord = normalizeGraphWord(start);
   const targetWord = normalizeGraphWord(target);
 

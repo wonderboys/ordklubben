@@ -1,9 +1,9 @@
-import { StegvisGame } from "@/components/games/stegvis/stegvis-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { loadStegvisPlaySession } from "@/lib/content/stegvis/load-play-session";
+import { StegvisGame } from '@/components/games/stegvis/stegvis-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { loadStegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function StegvisPage() {
   const session = await loadStegvisPlaySession();

@@ -1,6 +1,6 @@
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
-import { BILDJAKT_PROTOTYPE_PUZZLES } from "@/lib/game/bildjakten/puzzles";
-import { createBildjaktPuzzle, type BildjaktPuzzle } from "@/lib/game/bildjakten/types";
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
+import { BILDJAKT_PROTOTYPE_PUZZLES } from '@/lib/game/bildjakten/puzzles';
+import { createBildjaktPuzzle, type BildjaktPuzzle } from '@/lib/game/bildjakten/types';
 
 /**
  * Puzzle source for Bildjakten.
@@ -19,11 +19,11 @@ function normalizeImagePath(value: string): string {
     return trimmed;
   }
 
-  if (trimmed.startsWith("/")) {
+  if (trimmed.startsWith('/')) {
     return trimmed;
   }
 
-  return `/${trimmed.replace(/^\.\//, "")}`;
+  return `/${trimmed.replace(/^\.\//, '')}`;
 }
 
 function extractImageUrlFromText(text: string | null | undefined): string | null {
@@ -33,7 +33,11 @@ function extractImageUrlFromText(text: string | null | undefined): string | null
 
   const trimmed = text.trim();
 
-  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/") || IMAGE_PATH_PATTERN.test(trimmed)) {
+  if (
+    /^https?:\/\//i.test(trimmed) ||
+    trimmed.startsWith('/') ||
+    IMAGE_PATH_PATTERN.test(trimmed)
+  ) {
     return normalizeImagePath(trimmed);
   }
 
@@ -44,7 +48,11 @@ function extractImageUrlFromText(text: string | null | undefined): string | null
       continue;
     }
 
-    if (/^https?:\/\//i.test(candidate) || candidate.startsWith("/") || IMAGE_PATH_PATTERN.test(candidate)) {
+    if (
+      /^https?:\/\//i.test(candidate) ||
+      candidate.startsWith('/') ||
+      IMAGE_PATH_PATTERN.test(candidate)
+    ) {
       return normalizeImagePath(candidate);
     }
   }
@@ -70,13 +78,13 @@ async function loadApprovedMediaAssetPuzzles(): Promise<BildjaktPuzzle[]> {
 
   const mediaAssets = await prisma.mediaAsset.findMany({
     where: {
-      mediaType: "IMAGE",
-      status: "APPROVED",
+      mediaType: 'IMAGE',
+      status: 'APPROVED',
       word: {
-        status: "APPROVED",
+        status: 'APPROVED',
       },
     },
-    orderBy: [{ word: { answer: "asc" } }, { updatedAt: "desc" }],
+    orderBy: [{ word: { answer: 'asc' } }, { updatedAt: 'desc' }],
     select: {
       id: true,
       title: true,
@@ -107,7 +115,8 @@ async function loadApprovedMediaAssetPuzzles(): Promise<BildjaktPuzzle[]> {
       continue;
     }
 
-    const altText = asset.altText?.trim() || asset.title?.trim() || `Bild för ordet ${asset.word.answer}`;
+    const altText =
+      asset.altText?.trim() || asset.title?.trim() || `Bild för ordet ${asset.word.answer}`;
 
     puzzles.push(
       mapMediaAssetToBildjaktPuzzle({
@@ -134,7 +143,7 @@ class MediaAssetBildjaktPuzzleProvider implements BildjaktPuzzleProvider {
     try {
       return await loadApprovedMediaAssetPuzzles();
     } catch (error) {
-      console.error("[bildjakten] Failed to load MediaAsset puzzles:", error);
+      console.error('[bildjakten] Failed to load MediaAsset puzzles:', error);
       return [];
     }
   }

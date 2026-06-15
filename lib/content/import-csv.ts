@@ -7,7 +7,7 @@ export type ParsedCsv = {
 
 function parseCsvRow(line: string) {
   const cells: string[] = [];
-  let current = "";
+  let current = '';
   let inQuotes = false;
 
   for (let index = 0; index < line.length; index += 1) {
@@ -24,9 +24,9 @@ function parseCsvRow(line: string) {
       continue;
     }
 
-    if (char === "," && !inQuotes) {
+    if (char === ',' && !inQuotes) {
       cells.push(current);
-      current = "";
+      current = '';
       continue;
     }
 
@@ -39,24 +39,22 @@ function parseCsvRow(line: string) {
 
 export function parseCsv(csvText: string): ParsedCsv {
   const lines = csvText
-    .replace(/^\uFEFF/, "")
+    .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .filter((line) => line.trim().length > 0);
 
   if (lines.length === 0) {
-    throw new Error("CSV-filen är tom.");
+    throw new Error('CSV-filen är tom.');
   }
 
-  const headers = parseCsvRow(lines[0]).map((header) =>
-    header.trim().toLocaleLowerCase("sv-SE"),
-  );
+  const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLocaleLowerCase('sv-SE'));
 
   const rows = lines.slice(1).map((line) => {
     const values = parseCsvRow(line);
     const row: CsvRow = {};
 
     headers.forEach((header, index) => {
-      row[header] = values[index] ?? "";
+      row[header] = values[index] ?? '';
     });
 
     return row;
@@ -69,6 +67,6 @@ export function requireCsvHeaders(headers: string[], requiredHeaders: string[]) 
   const missing = requiredHeaders.filter((header) => !headers.includes(header));
 
   if (missing.length > 0) {
-    throw new Error(`CSV-filen saknar kolumn(er): ${missing.join(", ")}.`);
+    throw new Error(`CSV-filen saknar kolumn(er): ${missing.join(', ')}.`);
   }
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useTransition } from 'react';
 import {
   buildCellOwnershipMap,
   buildPuzzleGrid,
@@ -8,10 +8,10 @@ import {
   getPlacementCells,
   type PuzzleBlockedCellInput,
   type PuzzlePlacementInput,
-} from "@/lib/content/puzzle/grid";
-import type { PuzzleGhostPlacement } from "@/components/admin/puzzle/puzzle-ghost-placement";
-import { togglePuzzleBlockedCell } from "@/lib/content/puzzle-actions";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/puzzle/grid';
+import type { PuzzleGhostPlacement } from '@/components/admin/puzzle/puzzle-ghost-placement';
+import { togglePuzzleBlockedCell } from '@/lib/content/puzzle-actions';
+import { cn } from '@/lib/utils';
 
 export type PuzzleGridEntry = PuzzlePlacementInput & {
   id: string;
@@ -19,9 +19,9 @@ export type PuzzleGridEntry = PuzzlePlacementInput & {
 };
 
 export type PuzzleGridCellInteraction =
-  | { type: "entry"; entryId: string; row: number; col: number }
-  | { type: "placement"; row: number; col: number }
-  | { type: "blocked"; row: number; col: number };
+  | { type: 'entry'; entryId: string; row: number; col: number }
+  | { type: 'placement'; row: number; col: number }
+  | { type: 'blocked'; row: number; col: number };
 
 type PuzzleGridEditorProps = {
   puzzleId: string;
@@ -73,9 +73,7 @@ export function PuzzleGridEditor({
       return new Set<string>();
     }
 
-    return new Set(
-      getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`),
-    );
+    return new Set(getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`));
   }, [activeEntryId, entries]);
 
   const activeStartKey = useMemo(() => {
@@ -105,15 +103,15 @@ export function PuzzleGridEditor({
       }
 
       const formData = new FormData();
-      formData.set("puzzleId", puzzleId);
-      formData.set("row", String(row));
-      formData.set("col", String(col));
+      formData.set('puzzleId', puzzleId);
+      formData.set('row', String(row));
+      formData.set('col', String(col));
       startTransition(() => togglePuzzleBlockedCell(formData));
       return;
     }
 
     if (cell.blocked) {
-      onCellInteract({ type: "blocked", row, col });
+      onCellInteract({ type: 'blocked', row, col });
       return;
     }
 
@@ -121,7 +119,7 @@ export function PuzzleGridEditor({
 
     if (ownership && !allowPlacementOnOccupiedCells) {
       onCellInteract({
-        type: "entry",
+        type: 'entry',
         entryId: ownership.entryId,
         row,
         col,
@@ -129,13 +127,13 @@ export function PuzzleGridEditor({
       return;
     }
 
-    onCellInteract({ type: "placement", row, col });
+    onCellInteract({ type: 'placement', row, col });
   }
 
-  const cellSize = width <= 9 ? "2.85rem" : width <= 12 ? "2.45rem" : "2.1rem";
+  const cellSize = width <= 9 ? '2.85rem' : width <= 12 ? '2.45rem' : '2.1rem';
 
   return (
-    <div className={cn("w-full", isPending && "opacity-70")}>
+    <div className={cn('w-full', isPending && 'opacity-70')}>
       <div
         className="inline-grid w-full max-w-full gap-0.5 rounded-sm border-2 border-print-ink/25 bg-print-ink/10 p-1"
         style={{
@@ -151,8 +149,7 @@ export function PuzzleGridEditor({
             const isPlacementCell =
               selectedCell?.row === rowIndex && selectedCell?.col === colIndex;
             const isBlockedSelected =
-              selectedBlockedCell?.row === rowIndex &&
-              selectedBlockedCell?.col === colIndex;
+              selectedBlockedCell?.row === rowIndex && selectedBlockedCell?.col === colIndex;
             const startNumber = startCellNumbers.get(cellKey);
             const ghostCell = ghostPlacement?.cells.get(cellKey);
             const isGhostCell = Boolean(ghostCell);
@@ -169,59 +166,57 @@ export function PuzzleGridEditor({
                 data-row={rowIndex}
                 data-col={colIndex}
                 data-entry-id={ownership?.entryId ?? undefined}
-                data-is-start={ownership?.isStart ? "true" : undefined}
-                data-ghost-cell={isGhostCell ? "true" : undefined}
-                data-cell-kind={
-                  cell.blocked ? "blocked" : displayLetter ? "letter" : "empty"
-                }
+                data-is-start={ownership?.isStart ? 'true' : undefined}
+                data-ghost-cell={isGhostCell ? 'true' : undefined}
+                data-cell-kind={cell.blocked ? 'blocked' : displayLetter ? 'letter' : 'empty'}
                 onMouseEnter={() => onCellHover?.({ row: rowIndex, col: colIndex })}
                 onMouseLeave={() => onCellHover?.(null)}
                 onClick={() => handleCellClick(rowIndex, colIndex)}
                 className={cn(
-                  "@container group relative flex aspect-square items-center justify-center border uppercase transition-[colors,box-shadow,transform]",
-                  !blockMode && "hover:z-10 hover:ring-2 hover:ring-print-ink/20",
+                  '@container group relative flex aspect-square items-center justify-center border uppercase transition-[colors,box-shadow,transform]',
+                  !blockMode && 'hover:z-10 hover:ring-2 hover:ring-print-ink/20',
                   blockMode &&
                     !cell.letter &&
-                    "cursor-crosshair hover:z-10 hover:ring-2 hover:ring-print-yellow/45",
-                  blockMode && cell.letter && "cursor-not-allowed opacity-75 hover:ring-0",
+                    'cursor-crosshair hover:z-10 hover:ring-2 hover:ring-print-yellow/45',
+                  blockMode && cell.letter && 'cursor-not-allowed opacity-75 hover:ring-0',
                   cell.blocked
                     ? cn(
-                        "border-print-ink/20 bg-[#5a5752] shadow-inner",
-                        isBlockedSelected && "ring-2 ring-print-yellow ring-offset-1",
-                        !blockMode && "hover:ring-print-yellow/50",
+                        'border-print-ink/20 bg-[#5a5752] shadow-inner',
+                        isBlockedSelected && 'ring-2 ring-print-yellow ring-offset-1',
+                        !blockMode && 'hover:ring-print-yellow/50',
                       )
                     : isGhostCell
                       ? isGhostInvalid
-                        ? "z-10 border-dashed border-print-yellow/70 bg-print-yellow-soft/50 text-print-ink"
+                        ? 'z-10 border-dashed border-print-yellow/70 bg-print-yellow-soft/50 text-print-ink'
                         : isGhostOverlap
                           ? cn(
-                              "z-10 border-dashed border-print-ink/35 bg-print-bg/35 text-print-ink/85 ring-1 ring-inset ring-print-ink/15",
-                              isGhostStart && "ring-2 ring-print-ink/20 ring-offset-1",
+                              'z-10 border-dashed border-print-ink/35 bg-print-bg/35 text-print-ink/85 ring-1 ring-inset ring-print-ink/15',
+                              isGhostStart && 'ring-2 ring-print-ink/20 ring-offset-1',
                             )
                           : cn(
-                              "z-10 border-dashed border-print-ink/45 bg-print-bg/55 text-print-ink/75",
-                              isGhostStart && "ring-2 ring-print-ink/20 ring-offset-1",
+                              'z-10 border-dashed border-print-ink/45 bg-print-bg/55 text-print-ink/75',
+                              isGhostStart && 'ring-2 ring-print-ink/20 ring-offset-1',
                             )
                       : cell.letter
                         ? cell.conflict
-                          ? "border-print-red/40 bg-print-red-soft text-print-red"
+                          ? 'border-print-red/40 bg-print-red-soft text-print-red'
                           : isActiveCell
                             ? cn(
-                                "z-10 border-print-ink/25 bg-print-bg/90 text-print-ink shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
-                                !isActiveStart && "ring-1 ring-inset ring-print-ink/12",
+                                'z-10 border-print-ink/25 bg-print-bg/90 text-print-ink shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]',
+                                !isActiveStart && 'ring-1 ring-inset ring-print-ink/12',
                               )
-                            : "border-print-ink/15 bg-print-surface text-print-ink"
+                            : 'border-print-ink/15 bg-print-surface text-print-ink'
                         : cn(
-                            "border-print-ink/10 bg-print-bg text-transparent",
-                            "hover:border-print-ink/25 hover:bg-print-ink/[0.04]",
+                            'border-print-ink/10 bg-print-bg text-transparent',
+                            'hover:border-print-ink/25 hover:bg-print-ink/[0.04]',
                           ),
                   isPlacementCell &&
                     !cell.blocked &&
                     !isGhostCell &&
-                    "z-10 border-print-ink bg-print-ink/[0.03] ring-2 ring-print-ink/35 ring-offset-1",
+                    'z-10 border-print-ink bg-print-ink/[0.03] ring-2 ring-print-ink/35 ring-offset-1',
                   isActiveStart &&
                     !isGhostCell &&
-                    "z-20 border-print-ink ring-4 ring-print-ink/25 ring-offset-2",
+                    'z-20 border-print-ink ring-4 ring-print-ink/25 ring-offset-2',
                 )}
                 title={
                   isGhostInvalid && ghostPlacement?.message
@@ -239,15 +234,15 @@ export function PuzzleGridEditor({
                 ) : displayLetter ? (
                   <span
                     className={cn(
-                      "text-[clamp(1.2rem,52cqmin,1.65rem)] font-bold leading-none tracking-[0.02em]",
-                      isGhostCell && !isGhostInvalid && "opacity-80",
-                      isGhostInvalid && "opacity-95",
+                      'text-[clamp(1.2rem,52cqmin,1.65rem)] font-bold leading-none tracking-[0.02em]',
+                      isGhostCell && !isGhostInvalid && 'opacity-80',
+                      isGhostInvalid && 'opacity-95',
                     )}
                   >
                     {displayLetter}
                   </span>
                 ) : (
-                  "·"
+                  '·'
                 )}
               </button>
             );

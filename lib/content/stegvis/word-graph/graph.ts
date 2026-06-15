@@ -1,8 +1,5 @@
-import type { WordGraph } from "@/lib/content/stegvis/word-graph/types";
-import {
-  isOneLetterApart,
-  normalizeGraphWord,
-} from "@/lib/content/stegvis/word-graph/utils";
+import type { WordGraph } from '@/lib/content/stegvis/word-graph/types';
+import { isOneLetterApart, normalizeGraphWord } from '@/lib/content/stegvis/word-graph/utils';
 
 function uniqueNormalizedWords(words: string[]): string[] {
   const seen = new Set<string>();
@@ -29,7 +26,7 @@ export function groupWordsByLength(words: string[]): Map<number, string[]> {
   }
 
   for (const bucket of groups.values()) {
-    bucket.sort((left, right) => left.localeCompare(right, "sv"));
+    bucket.sort((left, right) => left.localeCompare(right, 'sv'));
   }
 
   return groups;
@@ -50,10 +47,7 @@ export function getNeighbors(word: string, words: string[]): string[] {
   for (const candidate of words) {
     const normalizedCandidate = normalizeGraphWord(candidate);
 
-    if (
-      normalizedCandidate.length !== normalized.length ||
-      normalizedCandidate === normalized
-    ) {
+    if (normalizedCandidate.length !== normalized.length || normalizedCandidate === normalized) {
       continue;
     }
 
@@ -62,7 +56,7 @@ export function getNeighbors(word: string, words: string[]): string[] {
     }
   }
 
-  return neighbors.sort((left, right) => left.localeCompare(right, "sv"));
+  return neighbors.sort((left, right) => left.localeCompare(right, 'sv'));
 }
 
 /**
@@ -81,11 +75,7 @@ export function buildWordGraph(words: string[]): WordGraph {
     }
 
     for (let leftIndex = 0; leftIndex < lengthWords.length; leftIndex += 1) {
-      for (
-        let rightIndex = leftIndex + 1;
-        rightIndex < lengthWords.length;
-        rightIndex += 1
-      ) {
+      for (let rightIndex = leftIndex + 1; rightIndex < lengthWords.length; rightIndex += 1) {
         const left = lengthWords[leftIndex];
         const right = lengthWords[rightIndex];
 
@@ -102,13 +92,8 @@ export function buildWordGraph(words: string[]): WordGraph {
   return graph;
 }
 
-export function buildWordGraphForLength(
-  words: string[],
-  length: number,
-): WordGraph {
-  const filtered = uniqueNormalizedWords(words).filter(
-    (word) => word.length === length,
-  );
+export function buildWordGraphForLength(words: string[], length: number): WordGraph {
+  const filtered = uniqueNormalizedWords(words).filter((word) => word.length === length);
 
   return buildWordGraph(filtered);
 }

@@ -10,8 +10,8 @@ export type NormalizedAnswerResult = {
 };
 
 export function normalizeAnswer(input: string): NormalizedAnswerResult {
-  const answer = input.trim().normalize("NFC").toLocaleUpperCase("sv-SE");
-  const normalizedAnswer = answer.replace(REMOVABLE_CHARS_PATTERN, "");
+  const answer = input.trim().normalize('NFC').toLocaleUpperCase('sv-SE');
+  const normalizedAnswer = answer.replace(REMOVABLE_CHARS_PATTERN, '');
 
   return {
     answer,
@@ -23,11 +23,7 @@ export function normalizeAnswer(input: string): NormalizedAnswerResult {
 export function isValidAnswerFormat(input: string) {
   const { answer, normalizedAnswer } = normalizeAnswer(input);
 
-  return (
-    answer.length > 0 &&
-    normalizedAnswer.length > 0 &&
-    CONTENT_ANSWER_PATTERN.test(answer)
-  );
+  return answer.length > 0 && normalizedAnswer.length > 0 && CONTENT_ANSWER_PATTERN.test(answer);
 }
 
 const NORMALIZED_ANSWER_PATTERN = /^[A-ZÅÄÖ]+$/u;
@@ -35,9 +31,9 @@ const NORMALIZED_ANSWER_PATTERN = /^[A-ZÅÄÖ]+$/u;
 export function normalizeNormalizedAnswerInput(input: string) {
   return input
     .trim()
-    .normalize("NFC")
-    .toLocaleUpperCase("sv-SE")
-    .replace(REMOVABLE_CHARS_PATTERN, "");
+    .normalize('NFC')
+    .toLocaleUpperCase('sv-SE')
+    .replace(REMOVABLE_CHARS_PATTERN, '');
 }
 
 export function isValidNormalizedAnswer(input: string) {
@@ -48,11 +44,11 @@ export function isValidNormalizedAnswer(input: string) {
 export function slugifyThemeName(input: string) {
   return input
     .trim()
-    .normalize("NFC")
-    .toLocaleLowerCase("sv-SE")
-    .replace(/['’]/g, "")
-    .replace(THEME_SLUG_SEPARATOR_PATTERN, "-")
-    .replace(THEME_SLUG_INVALID_PATTERN, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .normalize('NFC')
+    .toLocaleLowerCase('sv-SE')
+    .replace(/['’]/g, '')
+    .replace(THEME_SLUG_SEPARATOR_PATTERN, '-')
+    .replace(THEME_SLUG_INVALID_PATTERN, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }

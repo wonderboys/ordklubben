@@ -8,20 +8,16 @@ import {
   SubmitButton,
   TextArea,
   TextInput,
-} from "@/components/admin/admin-ui";
-import { createWord } from "@/lib/content/actions";
-import { CONTENT_STATUSES, STATUS_LABELS } from "@/lib/content/constants";
+} from '@/components/admin/admin-ui';
+import { createWord } from '@/lib/content/actions';
+import { CONTENT_STATUSES, STATUS_LABELS } from '@/lib/content/constants';
 
 type SearchParams = Promise<{
   error?: string;
   success?: string;
 }>;
 
-export default async function NewWordPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function NewWordPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   return (
@@ -44,7 +40,7 @@ export default async function NewWordPage({
 
           <Field label="Status" htmlFor="status">
             <SelectInput id="status" name="status" defaultValue="DRAFT">
-              {CONTENT_STATUSES.filter((value) => value !== "ARCHIVED").map((value) => (
+              {CONTENT_STATUSES.filter((value) => value !== 'ARCHIVED').map((value) => (
                 <option key={value} value={value}>
                   {STATUS_LABELS[value]}
                 </option>

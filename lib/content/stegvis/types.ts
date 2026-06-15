@@ -1,4 +1,4 @@
-import type { StegvisPuzzle } from "@/data/stegvis/puzzles";
+import type { StegvisPuzzle } from '@/data/stegvis/puzzles';
 
 export type StegvisWordEndpoint = {
   wordId: string | null;
@@ -6,7 +6,7 @@ export type StegvisWordEndpoint = {
   clueText: string;
 };
 
-export type StegvisChainStepRole = "start" | "middle" | "target";
+export type StegvisChainStepRole = 'start' | 'middle' | 'target';
 
 export type StegvisChainStep = {
   answer: string;

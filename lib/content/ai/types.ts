@@ -1,4 +1,4 @@
-import type { HintType } from "@prisma/client";
+import type { HintType } from '@prisma/client';
 
 export type HintCandidateDraft = {
   text: string;

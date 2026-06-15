@@ -1,9 +1,9 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from '@prisma/client';
 import {
   ACTIVE_CLUE_STATUS,
   ACTIVE_WORD_STATUS,
   type WordBankQueryFilters,
-} from "@/lib/content/word-bank/types";
+} from '@/lib/content/word-bank/types';
 
 export const wordBankWordSelect = {
   id: true,
@@ -26,7 +26,7 @@ export const wordBankWordSelect = {
     },
     orderBy: {
       theme: {
-        name: "asc" as const,
+        name: 'asc' as const,
       },
     },
   },
@@ -44,14 +44,12 @@ export const wordBankClueSelect = {
 } satisfies Prisma.HintSelect;
 
 const clueOrderBy = [
-  { difficulty: "asc" as const },
-  { type: "asc" as const },
-  { text: "asc" as const },
+  { difficulty: 'asc' as const },
+  { type: 'asc' as const },
+  { text: 'asc' as const },
 ];
 
-export function buildActiveWordWhere(
-  filters: WordBankQueryFilters = {},
-): Prisma.WordWhereInput {
+export function buildActiveWordWhere(filters: WordBankQueryFilters = {}): Prisma.WordWhereInput {
   const where: Prisma.WordWhereInput = {
     status: ACTIVE_WORD_STATUS,
   };
@@ -76,17 +74,10 @@ export function buildActiveWordWhere(
 
   if (filters.difficulty !== undefined) {
     where.difficulty = filters.difficulty;
-  } else if (
-    filters.minDifficulty !== undefined ||
-    filters.maxDifficulty !== undefined
-  ) {
+  } else if (filters.minDifficulty !== undefined || filters.maxDifficulty !== undefined) {
     where.difficulty = {
-      ...(filters.minDifficulty !== undefined
-        ? { gte: filters.minDifficulty }
-        : {}),
-      ...(filters.maxDifficulty !== undefined
-        ? { lte: filters.maxDifficulty }
-        : {}),
+      ...(filters.minDifficulty !== undefined ? { gte: filters.minDifficulty } : {}),
+      ...(filters.maxDifficulty !== undefined ? { lte: filters.maxDifficulty } : {}),
     };
   }
 
@@ -121,10 +112,7 @@ export async function fetchActiveWordClues(prisma: PrismaClient, wordId: string)
   });
 }
 
-export async function fetchActiveWordWithCluesRow(
-  prisma: PrismaClient,
-  id: string,
-) {
+export async function fetchActiveWordWithCluesRow(prisma: PrismaClient, id: string) {
   return prisma.word.findFirst({
     where: {
       id,
@@ -181,6 +169,6 @@ export async function fetchActiveWordsWithClues(
         orderBy: clueOrderBy,
       },
     },
-    orderBy: [{ length: "asc" }, { answer: "asc" }],
+    orderBy: [{ length: 'asc' }, { answer: 'asc' }],
   });
 }

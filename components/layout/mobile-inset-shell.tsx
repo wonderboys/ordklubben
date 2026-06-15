@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 type MobileInsetShellProps = {
   children: React.ReactNode;
@@ -10,11 +10,6 @@ type MobileInsetShellProps = {
  * the screen edge. Print Theme is global on `body` — this wrapper does not
  * activate theme, fonts, or raster.
  */
-export function MobileInsetShell({
-  children,
-  className,
-}: MobileInsetShellProps) {
-  return (
-    <div className={cn("print-shell max-md:pb-6", className)}>{children}</div>
-  );
+export function MobileInsetShell({ children, className }: MobileInsetShellProps) {
+  return <div className={cn('print-shell max-md:pb-6', className)}>{children}</div>;
 }

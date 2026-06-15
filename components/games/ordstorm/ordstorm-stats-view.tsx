@@ -1,15 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { OrdstormStatBox } from "@/components/games/ordstorm/ordstorm-stat-box";
-import { useOrdstormStats } from "@/hooks/use-ordstorm-stats";
-import {
-  BodyText,
-  MonoLabel,
-  PageTitle,
-  SectionTitle,
-} from "@/components/ui/typography";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { OrdstormStatBox } from '@/components/games/ordstorm/ordstorm-stat-box';
+import { useOrdstormStats } from '@/hooks/use-ordstorm-stats';
+import { BodyText, MonoLabel, PageTitle, SectionTitle } from '@/components/ui/typography';
 
 export function OrdstormStatsView() {
   const stats = useOrdstormStats();
@@ -19,9 +14,7 @@ export function OrdstormStatsView() {
       <div className="space-y-1 sm:space-y-2">
         <MonoLabel>Ordstorm</MonoLabel>
         <PageTitle>Statistik</PageTitle>
-        <BodyText>
-          Lokal statistik för Ordstorm. Sparas i webbläsaren på den här enheten.
-        </BodyText>
+        <BodyText>Lokal statistik för Ordstorm. Sparas i webbläsaren på den här enheten.</BodyText>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
@@ -40,13 +33,11 @@ export function OrdstormStatsView() {
                 key={word}
                 className="rounded-none border border-print-ink/20 bg-print-bg px-3 py-2 text-sm font-black uppercase text-print-ink"
               >
-                {word.toLocaleUpperCase("sv-SE")}
+                {word.toLocaleUpperCase('sv-SE')}
               </span>
             ))
           ) : (
-            <BodyText>
-              Spela några rundor i Ordstorm för att fylla på listan.
-            </BodyText>
+            <BodyText>Spela några rundor i Ordstorm för att fylla på listan.</BodyText>
           )}
         </div>
       </div>

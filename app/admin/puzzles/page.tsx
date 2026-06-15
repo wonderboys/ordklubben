@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 import {
   AdminLinkButton,
   AdminPage,
@@ -6,23 +6,16 @@ import {
   DatabaseNotice,
   FeedbackMessage,
   Table,
-} from "@/components/admin/admin-ui";
-import {
-  PUZZLE_STATUS_LABELS,
-  PUZZLE_TYPE_LABELS,
-} from "@/lib/content/constants";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/admin-ui';
+import { PUZZLE_STATUS_LABELS, PUZZLE_TYPE_LABELS } from '@/lib/content/constants';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   error?: string;
   success?: string;
 }>;
 
-export default async function PuzzlesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function PuzzlesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   if (!isDatabaseConfigured()) {
@@ -40,7 +33,7 @@ export default async function PuzzlesPage({
         select: { entries: true },
       },
     },
-    orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
+    orderBy: [{ updatedAt: 'desc' }, { title: 'asc' }],
   });
 
   return (
@@ -58,13 +51,13 @@ export default async function PuzzlesPage({
       <AdminPanel title="Pussellista">
         <Table
           headers={[
-            "Titel",
-            "Typ",
-            "Status",
-            "Storlek",
-            "Antal ord",
-            "Publiceringsdatum",
-            "Uppdaterad",
+            'Titel',
+            'Typ',
+            'Status',
+            'Storlek',
+            'Antal ord',
+            'Publiceringsdatum',
+            'Uppdaterad',
           ]}
         >
           {puzzles.map((puzzle) => (
@@ -84,13 +77,9 @@ export default async function PuzzlesPage({
               </td>
               <td>{puzzle._count.entries}</td>
               <td className="text-print-muted">
-                {puzzle.publishDate
-                  ? puzzle.publishDate.toLocaleDateString("sv-SE")
-                  : "—"}
+                {puzzle.publishDate ? puzzle.publishDate.toLocaleDateString('sv-SE') : '—'}
               </td>
-              <td className="text-print-muted">
-                {puzzle.updatedAt.toLocaleDateString("sv-SE")}
-              </td>
+              <td className="text-print-muted">{puzzle.updatedAt.toLocaleDateString('sv-SE')}</td>
             </tr>
           ))}
         </Table>

@@ -1,4 +1,4 @@
-import { normalizeAnswer } from "@/lib/content/normalize-answer";
+import { normalizeAnswer } from '@/lib/content/normalize-answer';
 
 /**
  * Normalizes a word for graph comparisons: trim, NFC, uppercase, no whitespace.

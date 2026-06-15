@@ -1,13 +1,10 @@
-"use client";
+'use client';
 
-import { Loader2, Sparkles } from "lucide-react";
-import { useFormStatus } from "react-dom";
-import {
-  SubmitButton,
-  adminButtonSecondaryClass,
-} from "@/components/admin/admin-ui";
-import { generateHintCandidatesAction } from "@/lib/content/actions";
-import { cn } from "@/lib/utils";
+import { Loader2, Sparkles } from 'lucide-react';
+import { useFormStatus } from 'react-dom';
+import { SubmitButton, adminButtonSecondaryClass } from '@/components/admin/admin-ui';
+import { generateHintCandidatesAction } from '@/lib/content/actions';
+import { cn } from '@/lib/utils';
 
 type ProposalActionsProps = {
   wordId: string;
@@ -28,11 +25,7 @@ function ProposalActionsFormBody({ manualToggleId }: { manualToggleId: string })
   return (
     <>
       <div className="flex flex-wrap items-start gap-2">
-        <SubmitButton
-          variant="secondary"
-          disabled={pending}
-          className="min-w-[11.5rem] gap-1.5"
-        >
+        <SubmitButton variant="secondary" disabled={pending} className="min-w-[11.5rem] gap-1.5">
           {pending ? (
             <>
               <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />

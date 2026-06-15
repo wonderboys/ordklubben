@@ -1,18 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound } from 'next/navigation';
 import {
   AdminBreadcrumb,
   AdminLinkButton,
   AdminPage,
   DatabaseNotice,
   FeedbackMessage,
-} from "@/components/admin/admin-ui";
-import { PuzzleEditorWorkspace } from "@/components/admin/puzzle/puzzle-editor-workspace";
-import { PuzzleGenerationReport } from "@/components/admin/puzzle/puzzle-generation-report";
-import {
-  PUZZLE_STATUS_LABELS,
-  PUZZLE_TYPE_LABELS,
-} from "@/lib/content/constants";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/components/admin/admin-ui';
+import { PuzzleEditorWorkspace } from '@/components/admin/puzzle/puzzle-editor-workspace';
+import { PuzzleGenerationReport } from '@/components/admin/puzzle/puzzle-generation-report';
+import { PUZZLE_STATUS_LABELS, PUZZLE_TYPE_LABELS } from '@/lib/content/constants';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   error?: string;
@@ -86,7 +83,7 @@ export default async function PuzzleDetailPage({
               hints: {
                 where: {
                   status: {
-                    in: ["DRAFT", "APPROVED"],
+                    in: ['DRAFT', 'APPROVED'],
                   },
                 },
                 select: {
@@ -96,7 +93,7 @@ export default async function PuzzleDetailPage({
                   type: true,
                   difficulty: true,
                 },
-                orderBy: [{ status: "asc" }, { text: "asc" }],
+                orderBy: [{ status: 'asc' }, { text: 'asc' }],
               },
             },
           },
@@ -109,10 +106,10 @@ export default async function PuzzleDetailPage({
             },
           },
         },
-        orderBy: [{ direction: "asc" }, { number: "asc" }, { row: "asc" }, { col: "asc" }],
+        orderBy: [{ direction: 'asc' }, { number: 'asc' }, { row: 'asc' }, { col: 'asc' }],
       },
       blockedCells: {
-        orderBy: [{ row: "asc" }, { col: "asc" }],
+        orderBy: [{ row: 'asc' }, { col: 'asc' }],
       },
     },
   });
@@ -135,7 +132,7 @@ export default async function PuzzleDetailPage({
       hints: {
         where: {
           status: {
-            in: ["DRAFT", "APPROVED"],
+            in: ['DRAFT', 'APPROVED'],
           },
         },
         select: {
@@ -145,10 +142,10 @@ export default async function PuzzleDetailPage({
           type: true,
           difficulty: true,
         },
-        orderBy: [{ status: "asc" }, { text: "asc" }],
+        orderBy: [{ status: 'asc' }, { text: 'asc' }],
       },
     },
-    orderBy: [{ answer: "asc" }],
+    orderBy: [{ answer: 'asc' }],
     take: 250,
   });
 
@@ -201,10 +198,7 @@ export default async function PuzzleDetailPage({
       header={
         <div className="mb-3 border-b border-print-ink/10 pb-3">
           <AdminBreadcrumb
-            items={[
-              { label: "Pussel", href: "/admin/puzzles" },
-              { label: puzzle.title },
-            ]}
+            items={[{ label: 'Pussel', href: '/admin/puzzles' }, { label: puzzle.title }]}
           />
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
@@ -212,12 +206,10 @@ export default async function PuzzleDetailPage({
                 {puzzle.title}
               </h1>
               <p className="mt-1 text-sm text-print-muted">
-                {PUZZLE_STATUS_LABELS[puzzle.status]} · {puzzle.width}×{puzzle.height} ·{" "}
+                {PUZZLE_STATUS_LABELS[puzzle.status]} · {puzzle.width}×{puzzle.height} ·{' '}
                 {puzzle.entries.length} ord
-                {missingHintCount > 0
-                  ? ` · ${missingHintCount} saknar nyckel`
-                  : ""}{" "}
-                · {PUZZLE_TYPE_LABELS[puzzle.type]}
+                {missingHintCount > 0 ? ` · ${missingHintCount} saknar nyckel` : ''} ·{' '}
+                {PUZZLE_TYPE_LABELS[puzzle.type]}
               </p>
             </div>
             <AdminLinkButton href="/admin/puzzles" variant="secondary">
@@ -229,7 +221,7 @@ export default async function PuzzleDetailPage({
     >
       <FeedbackMessage error={query.error} success={query.success} />
 
-      {query.generated === "1" ? (
+      {query.generated === '1' ? (
         <PuzzleGenerationReport
           themeName={query.genTheme ?? null}
           candidateCount={Number(query.genCandidates ?? 0)}
@@ -261,7 +253,7 @@ export default async function PuzzleDetailPage({
           optimizationImprovements={query.genOptimization ?? null}
           emptyCellsBlocked={Number(query.genEmptyBlocked ?? 0)}
           remainingEmptyCount={Number(query.genRemainingEmpty ?? 0)}
-          finalValidationOk={query.genValidationOk === "1"}
+          finalValidationOk={query.genValidationOk === '1'}
           width={Number(query.genWidth ?? puzzle.width)}
           height={Number(query.genHeight ?? puzzle.height)}
           summaryNote={query.genSummary ?? null}

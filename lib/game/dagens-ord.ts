@@ -1,16 +1,13 @@
-import { dagensOrdSolutionWords } from "@/data/dagens-ord/solution-words";
-import { allowedSvWords } from "@/data/words";
-import {
-  hasOnlySwedishLetters,
-  normalizeSwedish,
-} from "@/lib/dictionary/normalize-swedish";
+import { dagensOrdSolutionWords } from '@/data/dagens-ord/solution-words';
+import { allowedSvWords } from '@/data/words';
+import { hasOnlySwedishLetters, normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 export const DAGENS_ORD_WORD_LENGTH = 5;
 export const DAGENS_ORD_MAX_GUESSES = 6;
 export const DAGENS_ORD_REVEAL_STEP_MS = 150;
 export const DAGENS_ORD_REVEAL_ANIMATION_MS = 140;
 
-export type DagensOrdLetterFeedback = "correct" | "present" | "absent";
+export type DagensOrdLetterFeedback = 'correct' | 'present' | 'absent';
 
 export type DagensOrdGuess = {
   word: string;
@@ -43,7 +40,7 @@ function uniqueFiveLetterWords(words: readonly string[]) {
     result.push(normalized);
   }
 
-  return result.sort((left, right) => left.localeCompare(right, "sv"));
+  return result.sort((left, right) => left.localeCompare(right, 'sv'));
 }
 
 const solutionWordCandidates = uniqueFiveLetterWords(dagensOrdSolutionWords);
@@ -59,10 +56,7 @@ export function getDayKey(date = new Date()) {
   return start.toISOString().slice(0, 10);
 }
 
-export function getDailyWordIndex(
-  words: string[] = solutionWordCandidates,
-  date = new Date(),
-) {
+export function getDailyWordIndex(words: string[] = solutionWordCandidates, date = new Date()) {
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dayNumber = Math.floor(start.getTime() / (24 * 60 * 60 * 1000));
 
@@ -73,7 +67,7 @@ export function pickDailyWord(date = new Date()) {
   const words = solutionWordCandidates;
 
   if (words.length === 0) {
-    return [...allowedFiveLetterWords][0] ?? "";
+    return [...allowedFiveLetterWords][0] ?? '';
   }
 
   return words[getDailyWordIndex(words, date)] ?? words[0];
@@ -100,7 +94,7 @@ export function createDailyRound(date = new Date()): DagensOrdRound {
     targetWord,
     dayKey: getDayKey(date),
     guesses: [],
-    currentInput: "",
+    currentInput: '',
   };
 }
 
@@ -109,7 +103,7 @@ export function restartDailyRound(targetWord: string, date = new Date()): Dagens
     targetWord: normalizeSwedish(targetWord),
     dayKey: getDayKey(date),
     guesses: [],
-    currentInput: "",
+    currentInput: '',
   };
 }
 
@@ -123,20 +117,15 @@ export function isValidDagensOrdGuess(word: string) {
   );
 }
 
-export function evaluateGuess(
-  guess: string,
-  target: string,
-): DagensOrdLetterFeedback[] {
+export function evaluateGuess(guess: string, target: string): DagensOrdLetterFeedback[] {
   const normalizedGuess = normalizeSwedish(guess);
   const normalizedTarget = normalizeSwedish(target);
 
   if (normalizedGuess.length !== normalizedTarget.length) {
-    return Array<DagensOrdLetterFeedback>(normalizedGuess.length).fill("absent");
+    return Array<DagensOrdLetterFeedback>(normalizedGuess.length).fill('absent');
   }
 
-  const feedback = Array<DagensOrdLetterFeedback>(
-    normalizedGuess.length,
-  ).fill("absent");
+  const feedback = Array<DagensOrdLetterFeedback>(normalizedGuess.length).fill('absent');
   const remainingLetters = new Map<string, number>();
 
   for (const letter of normalizedTarget) {
@@ -148,13 +137,13 @@ export function evaluateGuess(
       continue;
     }
 
-    feedback[index] = "correct";
+    feedback[index] = 'correct';
     const letter = normalizedGuess[index];
     remainingLetters.set(letter, (remainingLetters.get(letter) ?? 0) - 1);
   }
 
   for (let index = 0; index < normalizedGuess.length; index += 1) {
-    if (feedback[index] === "correct") {
+    if (feedback[index] === 'correct') {
       continue;
     }
 
@@ -162,7 +151,7 @@ export function evaluateGuess(
     const remaining = remainingLetters.get(letter) ?? 0;
 
     if (remaining > 0) {
-      feedback[index] = "present";
+      feedback[index] = 'present';
       remainingLetters.set(letter, remaining - 1);
     }
   }
@@ -175,10 +164,7 @@ export function isSolved(guess: string, target: string) {
 }
 
 export function isGameOver(guesses: DagensOrdGuess[], target: string) {
-  return (
-    isDagensOrdWon(guesses, target) ||
-    guesses.length >= DAGENS_ORD_MAX_GUESSES
-  );
+  return isDagensOrdWon(guesses, target) || guesses.length >= DAGENS_ORD_MAX_GUESSES;
 }
 
 export function isDagensOrdWon(guesses: DagensOrdGuess[], target: string) {
@@ -186,10 +172,7 @@ export function isDagensOrdWon(guesses: DagensOrdGuess[], target: string) {
 }
 
 export function isDagensOrdLost(guesses: DagensOrdGuess[], target: string) {
-  return (
-    guesses.length >= DAGENS_ORD_MAX_GUESSES &&
-    !isDagensOrdWon(guesses, target)
-  );
+  return guesses.length >= DAGENS_ORD_MAX_GUESSES && !isDagensOrdWon(guesses, target);
 }
 
 const FEEDBACK_PRIORITY: Record<DagensOrdLetterFeedback, number> = {
@@ -207,10 +190,7 @@ export function getKeyboardLetterStates(guesses: DagensOrdGuess[]) {
       const feedback = guess.feedback[index];
       const current = states.get(letter);
 
-      if (
-        !current ||
-        FEEDBACK_PRIORITY[feedback] > FEEDBACK_PRIORITY[current]
-      ) {
+      if (!current || FEEDBACK_PRIORITY[feedback] > FEEDBACK_PRIORITY[current]) {
         states.set(letter, feedback);
       }
     }

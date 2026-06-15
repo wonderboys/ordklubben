@@ -1,5 +1,5 @@
-import Link from "next/link";
-import type { HintCandidateStatus } from "@prisma/client";
+import Link from 'next/link';
+import type { HintCandidateStatus } from '@prisma/client';
 import {
   AdminFilterToolbar,
   AdminPage,
@@ -11,7 +11,7 @@ import {
   SubmitButton,
   Table,
   TextInput,
-} from "@/components/admin/admin-ui";
+} from '@/components/admin/admin-ui';
 import {
   HINT_CANDIDATE_STATUSES,
   HINT_CANDIDATE_STATUS_LABELS,
@@ -19,27 +19,21 @@ import {
   formatHintSource,
   formatHintTone,
   formatHintType,
-} from "@/lib/content/constants";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/lib/content/constants';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
-  status?: HintCandidateStatus | "";
+  status?: HintCandidateStatus | '';
   q?: string;
   error?: string;
   success?: string;
 }>;
 
-export default async function AdminProposalsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function AdminProposalsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
-  const query = params.q?.trim() ?? "";
+  const query = params.q?.trim() ?? '';
   const status =
-    params.status && HINT_CANDIDATE_STATUSES.includes(params.status)
-      ? params.status
-      : undefined;
+    params.status && HINT_CANDIDATE_STATUSES.includes(params.status) ? params.status : undefined;
 
   if (!isDatabaseConfigured()) {
     return (
@@ -57,8 +51,8 @@ export default async function AdminProposalsPage({
         query
           ? {
               OR: [
-                { text: { contains: query, mode: "insensitive" } },
-                { word: { answer: { contains: query, mode: "insensitive" } } },
+                { text: { contains: query, mode: 'insensitive' } },
+                { word: { answer: { contains: query, mode: 'insensitive' } } },
               ],
             }
           : {},
@@ -72,7 +66,7 @@ export default async function AdminProposalsPage({
         },
       },
     },
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ createdAt: 'desc' }],
     take: 100,
   });
 
@@ -93,7 +87,7 @@ export default async function AdminProposalsPage({
               placeholder="Sök förslag eller ord"
               className="min-w-48 flex-1"
             />
-            <SelectInput name="status" defaultValue={status ?? ""} className="min-w-44">
+            <SelectInput name="status" defaultValue={status ?? ''} className="min-w-44">
               <option value="">Alla statusar</option>
               {HINT_CANDIDATE_STATUSES.map((value) => (
                 <option key={value} value={value}>
@@ -105,18 +99,7 @@ export default async function AdminProposalsPage({
           </AdminFilterToolbar>
         </form>
 
-        <Table
-          headers={[
-            "Förslag",
-            "Status",
-            "Ord",
-            "Typ",
-            "Svårighet",
-            "Ton",
-            "Källa",
-            "Skapad",
-          ]}
-        >
+        <Table headers={['Förslag', 'Status', 'Ord', 'Typ', 'Svårighet', 'Ton', 'Källa', 'Skapad']}>
           {proposals.map((proposal) => (
             <tr key={proposal.id} className="border-b border-print-ink/10 align-top">
               <td className="max-w-sm text-print-ink">{proposal.text}</td>
@@ -132,14 +115,10 @@ export default async function AdminProposalsPage({
                 </Link>
               </td>
               <td className="text-print-muted">{formatHintType(proposal.type)}</td>
-              <td className="text-print-muted">
-                {formatHintDifficulty(proposal.difficulty)}
-              </td>
+              <td className="text-print-muted">{formatHintDifficulty(proposal.difficulty)}</td>
               <td className="text-print-muted">{formatHintTone(proposal.tone)}</td>
               <td className="text-print-muted">{formatHintSource(proposal.source)}</td>
-              <td className="text-print-muted">
-                {proposal.createdAt.toLocaleDateString("sv-SE")}
-              </td>
+              <td className="text-print-muted">{proposal.createdAt.toLocaleDateString('sv-SE')}</td>
             </tr>
           ))}
         </Table>

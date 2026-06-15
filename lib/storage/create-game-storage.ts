@@ -1,4 +1,4 @@
-import { createLocalStorageStore } from "@/lib/storage/create-local-storage-store";
+import { createLocalStorageStore } from '@/lib/storage/create-local-storage-store';
 
 type CreateGameStorageOptions<T extends object> = {
   storageKey: string;
@@ -10,8 +10,8 @@ type CreateGameStorageOptions<T extends object> = {
 
 function shouldLogStorageWarning(debugEnvKey?: string) {
   return (
-    process.env.NODE_ENV !== "production" ||
-    (debugEnvKey !== undefined && process.env[debugEnvKey] === "true")
+    process.env.NODE_ENV !== 'production' ||
+    (debugEnvKey !== undefined && process.env[debugEnvKey] === 'true')
   );
 }
 

@@ -1,4 +1,4 @@
-import { AdminPanel } from "@/components/admin/admin-ui";
+import { AdminPanel } from '@/components/admin/admin-ui';
 
 type PuzzleGenerationReportProps = {
   themeName: string | null;
@@ -37,7 +37,12 @@ type PuzzleGenerationReportProps = {
   summaryNote: string | null;
 };
 
-function formatUtilizationRate(rate: number, letterCellCount: number, width: number, height: number) {
+function formatUtilizationRate(
+  rate: number,
+  letterCellCount: number,
+  width: number,
+  height: number,
+) {
   const totalCells = width * height;
   const percent = Math.round(rate * 100);
 
@@ -89,15 +94,11 @@ export function PuzzleGenerationReport({
 }: PuzzleGenerationReportProps) {
   return (
     <AdminPanel title="Generering slutförd" compact>
-      {summaryNote ? (
-        <p className="mb-3 text-sm text-print-ink">{summaryNote}</p>
-      ) : null}
+      {summaryNote ? <p className="mb-3 text-sm text-print-ink">{summaryNote}</p> : null}
       <dl className="grid gap-2 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
-            Tema
-          </dt>
-          <dd className="mt-0.5 text-print-ink">{themeName ?? "Inget tema"}</dd>
+          <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">Tema</dt>
+          <dd className="mt-0.5 text-print-ink">{themeName ?? 'Inget tema'}</dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
@@ -197,9 +198,7 @@ export function PuzzleGenerationReport({
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
             Optimeringsvinster
           </dt>
-          <dd className="mt-0.5 text-print-ink">
-            {optimizationImprovements ?? "Inga"}
-          </dd>
+          <dd className="mt-0.5 text-print-ink">{optimizationImprovements ?? 'Inga'}</dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
@@ -217,7 +216,7 @@ export function PuzzleGenerationReport({
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">
             Slutvalidering
           </dt>
-          <dd className="mt-0.5 text-print-ink">{finalValidationOk ? "OK" : "FAILED"}</dd>
+          <dd className="mt-0.5 text-print-ink">{finalValidationOk ? 'OK' : 'FAILED'}</dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-[0.06em] text-print-muted">

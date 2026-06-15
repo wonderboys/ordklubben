@@ -1,13 +1,10 @@
-"use client";
+'use client';
 
-import {
-  adminButtonPrimaryClass,
-  adminButtonSecondaryClass,
-} from "@/components/admin/admin-ui";
-import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
-import type { PuzzlePlacedEntry } from "@/components/admin/puzzle/puzzle-placed-entries-panel";
-import { getPlacedEntryHintPreview } from "@/components/admin/puzzle/puzzle-placed-entries-panel";
-import { cn } from "@/lib/utils";
+import { adminButtonPrimaryClass, adminButtonSecondaryClass } from '@/components/admin/admin-ui';
+import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
+import type { PuzzlePlacedEntry } from '@/components/admin/puzzle/puzzle-placed-entries-panel';
+import { getPlacedEntryHintPreview } from '@/components/admin/puzzle/puzzle-placed-entries-panel';
+import { cn } from '@/lib/utils';
 
 type PuzzleActiveEntryPanelProps = {
   entry: PuzzlePlacedEntry;
@@ -20,7 +17,7 @@ export function PuzzleActiveEntryPanel({
   isEditing,
   onEditToggle,
 }: PuzzleActiveEntryPanelProps) {
-  const hintText = getPlacedEntryHintPreview(entry) ?? "Saknar nyckel";
+  const hintText = getPlacedEntryHintPreview(entry) ?? 'Saknar nyckel';
 
   return (
     <div className="space-y-3 p-4">
@@ -32,8 +29,7 @@ export function PuzzleActiveEntryPanel({
           {entry.answerSnapshot}
         </p>
         <p className="mt-0.5 text-sm text-print-muted">
-          {PUZZLE_DIRECTION_LABELS[entry.direction]} · rad {entry.row + 1}, kolumn{" "}
-          {entry.col + 1}
+          {PUZZLE_DIRECTION_LABELS[entry.direction]} · rad {entry.row + 1}, kolumn {entry.col + 1}
         </p>
       </div>
 
@@ -49,19 +45,13 @@ export function PuzzleActiveEntryPanel({
         onClick={onEditToggle}
         className={cn(isEditing ? adminButtonSecondaryClass : adminButtonPrimaryClass)}
       >
-        {isEditing ? "Stäng redigering" : "Redigera ord"}
+        {isEditing ? 'Stäng redigering' : 'Redigera ord'}
       </button>
     </div>
   );
 }
 
-export function PuzzleBlockedCellPanel({
-  row,
-  col,
-}: {
-  row: number;
-  col: number;
-}) {
+export function PuzzleBlockedCellPanel({ row, col }: { row: number; col: number }) {
   return (
     <div className="space-y-2 rounded-sm border border-print-ink/15 border-l-2 border-l-print-ink bg-print-bg/50 p-4">
       <div>

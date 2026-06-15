@@ -1,6 +1,6 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { MonoLabel } from "@/components/ui/typography";
-import type { StegvisGeneratorDebugInfo } from "@/lib/content/stegvis/load-play-session";
+import { Card, CardContent } from '@/components/ui/card';
+import { MonoLabel } from '@/components/ui/typography';
+import type { StegvisGeneratorDebugInfo } from '@/lib/content/stegvis/load-play-session';
 
 type StegvisGeneratorDebugProps = {
   debug: StegvisGeneratorDebugInfo;
@@ -33,9 +33,7 @@ export function StegvisGeneratorDebug({ debug }: StegvisGeneratorDebugProps) {
           <MonoLabel muted className="text-[10px] uppercase tracking-wide">
             Kedja
           </MonoLabel>
-          <p className="print-mono text-xs text-print-muted">
-            {debug.chain.join(" → ")}
-          </p>
+          <p className="print-mono text-xs text-print-muted">{debug.chain.join(' → ')}</p>
         </div>
       </CardContent>
     </Card>

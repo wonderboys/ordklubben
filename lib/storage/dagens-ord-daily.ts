@@ -1,7 +1,7 @@
-import { type DagensOrdGuess } from "@/lib/game/dagens-ord";
-import { createGameStorage } from "@/lib/storage/create-game-storage";
+import { type DagensOrdGuess } from '@/lib/game/dagens-ord';
+import { createGameStorage } from '@/lib/storage/create-game-storage';
 
-export type DagensOrdDailyStatus = "playing" | "won" | "lost";
+export type DagensOrdDailyStatus = 'playing' | 'won' | 'lost';
 
 export type DagensOrdDailyState = {
   dayKey: string;
@@ -11,18 +11,18 @@ export type DagensOrdDailyState = {
 };
 
 export const defaultDagensOrdDailyState: DagensOrdDailyState = {
-  dayKey: "",
-  targetWord: "",
+  dayKey: '',
+  targetWord: '',
   guesses: [],
-  status: "playing",
+  status: 'playing',
 };
 
-const dagensOrdDailyStorage = createGameStorage({
-  storageKey: "ordklubben:dagens-ord:daily",
-  changeEvent: "ordklubben:dagens-ord:daily-changed",
+export const dagensOrdDailyStore = createGameStorage({
+  storageKey: 'ordklubben:dagens-ord:daily',
+  changeEvent: 'ordklubben:dagens-ord:daily-changed',
   defaultValue: defaultDagensOrdDailyState,
-  logLabel: "DagensOrd",
+  logLabel: 'DagensOrd',
 });
 
-export const loadDagensOrdDaily = dagensOrdDailyStorage.load;
-export const saveDagensOrdDaily = dagensOrdDailyStorage.save;
+export const loadDagensOrdDaily = dagensOrdDailyStore.load;
+export const saveDagensOrdDaily = dagensOrdDailyStore.save;

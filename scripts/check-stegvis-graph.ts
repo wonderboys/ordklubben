@@ -1,11 +1,11 @@
-import { stegvisPuzzles } from "../data/stegvis/puzzles.ts";
+import { stegvisPuzzles } from '../data/stegvis/puzzles.ts';
 import {
   buildWordGraph,
   findShortestPath,
   getNeighbors,
   isOneLetterApart,
   normalizeGraphWord,
-} from "./stegvis-word-graph.ts";
+} from './stegvis-word-graph.ts';
 
 type CheckResult = {
   name: string;
@@ -23,52 +23,46 @@ function check(name: string, pass: boolean, detail?: string) {
     return;
   }
 
-  console.error(`✗ ${name}${detail ? `: ${detail}` : ""}`);
+  console.error(`✗ ${name}${detail ? `: ${detail}` : ''}`);
 }
 
-check("normalizeGraphWord maps horn to HORN", normalizeGraphWord("horn") === "HORN");
-check(
-  "normalizeGraphWord trims whitespace",
-  normalizeGraphWord("  korn  ") === "KORN",
-);
+check('normalizeGraphWord maps horn to HORN', normalizeGraphWord('horn') === 'HORN');
+check('normalizeGraphWord trims whitespace', normalizeGraphWord('  korn  ') === 'KORN');
 
-check("HORN → KORN is one letter apart", isOneLetterApart("HORN", "KORN"));
-check("horn → korn is one letter apart", isOneLetterApart("horn", "korn"));
-check("HORN → PORT is not one letter apart", !isOneLetterApart("HORN", "PORT"));
-check("HORN → HORN is not one letter apart", !isOneLetterApart("HORN", "HORN"));
-check("HORN → HORNET is not one letter apart", !isOneLetterApart("HORN", "HORNET"));
+check('HORN → KORN is one letter apart', isOneLetterApart('HORN', 'KORN'));
+check('horn → korn is one letter apart', isOneLetterApart('horn', 'korn'));
+check('HORN → PORT is not one letter apart', !isOneLetterApart('HORN', 'PORT'));
+check('HORN → HORN is not one letter apart', !isOneLetterApart('HORN', 'HORN'));
+check('HORN → HORNET is not one letter apart', !isOneLetterApart('HORN', 'HORNET'));
 
-const chainWords = ["HORN", "KORN", "KORT", "FORT", "PORT", "SAND", "BAND", "LAND"];
+const chainWords = ['HORN', 'KORN', 'KORT', 'FORT', 'PORT', 'SAND', 'BAND', 'LAND'];
 const graph = buildWordGraph(chainWords);
 
-check("graph contains all chain words", chainWords.every((word) => graph.has(word)));
-
-const hornNeighbors = getNeighbors("HORN", chainWords);
-check("HORN neighbors include KORN", hornNeighbors.includes("KORN"));
-check("HORN neighbors exclude PORT", !hornNeighbors.includes("PORT"));
-
-const hornToPort = findShortestPath("HORN", "PORT", graph);
 check(
-  "shortest path HORN → PORT exists",
-  hornToPort !== null && hornToPort[0] === "HORN" && hornToPort.at(-1) === "PORT",
-  hornToPort?.join(" → "),
+  'graph contains all chain words',
+  chainWords.every((word) => graph.has(word)),
+);
+
+const hornNeighbors = getNeighbors('HORN', chainWords);
+check('HORN neighbors include KORN', hornNeighbors.includes('KORN'));
+check('HORN neighbors exclude PORT', !hornNeighbors.includes('PORT'));
+
+const hornToPort = findShortestPath('HORN', 'PORT', graph);
+check(
+  'shortest path HORN → PORT exists',
+  hornToPort !== null && hornToPort[0] === 'HORN' && hornToPort.at(-1) === 'PORT',
+  hornToPort?.join(' → '),
 );
 
 if (hornToPort) {
   for (let index = 0; index < hornToPort.length - 1; index += 1) {
     const left = hornToPort[index];
     const right = hornToPort[index + 1];
-    check(
-      `path step ${left} → ${right} is valid`,
-      isOneLetterApart(left, right),
-    );
+    check(`path step ${left} → ${right} is valid`, isOneLetterApart(left, right));
   }
 }
 
-check(
-  "no path between unrelated lengths",
-  findShortestPath("HORN", "HORNET", graph) === null,
-);
+check('no path between unrelated lengths', findShortestPath('HORN', 'HORNET', graph) === null);
 
 for (const puzzle of stegvisPuzzles) {
   if (puzzle.sampleSolution && puzzle.sampleSolution.length >= 2) {
@@ -78,23 +72,12 @@ for (const puzzle of stegvisPuzzles) {
     for (let index = 0; index < normalizedSolution.length - 1; index += 1) {
       const left = normalizedSolution[index];
       const right = normalizedSolution[index + 1];
-      check(
-        `${puzzle.id}: ${left} → ${right} is one letter apart`,
-        isOneLetterApart(left, right),
-      );
+      check(`${puzzle.id}: ${left} → ${right} is one letter apart`, isOneLetterApart(left, right));
     }
 
-    const path = findShortestPath(
-      normalizedSolution[0],
-      normalizedSolution.at(-1)!,
-      puzzleGraph,
-    );
+    const path = findShortestPath(normalizedSolution[0], normalizedSolution.at(-1)!, puzzleGraph);
 
-    check(
-      `${puzzle.id}: sample solution path is reachable`,
-      path !== null,
-      path?.join(" → "),
-    );
+    check(`${puzzle.id}: sample solution path is reachable`, path !== null, path?.join(' → '));
   }
 }
 

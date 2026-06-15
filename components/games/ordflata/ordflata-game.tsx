@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { OrdflataClues } from "@/components/games/ordflata/ordflata-clues";
-import { OrdflataGrid } from "@/components/games/ordflata/ordflata-grid";
-import { OrdflataKeyboard } from "@/components/games/ordflata/ordflata-keyboard";
-import { GameToast, useGameToast } from "@/components/games/game-toast";
-import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
-import { getPlacementCells } from "@/lib/content/puzzle/grid";
-import type { OrdflataPlayerPuzzle } from "@/lib/content/ordflata-alpha";
-import { normalizeSwedish } from "@/lib/dictionary/normalize-swedish";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { OrdflataClues } from '@/components/games/ordflata/ordflata-clues';
+import { OrdflataGrid } from '@/components/games/ordflata/ordflata-grid';
+import { OrdflataKeyboard } from '@/components/games/ordflata/ordflata-keyboard';
+import { GameToast, useGameToast } from '@/components/games/game-toast';
+import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
+import { getPlacementCells } from '@/lib/content/puzzle/grid';
+import type { OrdflataPlayerPuzzle } from '@/lib/content/ordflata-alpha';
+import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 const SWEDISH_LETTER_PATTERN = /^[a-zåäö]$/;
 
@@ -17,7 +17,7 @@ function cellKey(row: number, col: number) {
   return `${row}:${col}`;
 }
 
-function getEntryCells(entry: OrdflataPlayerPuzzle["entries"][number]) {
+function getEntryCells(entry: OrdflataPlayerPuzzle['entries'][number]) {
   return getPlacementCells({
     answerSnapshot: entry.answer,
     row: entry.row,
@@ -26,50 +26,41 @@ function getEntryCells(entry: OrdflataPlayerPuzzle["entries"][number]) {
   });
 }
 
-function findEntriesAtCell(
-  entries: OrdflataPlayerPuzzle["entries"],
-  row: number,
-  col: number,
-) {
+function findEntriesAtCell(entries: OrdflataPlayerPuzzle['entries'], row: number, col: number) {
   return entries.filter((entry) =>
     getEntryCells(entry).some((cell) => cell.row === row && cell.col === col),
   );
 }
 
 function pickActiveEntry(
-  entriesAtCell: OrdflataPlayerPuzzle["entries"],
+  entriesAtCell: OrdflataPlayerPuzzle['entries'],
   preferredEntryId: string | null,
 ) {
   if (entriesAtCell.length === 0) {
     return null;
   }
 
-  if (
-    preferredEntryId &&
-    entriesAtCell.some((entry) => entry.id === preferredEntryId)
-  ) {
+  if (preferredEntryId && entriesAtCell.some((entry) => entry.id === preferredEntryId)) {
     return preferredEntryId;
   }
 
-  const across = entriesAtCell.find((entry) => entry.direction === "ACROSS");
+  const across = entriesAtCell.find((entry) => entry.direction === 'ACROSS');
   return (across ?? entriesAtCell[0]).id;
 }
 
 function getFocusCellForEntry(
-  entry: OrdflataPlayerPuzzle["entries"][number],
+  entry: OrdflataPlayerPuzzle['entries'][number],
   filledCells: Map<string, string>,
 ) {
   const cells = getEntryCells(entry);
-  const firstEmpty = cells.find(
-    (cell) => !filledCells.has(cellKey(cell.row, cell.col)),
-  );
+  const firstEmpty = cells.find((cell) => !filledCells.has(cellKey(cell.row, cell.col)));
   const target = firstEmpty ?? cells[0];
 
   return target ? { row: target.row, col: target.col } : null;
 }
 
 function getAdjacentCellInEntry(
-  entry: OrdflataPlayerPuzzle["entries"][number],
+  entry: OrdflataPlayerPuzzle['entries'][number],
   row: number,
   col: number,
   forward: boolean,
@@ -85,7 +76,7 @@ function getAdjacentCellInEntry(
   return next ? { row: next.row, col: next.col } : null;
 }
 
-function getInitialSelection(entries: OrdflataPlayerPuzzle["entries"]) {
+function getInitialSelection(entries: OrdflataPlayerPuzzle['entries']) {
   const firstEntry = [...entries].sort((left, right) => {
     const leftNumber = left.number ?? Number.MAX_SAFE_INTEGER;
     const rightNumber = right.number ?? Number.MAX_SAFE_INTEGER;
@@ -107,10 +98,7 @@ type OrdflataGameProps = {
 };
 
 export function OrdflataGame({ puzzle }: OrdflataGameProps) {
-  const initialSelection = useMemo(
-    () => getInitialSelection(puzzle.entries),
-    [puzzle.entries],
-  );
+  const initialSelection = useMemo(() => getInitialSelection(puzzle.entries), [puzzle.entries]);
   const { toast, showToast } = useGameToast(1800);
   const [filledCells, setFilledCells] = useState<Map<string, string>>(() => new Map());
   const [selectedCell, setSelectedCell] = useState(initialSelection.selectedCell);
@@ -138,7 +126,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
     (nextFilled: Map<string, string>) => {
       for (const key of letterCellKeys) {
         const expected = answerMap.get(key);
-        const actual = nextFilled.get(key)?.toLocaleUpperCase("sv-SE");
+        const actual = nextFilled.get(key)?.toLocaleUpperCase('sv-SE');
 
         if (!actual || actual !== expected) {
           return false;
@@ -150,10 +138,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
     [answerMap, letterCellKeys],
   );
 
-  const isComplete = useMemo(
-    () => checkCompletion(filledCells),
-    [checkCompletion, filledCells],
-  );
+  const isComplete = useMemo(() => checkCompletion(filledCells), [checkCompletion, filledCells]);
 
   const maybeCelebrateCompletion = useCallback(
     (nextFilled: Map<string, string>) => {
@@ -162,7 +147,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
       }
 
       completionToastShownRef.current = true;
-      showToast("Flätan är klar!", "win");
+      showToast('Flätan är klar!', 'win');
     },
     [checkCompletion, showToast],
   );
@@ -229,7 +214,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
         return;
       }
 
-      const normalized = normalizeSwedish(letter).toLocaleUpperCase("sv-SE");
+      const normalized = normalizeSwedish(letter).toLocaleUpperCase('sv-SE');
       const key = cellKey(selectedCell.row, selectedCell.col);
       const nextFilled = new Map(filledCells);
       nextFilled.set(key, normalized);
@@ -247,14 +232,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
         focusCell(nextCell.row, nextCell.col);
       }
     },
-    [
-      activeEntry,
-      filledCells,
-      focusCell,
-      isComplete,
-      maybeCelebrateCompletion,
-      selectedCell,
-    ],
+    [activeEntry, filledCells, focusCell, isComplete, maybeCelebrateCompletion, selectedCell],
   );
 
   const applyBackspace = useCallback(() => {
@@ -298,13 +276,13 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
         return;
       }
 
-      if (event.key === "Backspace") {
+      if (event.key === 'Backspace') {
         event.preventDefault();
         applyBackspace();
         return;
       }
 
-      if (event.key === " " || event.key === "Tab") {
+      if (event.key === ' ' || event.key === 'Tab') {
         return;
       }
 
@@ -318,18 +296,14 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
       applyLetter(letter);
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [applyBackspace, applyLetter, isComplete]);
 
   return (
     <div className="relative w-full md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] md:items-start md:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,23rem)] lg:gap-6">
       <div className="relative flex min-w-0 flex-col gap-4">
-        <GameToast
-          message={toast?.message ?? null}
-          tone={toast?.tone}
-          toastId={toast?.id}
-        />
+        <GameToast message={toast?.message ?? null} tone={toast?.tone} toastId={toast?.id} />
 
         <OrdflataGrid
           width={puzzle.width}
@@ -348,8 +322,7 @@ export function OrdflataGame({ puzzle }: OrdflataGameProps) {
               {PUZZLE_DIRECTION_LABELS[activeEntry.direction]}
             </p>
             <p className="mt-0.5 text-sm leading-snug text-print-ink">
-              <span className="font-semibold">{activeEntry.number ?? "–"}.</span>{" "}
-              {activeEntry.clue}
+              <span className="font-semibold">{activeEntry.number ?? '–'}.</span> {activeEntry.clue}
               <span className="text-print-muted"> ({activeEntry.length})</span>
             </p>
           </div>

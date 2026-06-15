@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* Print Theme — canonical design foundation */
@@ -19,8 +19,7 @@
   --print-border: #111111;
   --print-shadow-offset-x: 3px;
   --print-shadow-offset-y: 3px;
-  --print-shadow-soft: var(--print-shadow-offset-x) var(--print-shadow-offset-y) 0 0
-    #c8c3b8;
+  --print-shadow-soft: var(--print-shadow-offset-x) var(--print-shadow-offset-y) 0 0 #c8c3b8;
   --print-shadow-strong: var(--print-shadow-offset-x) var(--print-shadow-offset-y) 0 0
     var(--print-ink);
   --print-shadow: var(--print-shadow-soft);
@@ -86,11 +85,11 @@ select {
 }
 
 @media (min-width: 768px) {
-  .admin-sidebar[data-collapsed="true"] {
+  .admin-sidebar[data-collapsed='true'] {
     --admin-sidebar-width: var(--admin-sidebar-width-collapsed);
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__label {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__label {
     display: none;
   }
 
@@ -101,13 +100,13 @@ select {
     overflow: visible;
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__header-inner {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__header-inner {
     justify-content: center;
     padding-block: 0.625rem;
     padding-inline: 0.375rem;
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__header-open {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__header-open {
     width: 100%;
   }
 
@@ -115,12 +114,12 @@ select {
     z-index: 100;
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__link {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__link {
     justify-content: center;
     padding-inline: 0.375rem;
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__nav {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__nav {
     padding-inline: 0.375rem;
   }
 
@@ -146,15 +145,23 @@ select {
       0 1px 2px color-mix(in srgb, var(--print-ink) 18%, transparent);
   }
 
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__link:hover .admin-sidebar__tooltip,
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__link:focus-visible .admin-sidebar__tooltip,
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__header-open:hover .admin-sidebar__tooltip,
-  .admin-sidebar[data-collapsed="true"] .admin-sidebar__header-open:focus-visible .admin-sidebar__tooltip {
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__link:hover .admin-sidebar__tooltip,
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__link:focus-visible .admin-sidebar__tooltip,
+  .admin-sidebar[data-collapsed='true'] .admin-sidebar__header-open:hover .admin-sidebar__tooltip,
+  .admin-sidebar[data-collapsed='true']
+    .admin-sidebar__header-open:focus-visible
+    .admin-sidebar__tooltip {
     display: block;
   }
 }
 
-.admin-ui :where(input:not([type="hidden"]):not([type="checkbox"]):not(.sr-only), select, textarea, button) {
+.admin-ui
+  :where(
+    input:not([type='hidden']):not([type='checkbox']):not(.sr-only),
+    select,
+    textarea,
+    button
+  ) {
   font-size: var(--admin-control-font-size);
 }
 

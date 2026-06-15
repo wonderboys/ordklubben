@@ -1,10 +1,10 @@
-import { z } from "zod";
-import type { MediaSuggestionDraft } from "@/lib/content/ai/types";
+import { z } from 'zod';
+import type { MediaSuggestionDraft } from '@/lib/content/ai/types';
 
 export class AiMediaGenerationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "AiMediaGenerationError";
+    this.name = 'AiMediaGenerationError';
   }
 }
 
@@ -31,25 +31,23 @@ export function parseMediaSuggestionResponse(options: {
   try {
     parsedJson = JSON.parse(options.rawContent);
   } catch {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[ai-media-suggestion] Ogiltig JSON:", options.rawContent);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[ai-media-suggestion] Ogiltig JSON:', options.rawContent);
     }
 
-    throw new AiMediaGenerationError(
-      "AI returnerade ogiltig JSON. Inget mediaförslag skapades.",
-    );
+    throw new AiMediaGenerationError('AI returnerade ogiltig JSON. Inget mediaförslag skapades.');
   }
 
   const parsed = aiResponseSchema.safeParse(parsedJson);
 
   if (!parsed.success) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[ai-media-suggestion] JSON validerades inte:", parsed.error);
-      console.error("[ai-media-suggestion] Råsvar:", options.rawContent);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[ai-media-suggestion] JSON validerades inte:', parsed.error);
+      console.error('[ai-media-suggestion] Råsvar:', options.rawContent);
     }
 
     throw new AiMediaGenerationError(
-      "AI returnerade ett ogiltigt svar. Inget mediaförslag skapades.",
+      'AI returnerade ett ogiltigt svar. Inget mediaförslag skapades.',
     );
   }
 

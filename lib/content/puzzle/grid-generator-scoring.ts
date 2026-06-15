@@ -1,11 +1,15 @@
-import { getAnswerLength, getPlacementCells, type PuzzlePlacementInput } from "@/lib/content/puzzle/grid";
-import { computeOpenConnectionDelta } from "@/lib/content/puzzle/grid-generator-connectivity";
-import type { BlockedCell } from "@/lib/content/puzzle/grid-generator-blocks";
+import {
+  getAnswerLength,
+  getPlacementCells,
+  type PuzzlePlacementInput,
+} from '@/lib/content/puzzle/grid';
+import { computeOpenConnectionDelta } from '@/lib/content/puzzle/grid-generator-connectivity';
+import type { BlockedCell } from '@/lib/content/puzzle/grid-generator-blocks';
 import {
   scoreEmergencyWordPenalty,
   scoreThemeWordBonus,
   scoreWordLengthBonus,
-} from "@/lib/content/puzzle/grid-generator-quality";
+} from '@/lib/content/puzzle/grid-generator-quality';
 
 const VOWEL_PATTERN = /[AEIOUYÅÄÖ]/u;
 
@@ -16,11 +20,11 @@ export type ScoringWordCandidate = {
   hints: Array<{
     id: string;
     text: string;
-    status: "DRAFT" | "APPROVED";
+    status: 'DRAFT' | 'APPROVED';
   }>;
 };
 
-export type WordSelectionPhase = "anchor" | "crossing" | "gap";
+export type WordSelectionPhase = 'anchor' | 'crossing' | 'gap';
 
 export type GridSizeProfile = {
   idealMin: number;
@@ -198,15 +202,13 @@ export function getGridSizeProfile(width: number, height: number): GridSizeProfi
 export function getAnswerLetters(answerSnapshot: string) {
   return answerSnapshot
     .trim()
-    .toLocaleUpperCase("sv-SE")
-    .replace(/[\s'’\-‐‑‒–—]+/g, "")
-    .split("");
+    .toLocaleUpperCase('sv-SE')
+    .replace(/[\s'’\-‐‑‒–—]+/g, '')
+    .split('');
 }
 
 export function hasVowel(answerSnapshot: string) {
-  return VOWEL_PATTERN.test(
-    answerSnapshot.trim().toLocaleUpperCase("sv-SE"),
-  );
+  return VOWEL_PATTERN.test(answerSnapshot.trim().toLocaleUpperCase('sv-SE'));
 }
 
 export function buildLetterFrequency(entries: PuzzlePlacementInput[]) {
@@ -260,18 +262,18 @@ export function isUsableCandidate(
 
 export function getLengthBucket(length: number, profile: GridSizeProfile) {
   if (length >= profile.longMin && length <= profile.longMax) {
-    return "long" as const;
+    return 'long' as const;
   }
 
   if (length >= profile.mediumMin && length <= profile.mediumMax) {
-    return "medium" as const;
+    return 'medium' as const;
   }
 
   if (length >= profile.shortMin && length <= profile.shortMax) {
-    return "short" as const;
+    return 'short' as const;
   }
 
-  return "other" as const;
+  return 'other' as const;
 }
 
 export function computeWordLengthStats(
@@ -296,11 +298,11 @@ export function computeWordLengthStats(
   for (const length of lengths) {
     const bucket = getLengthBucket(length, profile);
 
-    if (bucket === "short") {
+    if (bucket === 'short') {
       shortCount += 1;
-    } else if (bucket === "medium") {
+    } else if (bucket === 'medium') {
       mediumCount += 1;
-    } else if (bucket === "long") {
+    } else if (bucket === 'long') {
       longCount += 1;
     }
   }
@@ -314,17 +316,14 @@ export function computeWordLengthStats(
   };
 }
 
-export function countShortWords(
-  entries: PuzzlePlacementInput[],
-  profile: GridSizeProfile,
-) {
+export function countShortWords(entries: PuzzlePlacementInput[], profile: GridSizeProfile) {
   return computeWordLengthStats(entries, profile).shortCount;
 }
 
 function countBucketInLengths(
   placedLengths: number[],
   profile: GridSizeProfile,
-  bucket: "short" | "medium" | "long",
+  bucket: 'short' | 'medium' | 'long',
 ) {
   return placedLengths.filter((length) => getLengthBucket(length, profile) === bucket).length;
 }
@@ -346,10 +345,10 @@ export function scoreLengthMix(
     return 0;
   }
 
-  const shortCount = countBucketInLengths(nextLengths, profile, "short");
-  const mediumCount = countBucketInLengths(nextLengths, profile, "medium");
-  const longCount = countBucketInLengths(nextLengths, profile, "long");
-  const placedLongCount = countBucketInLengths(placedLengths, profile, "long");
+  const shortCount = countBucketInLengths(nextLengths, profile, 'short');
+  const mediumCount = countBucketInLengths(nextLengths, profile, 'medium');
+  const longCount = countBucketInLengths(nextLengths, profile, 'long');
+  const placedLongCount = countBucketInLengths(placedLengths, profile, 'long');
   const shortRate = shortCount / total;
   const mediumRate = mediumCount / total;
   const longRate = longCount / total;
@@ -359,7 +358,7 @@ export function scoreLengthMix(
   if (longRate > profile.longRatioMax) {
     score -= (longRate - profile.longRatioMax) * 320;
 
-    if (bucket === "long") {
+    if (bucket === 'long') {
       score -= 55;
     }
   }
@@ -381,39 +380,39 @@ export function scoreLengthMix(
     score += 24;
   }
 
-  if (phase === "anchor") {
-    if (bucket === "long" && longCount <= profile.targetLongMax) {
+  if (phase === 'anchor') {
+    if (bucket === 'long' && longCount <= profile.targetLongMax) {
       score += 22;
-    } else if (bucket === "medium") {
+    } else if (bucket === 'medium') {
       score += 28;
-    } else if (bucket === "short") {
+    } else if (bucket === 'short') {
       score -= 18;
     }
 
-    if (bucket === "long" && length >= profile.anchorMax) {
+    if (bucket === 'long' && length >= profile.anchorMax) {
       score -= 20;
     }
 
     return score;
   }
 
-  if (phase === "gap") {
-    if (bucket === "short" && shortCount <= profile.targetShortMax) {
+  if (phase === 'gap') {
+    if (bucket === 'short' && shortCount <= profile.targetShortMax) {
       score += 16;
-    } else if (bucket === "medium") {
+    } else if (bucket === 'medium') {
       score += 20;
-    } else if (bucket === "long") {
+    } else if (bucket === 'long') {
       score -= 36;
     }
 
     return score;
   }
 
-  if (bucket === "medium") {
+  if (bucket === 'medium') {
     score += 34;
-  } else if (bucket === "short") {
+  } else if (bucket === 'short') {
     score += shortCount <= profile.targetShortMax ? 14 : -10;
-  } else if (bucket === "long") {
+  } else if (bucket === 'long') {
     if (placedLongCount >= profile.targetLongMax) {
       score -= 85;
     } else if (placedLongCount === 0) {
@@ -449,29 +448,29 @@ export function scoreWordCandidate(options: {
     placedLengths,
     letterFrequency,
     themeSelected,
-    phase = "crossing",
+    phase = 'crossing',
     slotLength,
   } = options;
   const length = getAnswerLength(candidate.answer);
   const bucket = getLengthBucket(length, profile);
-  const longCount = countBucketInLengths(placedLengths, profile, "long");
+  const longCount = countBucketInLengths(placedLengths, profile, 'long');
   let score = scoreWordLengthBonus(length);
 
-  if (phase === "anchor") {
+  if (phase === 'anchor') {
     const anchorTarget = (profile.anchorMin + profile.anchorMax) / 2;
 
     if (length >= profile.anchorMin && length <= profile.anchorMax) {
       score += 52 - Math.abs(length - anchorTarget) * 5;
-    } else if (bucket === "medium") {
+    } else if (bucket === 'medium') {
       score += 24;
     } else {
       score -= 40;
     }
-  } else if (phase === "crossing") {
-    if (bucket === "long" && longCount >= profile.targetLongMax) {
+  } else if (phase === 'crossing') {
+    if (bucket === 'long' && longCount >= profile.targetLongMax) {
       score -= 120;
     }
-  } else if (phase === "gap") {
+  } else if (phase === 'gap') {
     if (slotLength !== undefined && length === slotLength) {
       score += 44;
     } else if (slotLength !== undefined && length !== slotLength) {
@@ -485,7 +484,7 @@ export function scoreWordCandidate(options: {
   score += scoreThemeWordBonus(themeSelected, candidate.hasThemeMatch ?? false);
   score += scoreEmergencyWordPenalty(candidate.answer, phase);
 
-  if (candidate.hints.some((hint) => hint.status === "APPROVED")) {
+  if (candidate.hints.some((hint) => hint.status === 'APPROVED')) {
     score += 10;
   } else if (candidate.hints.length > 0) {
     score += 3;
@@ -503,12 +502,12 @@ export function combineWordAndPlacementScore(wordScore: number, placementScore: 
 
 export function isLongPlacementViable(
   placement: PuzzlePlacementInput,
-  scored: Pick<ScoredPlacement, "crossings" | "openConnectionDelta">,
+  scored: Pick<ScoredPlacement, 'crossings' | 'openConnectionDelta'>,
   profile: GridSizeProfile,
 ) {
   const length = getAnswerLength(placement.answerSnapshot);
 
-  if (getLengthBucket(length, profile) !== "long") {
+  if (getLengthBucket(length, profile) !== 'long') {
     return true;
   }
 
@@ -596,7 +595,7 @@ function getBoundingBox(keys: Set<string>) {
   let maxCol = Number.NEGATIVE_INFINITY;
 
   for (const key of keys) {
-    const [row, col] = key.split(":").map(Number);
+    const [row, col] = key.split(':').map(Number);
     minRow = Math.min(minRow, row);
     maxRow = Math.max(maxRow, row);
     minCol = Math.min(minCol, col);
@@ -619,9 +618,7 @@ export function computeLayoutCompactness(entries: PuzzlePlacementInput[]) {
 
 function occupiedCellKeys(entries: PuzzlePlacementInput[]) {
   return new Set(
-    entries.flatMap((entry) =>
-      getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`),
-    ),
+    entries.flatMap((entry) => getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`)),
   );
 }
 
@@ -661,20 +658,19 @@ export function scorePlacement(
 
   const centerRow = (height - 1) / 2;
   const centerCol = (width - 1) / 2;
-  const centerDistance =
-    Math.abs(placement.row - centerRow) + Math.abs(placement.col - centerCol);
+  const centerDistance = Math.abs(placement.row - centerRow) + Math.abs(placement.col - centerCol);
 
-  const acrossCount = existing.filter((entry) => entry.direction === "ACROSS").length;
-  const downCount = existing.filter((entry) => entry.direction === "DOWN").length;
+  const acrossCount = existing.filter((entry) => entry.direction === 'ACROSS').length;
+  const downCount = existing.filter((entry) => entry.direction === 'DOWN').length;
   let directionBalance = 0;
 
-  if (placement.direction === "ACROSS" && downCount > acrossCount) {
+  if (placement.direction === 'ACROSS' && downCount > acrossCount) {
     directionBalance += 8;
-  } else if (placement.direction === "DOWN" && acrossCount > downCount) {
+  } else if (placement.direction === 'DOWN' && acrossCount > downCount) {
     directionBalance += 8;
-  } else if (placement.direction === "ACROSS" && acrossCount > downCount) {
+  } else if (placement.direction === 'ACROSS' && acrossCount > downCount) {
     directionBalance -= 4;
-  } else if (placement.direction === "DOWN" && downCount > acrossCount) {
+  } else if (placement.direction === 'DOWN' && downCount > acrossCount) {
     directionBalance -= 4;
   }
 
@@ -686,9 +682,9 @@ export function scorePlacement(
     height,
   );
   const wordLength = getAnswerLength(placement.answerSnapshot);
-  const phase = options?.phase ?? "crossing";
+  const phase = options?.phase ?? 'crossing';
   const profile = options?.profile;
-  const bucket = profile ? getLengthBucket(wordLength, profile) : "other";
+  const bucket = profile ? getLengthBucket(wordLength, profile) : 'other';
   const wordQuality =
     scoreThemeWordBonus(options?.themeSelected ?? false, options?.hasThemeMatch ?? false) * 0.45 +
     scoreEmergencyWordPenalty(placement.answerSnapshot, phase) * 0.5;
@@ -697,7 +693,7 @@ export function scorePlacement(
   ).length;
   let longPlacementPenalty = 0;
 
-  if (profile && bucket === "long") {
+  if (profile && bucket === 'long') {
     if (crossings < 1 && openConnectionDelta < 2) {
       longPlacementPenalty += 200;
     } else if (crossings < 2 && openConnectionDelta < 3) {
@@ -708,7 +704,7 @@ export function scorePlacement(
     longPlacementPenalty += Math.max(0, compactness - totalCells * 0.45) * 0.8;
   }
 
-  const newCellBonus = bucket === "long" ? newLetterCells * 4 : newLetterCells * 10;
+  const newCellBonus = bucket === 'long' ? newLetterCells * 4 : newLetterCells * 10;
 
   const totalScore =
     crossings * 120 +
@@ -764,18 +760,15 @@ export function comparePlacements(
   return rightBalance - leftBalance;
 }
 
-function scoreDirectionBalance(
-  placement: PuzzlePlacementInput,
-  existing: PuzzlePlacementInput[],
-) {
-  const acrossCount = existing.filter((entry) => entry.direction === "ACROSS").length;
-  const downCount = existing.filter((entry) => entry.direction === "DOWN").length;
+function scoreDirectionBalance(placement: PuzzlePlacementInput, existing: PuzzlePlacementInput[]) {
+  const acrossCount = existing.filter((entry) => entry.direction === 'ACROSS').length;
+  const downCount = existing.filter((entry) => entry.direction === 'DOWN').length;
 
-  if (placement.direction === "ACROSS" && downCount > acrossCount) {
+  if (placement.direction === 'ACROSS' && downCount > acrossCount) {
     return 1;
   }
 
-  if (placement.direction === "DOWN" && acrossCount > downCount) {
+  if (placement.direction === 'DOWN' && acrossCount > downCount) {
     return 1;
   }
 
@@ -787,7 +780,5 @@ export function buildCandidatePool(
   profile: GridSizeProfile,
   gridLimit: number,
 ) {
-  return candidates.filter((candidate) =>
-    isUsableCandidate(candidate, profile, gridLimit),
-  );
+  return candidates.filter((candidate) => isUsableCandidate(candidate, profile, gridLimit));
 }

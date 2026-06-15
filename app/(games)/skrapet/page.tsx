@@ -1,6 +1,6 @@
-import { SkrapetGame } from "@/components/games/skrapet/skrapet-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
+import { SkrapetGame } from '@/components/games/skrapet/skrapet-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 
 export default function SkrapetPage() {
   return (

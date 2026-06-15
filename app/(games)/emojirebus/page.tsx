@@ -1,9 +1,9 @@
-import { EmojirebusGame } from "@/components/games/emojirebus/emojirebus-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
-import { BodyText } from "@/components/ui/typography";
-import { loadEmojirebusPuzzle } from "@/lib/content/emojirebus";
-import { isDatabaseConfigured } from "@/lib/db/prisma";
+import { EmojirebusGame } from '@/components/games/emojirebus/emojirebus-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { BodyText } from '@/components/ui/typography';
+import { loadEmojirebusPuzzle } from '@/lib/content/emojirebus';
+import { isDatabaseConfigured } from '@/lib/db/prisma';
 
 export default async function EmojirebusPage() {
   if (!isDatabaseConfigured()) {
@@ -16,9 +16,7 @@ export default async function EmojirebusPage() {
             description="Den här testversionen kräver databasanslutning."
             mobileDescription="Kräver databasanslutning."
           >
-            <BodyText>
-              Sätt `DATABASE_URL` och starta Postgres innan du testar Emojirebus.
-            </BodyText>
+            <BodyText>Sätt `DATABASE_URL` och starta Postgres innan du testar Emojirebus.</BodyText>
           </GameShell>
         </div>
       </MobileInsetShell>

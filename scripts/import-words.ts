@@ -1,16 +1,13 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { PrismaClient } from "@prisma/client";
-import {
-  isValidAnswerFormat,
-  normalizeAnswer,
-} from "../lib/content/normalize-answer";
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { PrismaClient } from '@prisma/client';
+import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer';
 
 const prisma = new PrismaClient();
 
 function parseCsvRow(line: string) {
   const cells: string[] = [];
-  let current = "";
+  let current = '';
   let inQuotes = false;
 
   for (let index = 0; index < line.length; index += 1) {
@@ -27,9 +24,9 @@ function parseCsvRow(line: string) {
       continue;
     }
 
-    if (char === "," && !inQuotes) {
+    if (char === ',' && !inQuotes) {
       cells.push(current);
-      current = "";
+      current = '';
       continue;
     }
 
@@ -41,22 +38,23 @@ function parseCsvRow(line: string) {
 }
 
 function parseAnswersCsv(contents: string) {
-  const lines = contents.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+  const lines = contents
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .filter(Boolean);
 
   if (lines.length === 0) {
-    throw new Error("CSV-filen är tom.");
+    throw new Error('CSV-filen är tom.');
   }
 
-  const headers = parseCsvRow(lines[0]).map((header) =>
-    header.trim().toLocaleLowerCase("sv-SE"),
-  );
-  const answerIndex = headers.indexOf("answer");
+  const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLocaleLowerCase('sv-SE'));
+  const answerIndex = headers.indexOf('answer');
 
   if (answerIndex === -1) {
     throw new Error('CSV-filen måste innehålla kolumnen "answer".');
   }
 
-  return lines.slice(1).map((line) => parseCsvRow(line)[answerIndex] ?? "");
+  return lines.slice(1).map((line) => parseCsvRow(line)[answerIndex] ?? '');
 }
 
 function chunk<T>(values: T[], size: number) {
@@ -74,20 +72,18 @@ async function main() {
   const source = process.argv[3];
 
   if (!inputPath) {
-    throw new Error(
-      "Användning: npm run import:words -- <sökväg-till-csv> [källa]",
-    );
+    throw new Error('Användning: npm run import:words -- <sökväg-till-csv> [källa]');
   }
 
   const absolutePath = path.resolve(process.cwd(), inputPath);
-  const contents = await readFile(absolutePath, "utf8");
+  const contents = await readFile(absolutePath, 'utf8');
   const answers = parseAnswersCsv(contents);
 
   const batch = await prisma.importBatch.create({
     data: {
       filename: path.basename(absolutePath),
-      source: source ?? "csv",
-      status: "PENDING",
+      source: source ?? 'csv',
+      status: 'PENDING',
       totalRows: answers.length,
     },
   });
@@ -148,8 +144,8 @@ async function main() {
           answer: row.answer,
           normalizedAnswer: row.normalizedAnswer,
           length: row.length,
-          language: "sv",
-          status: "DRAFT",
+          language: 'sv',
+          status: 'DRAFT',
         })),
       });
     }
@@ -157,7 +153,7 @@ async function main() {
     await prisma.importBatch.update({
       where: { id: batch.id },
       data: {
-        status: "COMPLETED",
+        status: 'COMPLETED',
         importedRows: newWords.length,
         skippedRows,
         completedAt: new Date(),
@@ -169,7 +165,7 @@ async function main() {
     await prisma.importBatch.update({
       where: { id: batch.id },
       data: {
-        status: "FAILED",
+        status: 'FAILED',
         completedAt: new Date(),
       },
     });

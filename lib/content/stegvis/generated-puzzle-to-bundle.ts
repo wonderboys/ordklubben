@@ -1,9 +1,6 @@
-import type { StegvisGeneratedPuzzle } from "@/lib/content/stegvis/generator/types";
-import type {
-  StegvisChainStep,
-  StegvisPuzzleBundle,
-} from "@/lib/content/stegvis/types";
-import { normalizeStegvisWord } from "@/lib/game/stegvis";
+import type { StegvisGeneratedPuzzle } from '@/lib/content/stegvis/generator/types';
+import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
+import { normalizeStegvisWord } from '@/lib/game/stegvis';
 
 function toPlayAnswer(answer: string): string {
   return normalizeStegvisWord(answer);
@@ -14,28 +11,21 @@ function toDisplayClue(clue: string | null): string {
     return clue.trim();
   }
 
-  return "Nyckel saknas";
+  return 'Nyckel saknas';
 }
 
-export function generatedPuzzleToBundle(
-  puzzle: StegvisGeneratedPuzzle,
-): StegvisPuzzleBundle {
+export function generatedPuzzleToBundle(puzzle: StegvisGeneratedPuzzle): StegvisPuzzleBundle {
   const start = toPlayAnswer(puzzle.start.answer);
   const target = toPlayAnswer(puzzle.target.answer);
   const sampleSolution = puzzle.path.map((slot) => toPlayAnswer(slot.answer));
 
   const chain: StegvisChainStep[] = puzzle.path.map((slot, index) => {
     const answer = toPlayAnswer(slot.answer);
-    const role =
-      index === 0
-        ? "start"
-        : index === puzzle.path.length - 1
-          ? "target"
-          : "middle";
+    const role = index === 0 ? 'start' : index === puzzle.path.length - 1 ? 'target' : 'middle';
 
     return {
       answer,
-      displayAnswer: answer.toLocaleUpperCase("sv-SE"),
+      displayAnswer: answer.toLocaleUpperCase('sv-SE'),
       clueText: toDisplayClue(slot.clue),
       wordId: slot.wordId,
       role,

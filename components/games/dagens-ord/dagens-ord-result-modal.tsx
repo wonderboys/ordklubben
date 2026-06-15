@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { MonoLabel } from "@/components/ui/typography";
+import { Button } from '@/components/ui/button';
+import { MonoLabel } from '@/components/ui/typography';
 
 export type DagensOrdResultData = {
-  outcome: "won" | "lost";
+  outcome: 'won' | 'lost';
   targetWord: string;
   attemptCount?: number;
   /** Reserved for future stats UI. */
@@ -19,17 +19,13 @@ type DagensOrdResultModalProps = {
   onClose: () => void;
 };
 
-export function DagensOrdResultModal({
-  open,
-  result,
-  onClose,
-}: DagensOrdResultModalProps) {
+export function DagensOrdResultModal({ open, result, onClose }: DagensOrdResultModalProps) {
   if (!open) {
     return null;
   }
 
-  const displayWord = result.targetWord.toLocaleUpperCase("sv-SE");
-  const isWin = result.outcome === "won";
+  const displayWord = result.targetWord.toLocaleUpperCase('sv-SE');
+  const isWin = result.outcome === 'won';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -51,18 +47,17 @@ export function DagensOrdResultModal({
               id="dagens-ord-result-title"
               className="text-2xl font-black uppercase text-print-ink sm:text-3xl"
             >
-              {isWin ? "Rätt." : "Slut."}
+              {isWin ? 'Rätt.' : 'Slut.'}
             </p>
             {isWin && result.attemptCount !== undefined ? (
               <p className="text-sm text-print-ink sm:text-base">
-                Du löste dagens ord på {result.attemptCount}{" "}
-                {result.attemptCount === 1 ? "försök" : "försök"}.
+                Du löste dagens ord på {result.attemptCount}{' '}
+                {result.attemptCount === 1 ? 'försök' : 'försök'}.
               </p>
             ) : null}
             {!isWin ? (
               <p className="text-sm text-print-ink sm:text-base">
-                Dagens ord var{" "}
-                <span className="font-black uppercase">{displayWord}</span>.
+                Dagens ord var <span className="font-black uppercase">{displayWord}</span>.
               </p>
             ) : null}
           </div>

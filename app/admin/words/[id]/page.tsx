@@ -1,27 +1,23 @@
-import { notFound } from "next/navigation";
-import type { HintCandidateStatus, LexicalEntryType, WordRelationType } from "@prisma/client";
-import {
-  AdminPage,
-  DatabaseNotice,
-  FeedbackMessage,
-} from "@/components/admin/admin-ui";
-import { WordDetailHeader } from "@/components/admin/word-detail/word-detail-header";
-import { WordDetailView } from "@/components/admin/word-detail/word-detail-view";
-import type { WordDetailData } from "@/components/admin/word-detail/types";
+import { notFound } from 'next/navigation';
+import type { HintCandidateStatus, LexicalEntryType, WordRelationType } from '@prisma/client';
+import { AdminPage, DatabaseNotice, FeedbackMessage } from '@/components/admin/admin-ui';
+import { WordDetailHeader } from '@/components/admin/word-detail/word-detail-header';
+import { WordDetailView } from '@/components/admin/word-detail/word-detail-view';
+import type { WordDetailData } from '@/components/admin/word-detail/types';
 import {
   HINT_CANDIDATE_STATUSES,
   LEXICAL_ENTRY_TYPES,
   WORD_RELATION_TYPES,
-} from "@/lib/content/constants";
-import { normalizeWordDetailTab } from "@/lib/content/word-detail-path";
-import { parseWordInflections } from "@/lib/content/word-language";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+} from '@/lib/content/constants';
+import { normalizeWordDetailTab } from '@/lib/content/word-detail-path';
+import { parseWordInflections } from '@/lib/content/word-language';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
   tab?: string;
-  candidateStatus?: HintCandidateStatus | "";
-  entryType?: LexicalEntryType | "";
-  relationType?: WordRelationType | "";
+  candidateStatus?: HintCandidateStatus | '';
+  entryType?: LexicalEntryType | '';
+  relationType?: WordRelationType | '';
   error?: string;
   success?: string;
 }>;
@@ -41,8 +37,7 @@ export default async function WordDetailPage({
   const feedback = await searchParams;
   const activeTab = normalizeWordDetailTab(feedback.tab);
   const candidateStatus =
-    feedback.candidateStatus &&
-    HINT_CANDIDATE_STATUSES.includes(feedback.candidateStatus)
+    feedback.candidateStatus && HINT_CANDIDATE_STATUSES.includes(feedback.candidateStatus)
       ? feedback.candidateStatus
       : undefined;
   const entryType =
@@ -68,11 +63,11 @@ export default async function WordDetailPage({
       where: { id },
       include: {
         languageData: true,
-        hints: { orderBy: [{ createdAt: "desc" }] },
-        hintCandidates: { orderBy: [{ createdAt: "desc" }] },
-        lexicalEntries: { orderBy: [{ type: "asc" }, { value: "asc" }] },
-        rebusEntries: { orderBy: [{ createdAt: "desc" }] },
-        mediaAssets: { orderBy: [{ createdAt: "desc" }] },
+        hints: { orderBy: [{ createdAt: 'desc' }] },
+        hintCandidates: { orderBy: [{ createdAt: 'desc' }] },
+        lexicalEntries: { orderBy: [{ type: 'asc' }, { value: 'asc' }] },
+        rebusEntries: { orderBy: [{ createdAt: 'desc' }] },
+        mediaAssets: { orderBy: [{ createdAt: 'desc' }] },
         outgoingRelations: {
           include: {
             targetWord: {
@@ -82,7 +77,7 @@ export default async function WordDetailPage({
               },
             },
           },
-          orderBy: [{ relationType: "asc" }, { targetWord: { answer: "asc" } }],
+          orderBy: [{ relationType: 'asc' }, { targetWord: { answer: 'asc' } }],
         },
         themes: {
           include: {
@@ -95,7 +90,7 @@ export default async function WordDetailPage({
               },
             },
           },
-          orderBy: { theme: { name: "asc" } },
+          orderBy: { theme: { name: 'asc' } },
         },
         _count: {
           select: {
@@ -112,15 +107,15 @@ export default async function WordDetailPage({
       },
     }),
     prisma.theme.findMany({
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true },
     }),
     prisma.word.findMany({
       where: {
         id: { not: id },
-        status: { not: "ARCHIVED" },
+        status: { not: 'ARCHIVED' },
       },
-      orderBy: { answer: "asc" },
+      orderBy: { answer: 'asc' },
       select: {
         id: true,
         answer: true,

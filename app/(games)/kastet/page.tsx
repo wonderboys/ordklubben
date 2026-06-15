@@ -1,6 +1,6 @@
-import { KastetGame } from "@/components/games/kastet/kastet-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
+import { KastetGame } from '@/components/games/kastet/kastet-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 
 export default function KastetPage() {
   return (

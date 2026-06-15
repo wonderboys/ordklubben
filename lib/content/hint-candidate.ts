@@ -1,6 +1,6 @@
-import type { HintType, PrismaClient } from "@prisma/client";
-import { hintTextsMatch, trimHintText } from "@/lib/content/normalize-hint";
-import { normalizeApprovedHintMetadata } from "@/lib/content/normalize-hint-metadata";
+import type { HintType, PrismaClient } from '@prisma/client';
+import { hintTextsMatch, trimHintText } from '@/lib/content/normalize-hint';
+import { normalizeApprovedHintMetadata } from '@/lib/content/normalize-hint-metadata';
 
 type ApproveCandidateInput = {
   wordId: string;
@@ -31,17 +31,17 @@ export async function approveCandidateAsHint(
   });
 
   if (!candidate) {
-    return { ok: false, error: "Förslaget kunde inte hittas." };
+    return { ok: false, error: 'Förslaget kunde inte hittas.' };
   }
 
-  if (candidate.status !== "PENDING") {
-    return { ok: false, error: "Förslaget är redan granskat." };
+  if (candidate.status !== 'PENDING') {
+    return { ok: false, error: 'Förslaget är redan granskat.' };
   }
 
   const text = trimHintText(input.text);
 
   if (text.length === 0) {
-    return { ok: false, error: "Nyckeltexten får inte vara tom." };
+    return { ok: false, error: 'Nyckeltexten får inte vara tom.' };
   }
 
   const metadata = normalizeApprovedHintMetadata({
@@ -58,7 +58,7 @@ export async function approveCandidateAsHint(
   if (existingHints.some((hint) => hintTextsMatch(hint.text, text))) {
     return {
       ok: false,
-      error: "En nyckel med samma text finns redan för ordet.",
+      error: 'En nyckel med samma text finns redan för ordet.',
     };
   }
 
@@ -70,7 +70,7 @@ export async function approveCandidateAsHint(
         wordId: input.wordId,
         text,
         type: metadata.type,
-        status: "DRAFT",
+        status: 'DRAFT',
         difficulty: metadata.difficulty,
         tone: metadata.tone,
         source: input.source ?? candidate.source,
@@ -81,7 +81,7 @@ export async function approveCandidateAsHint(
     await tx.hintCandidate.update({
       where: { id: candidate.id },
       data: {
-        status: "APPROVED",
+        status: 'APPROVED',
         reviewedAt,
         approvedHintId: createdHint.id,
         text,

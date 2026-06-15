@@ -1,7 +1,7 @@
-import { config } from "dotenv";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import { normalizeAnswer } from "../lib/content/normalize-answer.ts";
+import { config } from 'dotenv';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import { normalizeAnswer } from '../lib/content/normalize-answer.ts';
 
 config();
 
@@ -11,23 +11,23 @@ type SeedEntry = {
 };
 
 const SEED_ENTRIES: SeedEntry[] = [
-  { answer: "BOKMÄL", emoji: "📚🐛" },
-  { answer: "SOLROS", emoji: "☀️🌻" },
-  { answer: "REGNBYXOR", emoji: "🌧️👖" },
-  { answer: "DROTTNINGBI", emoji: "👑🐝" },
-  { answer: "FISKE", emoji: "🐟🎣" },
-  { answer: "SNÖBOLL", emoji: "❄️⚽" },
-  { answer: "HUNDSKALL", emoji: "🐶🔊" },
-  { answer: "KAFFEKOPP", emoji: "☕🏆" },
-  { answer: "MÅNSKEN", emoji: "🌙✨" },
-  { answer: "BILNYCKEL", emoji: "🚗🔑" },
+  { answer: 'BOKMÄL', emoji: '📚🐛' },
+  { answer: 'SOLROS', emoji: '☀️🌻' },
+  { answer: 'REGNBYXOR', emoji: '🌧️👖' },
+  { answer: 'DROTTNINGBI', emoji: '👑🐝' },
+  { answer: 'FISKE', emoji: '🐟🎣' },
+  { answer: 'SNÖBOLL', emoji: '❄️⚽' },
+  { answer: 'HUNDSKALL', emoji: '🐶🔊' },
+  { answer: 'KAFFEKOPP', emoji: '☕🏆' },
+  { answer: 'MÅNSKEN', emoji: '🌙✨' },
+  { answer: 'BILNYCKEL', emoji: '🚗🔑' },
 ];
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL saknas.");
+    throw new Error('DATABASE_URL saknas.');
   }
 
   return new PrismaClient({
@@ -52,16 +52,16 @@ async function main() {
           answer: normalized.answer,
           normalizedAnswer: normalized.normalizedAnswer,
           length: normalized.length,
-          language: "sv",
-          status: "APPROVED",
-          source: "manual",
-          sourceReference: "seed-emojirebus",
+          language: 'sv',
+          status: 'APPROVED',
+          source: 'manual',
+          sourceReference: 'seed-emojirebus',
         },
         update: {
           answer: normalized.answer,
           length: normalized.length,
-          status: "APPROVED",
-          sourceReference: "seed-emojirebus",
+          status: 'APPROVED',
+          sourceReference: 'seed-emojirebus',
         },
       });
 
@@ -88,14 +88,14 @@ async function main() {
         create: {
           wordId: word.id,
           value: entry.emoji,
-          status: "APPROVED",
-          source: "manual",
-          sourceReference: "seed-emojirebus",
+          status: 'APPROVED',
+          source: 'manual',
+          sourceReference: 'seed-emojirebus',
         },
         update: {
-          status: "APPROVED",
-          source: "manual",
-          sourceReference: "seed-emojirebus",
+          status: 'APPROVED',
+          source: 'manual',
+          sourceReference: 'seed-emojirebus',
         },
       });
 

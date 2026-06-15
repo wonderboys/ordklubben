@@ -1,4 +1,4 @@
-import type { PuzzleDirection } from "@prisma/client";
+import type { PuzzleDirection } from '@prisma/client';
 
 export type PuzzlePlacementInput = {
   id?: string;
@@ -19,15 +19,13 @@ export type PuzzleGridCell = {
   blocked: boolean;
 };
 
-export type PuzzlePlacementValidationResult =
-  | { ok: true }
-  | { ok: false; message: string };
+export type PuzzlePlacementValidationResult = { ok: true } | { ok: false; message: string };
 
 function getAnswerLetters(answerSnapshot: string) {
   return answerSnapshot
     .trim()
-    .toLocaleUpperCase("sv-SE")
-    .replace(/[\s'’\-‐‑‒–—]+/g, "");
+    .toLocaleUpperCase('sv-SE')
+    .replace(/[\s'’\-‐‑‒–—]+/g, '');
 }
 
 export function getPlacementCells(placement: PuzzlePlacementInput) {
@@ -35,17 +33,17 @@ export function getPlacementCells(placement: PuzzlePlacementInput) {
   const cells: Array<{ row: number; col: number; letter: string }> = [];
 
   for (let index = 0; index < letters.length; index += 1) {
-    if (placement.direction === "ACROSS") {
+    if (placement.direction === 'ACROSS') {
       cells.push({
         row: placement.row,
         col: placement.col + index,
-        letter: letters[index] ?? "",
+        letter: letters[index] ?? '',
       });
     } else {
       cells.push({
         row: placement.row + index,
         col: placement.col,
-        letter: letters[index] ?? "",
+        letter: letters[index] ?? '',
       });
     }
   }
@@ -74,9 +72,7 @@ export function buildLetterMap(entries: PuzzlePlacementInput[]) {
 
 export function getOccupiedCells(entries: PuzzlePlacementInput[]) {
   return new Set(
-    entries.flatMap((entry) =>
-      getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`),
-    ),
+    entries.flatMap((entry) => getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`)),
   );
 }
 
@@ -96,24 +92,22 @@ export function validatePuzzlePlacement(options: {
   const letters = getAnswerLetters(placement.answerSnapshot);
 
   if (letters.length === 0) {
-    return { ok: false, message: "Ordets svar saknar bokstäver att placera." };
+    return { ok: false, message: 'Ordets svar saknar bokstäver att placera.' };
   }
 
   if (placement.row < 0 || placement.col < 0) {
-    return { ok: false, message: "Rad och kolumn måste vara 0 eller större." };
+    return { ok: false, message: 'Rad och kolumn måste vara 0 eller större.' };
   }
 
   const cells = getPlacementCells(placement);
   const blocked = new Set(blockedCells.map((cell) => `${cell.row}:${cell.col}`));
-  const letterMap = buildLetterMap(
-    existing.filter((entry) => entry.id !== placement.id),
-  );
+  const letterMap = buildLetterMap(existing.filter((entry) => entry.id !== placement.id));
 
   for (const cell of cells) {
     if (cell.row < 0 || cell.col < 0 || cell.row >= height || cell.col >= width) {
       return {
         ok: false,
-        message: "Ordet får inte plats i rutnätet med vald position och riktning.",
+        message: 'Ordet får inte plats i rutnätet med vald position och riktning.',
       };
     }
 
@@ -212,9 +206,7 @@ export function buildCellOwnershipMap(
       map.set(key, {
         entryId: entry.id,
         isStart: isStart || Boolean(existing?.isStart),
-        number: isStart
-          ? (entry.number ?? existing?.number ?? null)
-          : (existing?.number ?? null),
+        number: isStart ? (entry.number ?? existing?.number ?? null) : (existing?.number ?? null),
       });
     });
   }
@@ -248,8 +240,8 @@ export function computeStartCellNumbers(entries: PuzzlePlacementInput[]) {
   }
 
   const sorted = [...startCells].sort((left, right) => {
-    const [leftRow, leftCol] = left.split(":").map(Number);
-    const [rightRow, rightCol] = right.split(":").map(Number);
+    const [leftRow, leftCol] = left.split(':').map(Number);
+    const [rightRow, rightCol] = right.split(':').map(Number);
 
     return leftRow - rightRow || leftCol - rightCol;
   });

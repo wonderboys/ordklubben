@@ -1,11 +1,11 @@
-import type { PuzzleDirection } from "@prisma/client";
+import type { PuzzleDirection } from '@prisma/client';
 import {
   buildLetterMap,
   getPlacementCells,
   validatePuzzlePlacement,
   type PuzzleBlockedCellInput,
   type PuzzlePlacementInput,
-} from "@/lib/content/puzzle/grid";
+} from '@/lib/content/puzzle/grid';
 
 export type PuzzleGhostCell = {
   row: number;

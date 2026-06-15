@@ -1,6 +1,6 @@
-import type { PuzzleDirection } from "@prisma/client";
-import { getAnswerLength } from "@/lib/content/puzzle/grid";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+import type { PuzzleDirection } from '@prisma/client';
+import { getAnswerLength } from '@/lib/content/puzzle/grid';
+import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 export type OrdflataPlayerEntry = {
   id: string;
@@ -24,12 +24,12 @@ export type OrdflataPlayerPuzzle = {
 function normalizeAnswer(answerSnapshot: string) {
   return answerSnapshot
     .trim()
-    .toLocaleUpperCase("sv-SE")
-    .replace(/[\s'’\-‐‑‒–—]+/g, "");
+    .toLocaleUpperCase('sv-SE')
+    .replace(/[\s'’\-‐‑‒–—]+/g, '');
 }
 
 const playableWordGridWhere = {
-  type: "WORD_GRID" as const,
+  type: 'WORD_GRID' as const,
   entries: { some: {} },
 };
 
@@ -39,9 +39,9 @@ async function findOrdflataPuzzleId() {
   const published = await prisma.puzzle.findFirst({
     where: {
       ...playableWordGridWhere,
-      status: "PUBLISHED",
+      status: 'PUBLISHED',
     },
-    orderBy: [{ publishDate: "desc" }, { updatedAt: "desc" }],
+    orderBy: [{ publishDate: 'desc' }, { updatedAt: 'desc' }],
     select: { id: true },
   });
 
@@ -53,9 +53,9 @@ async function findOrdflataPuzzleId() {
   const fallback = await prisma.puzzle.findFirst({
     where: {
       ...playableWordGridWhere,
-      status: { in: ["DRAFT", "REVIEW"] },
+      status: { in: ['DRAFT', 'REVIEW'] },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { updatedAt: 'desc' },
     select: { id: true },
   });
 
@@ -83,10 +83,10 @@ export async function loadOrdflataAlphaPuzzle(): Promise<OrdflataPlayerPuzzle | 
             select: { text: true },
           },
         },
-        orderBy: [{ direction: "asc" }, { number: "asc" }, { row: "asc" }, { col: "asc" }],
+        orderBy: [{ direction: 'asc' }, { number: 'asc' }, { row: 'asc' }, { col: 'asc' }],
       },
       blockedCells: {
-        orderBy: [{ row: "asc" }, { col: "asc" }],
+        orderBy: [{ row: 'asc' }, { col: 'asc' }],
       },
     },
   });
@@ -107,7 +107,7 @@ export async function loadOrdflataAlphaPuzzle(): Promise<OrdflataPlayerPuzzle | 
       number: entry.number,
       length: getAnswerLength(entry.answerSnapshot),
       answer: normalizeAnswer(entry.answerSnapshot),
-      clue: entry.hintSnapshot ?? entry.hint?.text ?? "Ingen nyckel",
+      clue: entry.hintSnapshot ?? entry.hint?.text ?? 'Ingen nyckel',
     })),
     blockedCells: puzzle.blockedCells.map((cell) => ({
       row: cell.row,

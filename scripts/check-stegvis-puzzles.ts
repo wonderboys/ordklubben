@@ -1,19 +1,15 @@
-import { allowedSvGeneratedWords } from "../data/generated/allowed-sv.generated.ts";
-import { stegvisPuzzles } from "../data/stegvis/puzzles.ts";
-import { allowedSvWords as allowedSvWordsManual } from "../data/words/allowed-sv.ts";
+import { allowedSvGeneratedWords } from '../data/generated/allowed-sv.generated.ts';
+import { stegvisPuzzles } from '../data/stegvis/puzzles.ts';
+import { allowedSvWords as allowedSvWordsManual } from '../data/words/allowed-sv.ts';
 
 const allowedSvWords =
-  allowedSvGeneratedWords.length > 0
-    ? allowedSvGeneratedWords
-    : allowedSvWordsManual;
+  allowedSvGeneratedWords.length > 0 ? allowedSvGeneratedWords : allowedSvWordsManual;
 import {
   normalizeStegvisWordForCheck,
   validateStegvisSampleSolution,
-} from "./stegvis-puzzle-validation.ts";
+} from './stegvis-puzzle-validation.ts';
 
-const allowedWordSet = new Set(
-  allowedSvWords.map((word) => normalizeStegvisWordForCheck(word)),
-);
+const allowedWordSet = new Set(allowedSvWords.map((word) => normalizeStegvisWordForCheck(word)));
 
 let hasErrors = false;
 

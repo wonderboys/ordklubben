@@ -1,10 +1,10 @@
-import { getOpenAiApiKey } from "@/lib/content/ai/openai-hint-candidates";
-import { requestOpenAiMediaSuggestion } from "@/lib/content/ai/openai-media-suggestion";
-import { AiMediaGenerationError } from "@/lib/content/ai/parse-media-suggestion-response";
+import { getOpenAiApiKey } from '@/lib/content/ai/openai-hint-candidates';
+import { requestOpenAiMediaSuggestion } from '@/lib/content/ai/openai-media-suggestion';
+import { AiMediaGenerationError } from '@/lib/content/ai/parse-media-suggestion-response';
 import type {
   GenerateMediaSuggestionInput,
   GenerateMediaSuggestionResult,
-} from "@/lib/content/ai/types";
+} from '@/lib/content/ai/types';
 
 export function isAiProviderConfigured(): boolean {
   return Boolean(getOpenAiApiKey());
@@ -15,7 +15,7 @@ export async function generateMediaSuggestion(
 ): Promise<GenerateMediaSuggestionResult> {
   if (!isAiProviderConfigured()) {
     throw new AiMediaGenerationError(
-      "AI-generatorn är inte konfigurerad. Sätt OPENAI_API_KEY i miljövariablerna.",
+      'AI-generatorn är inte konfigurerad. Sätt OPENAI_API_KEY i miljövariablerna.',
     );
   }
 
@@ -26,10 +26,7 @@ export async function generateMediaSuggestion(
       throw error;
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "AI-generering misslyckades.";
+    const message = error instanceof Error ? error.message : 'AI-generering misslyckades.';
 
     throw new AiMediaGenerationError(message);
   }

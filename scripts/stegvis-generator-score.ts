@@ -1,11 +1,11 @@
 // Node-runnable mirror of lib/content/stegvis/generator/score.ts
-import { pickPrimaryClue } from "../lib/content/stegvis/clue-display.ts";
-import type { WordBankWordWithClues } from "../lib/content/word-bank/types.ts";
+import { pickPrimaryClue } from '../lib/content/stegvis/clue-display.ts';
+import type { WordBankWordWithClues } from '../lib/content/word-bank/types.ts';
 import type {
   StegvisGeneratedPuzzle,
   StegvisGeneratedWordSlot,
   StegvisGeneratorCorpus,
-} from "../lib/content/stegvis/generator/types.ts";
+} from '../lib/content/stegvis/generator/types.ts';
 
 export function toWordSlot(word: WordBankWordWithClues): StegvisGeneratedWordSlot {
   const primary = pickPrimaryClue(word.clues);
@@ -20,9 +20,7 @@ export function toWordSlot(word: WordBankWordWithClues): StegvisGeneratedWordSlo
 }
 
 export function hasDefinitionClue(word: WordBankWordWithClues): boolean {
-  return word.clues.some(
-    (clue) => clue.type === "DEFINITION" && clue.text.trim().length > 0,
-  );
+  return word.clues.some((clue) => clue.type === 'DEFINITION' && clue.text.trim().length > 0);
 }
 
 export function countSamePrefixSteps(path: string[]): number {
@@ -65,8 +63,8 @@ export function scoreStegvisPuzzle(options: {
   const targetSteps = (minSteps + maxSteps) / 2;
   score -= Math.abs(stats.steps - targetSteps) * 4;
 
-  const startWord = corpus.wordsByAnswer.get(path[0]?.answer ?? "");
-  const targetWord = corpus.wordsByAnswer.get(path[path.length - 1]?.answer ?? "");
+  const startWord = corpus.wordsByAnswer.get(path[0]?.answer ?? '');
+  const targetWord = corpus.wordsByAnswer.get(path[path.length - 1]?.answer ?? '');
 
   if (startWord && hasDefinitionClue(startWord)) {
     score += 12;

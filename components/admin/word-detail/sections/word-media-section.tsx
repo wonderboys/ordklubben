@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from 'lucide-react';
 import {
   AdminActionGroup,
   AdminPanel,
@@ -12,17 +12,13 @@ import {
   TextArea,
   TextInput,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
-import { GenerateMediaSuggestionButton } from "@/components/admin/generate-media-suggestion-button";
+} from '@/components/admin/admin-ui';
+import { GenerateMediaSuggestionButton } from '@/components/admin/generate-media-suggestion-button';
 import {
   MediaAssetImageFields,
   MediaAssetImagePreview,
-} from "@/components/admin/media-asset-image-fields";
-import {
-  createMediaAsset,
-  deleteMediaAsset,
-  updateMediaAsset,
-} from "@/lib/content/actions";
+} from '@/components/admin/media-asset-image-fields';
+import { createMediaAsset, deleteMediaAsset, updateMediaAsset } from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
   MEDIA_TYPES,
@@ -32,20 +28,14 @@ import {
   WORD_SOURCE_LABELS,
   formatMediaType,
   formatWordSourceWithReference,
-} from "@/lib/content/constants";
-import type { WordDetailData, WordDetailMediaAsset } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData, WordDetailMediaAsset } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-const MEDIA_TAB = "media";
-const NEW_ASSET_FORM_ID = "new-media-asset";
+const MEDIA_TAB = 'media';
+const NEW_ASSET_FORM_ID = 'new-media-asset';
 
-function MediaAssetCard({
-  wordId,
-  asset,
-}: {
-  wordId: string;
-  asset: WordDetailMediaAsset;
-}) {
+function MediaAssetCard({ wordId, asset }: { wordId: string; asset: WordDetailMediaAsset }) {
   const editFormId = `media-edit-${asset.id}`;
 
   return (
@@ -65,19 +55,15 @@ function MediaAssetCard({
         ) : (
           <p className="mt-2 text-sm text-print-muted">Ingen titel</p>
         )}
-        {asset.altText ? (
-          <p className="mt-1 text-sm text-print-muted">{asset.altText}</p>
-        ) : null}
+        {asset.altText ? <p className="mt-1 text-sm text-print-muted">{asset.altText}</p> : null}
         {asset.prompt ? (
           <p className="mt-2 text-sm text-print-muted">
             <span className="font-medium text-print-ink">Prompt: </span>
             {asset.prompt}
           </p>
         ) : null}
-        {asset.notes ? (
-          <p className="mt-2 text-sm text-print-muted">{asset.notes}</p>
-        ) : null}
-        {asset.mediaType === "IMAGE" && asset.filePath ? (
+        {asset.notes ? <p className="mt-2 text-sm text-print-muted">{asset.notes}</p> : null}
+        {asset.mediaType === 'IMAGE' && asset.filePath ? (
           <MediaAssetImagePreview filePath={asset.filePath} altText={asset.altText} />
         ) : null}
       </div>
@@ -86,7 +72,7 @@ function MediaAssetCard({
       <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
         <label
           htmlFor={editFormId}
-          className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+          className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
         >
           <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
           Redigera
@@ -139,10 +125,18 @@ function MediaAssetCard({
             </Field>
           </div>
           <Field label="Titel" htmlFor={`media-title-${asset.id}`} hint="Valfritt">
-            <TextInput id={`media-title-${asset.id}`} name="title" defaultValue={asset.title ?? ""} />
+            <TextInput
+              id={`media-title-${asset.id}`}
+              name="title"
+              defaultValue={asset.title ?? ''}
+            />
           </Field>
           <Field label="Alt-text" htmlFor={`media-alt-${asset.id}`} hint="Valfritt">
-            <TextInput id={`media-alt-${asset.id}`} name="altText" defaultValue={asset.altText ?? ""} />
+            <TextInput
+              id={`media-alt-${asset.id}`}
+              name="altText"
+              defaultValue={asset.altText ?? ''}
+            />
           </Field>
           <MediaAssetImageFields
             mediaTypeFieldId={`media-type-${asset.id}`}
@@ -153,7 +147,7 @@ function MediaAssetCard({
             <TextArea
               id={`media-prompt-${asset.id}`}
               name="prompt"
-              defaultValue={asset.prompt ?? ""}
+              defaultValue={asset.prompt ?? ''}
               className="min-h-16"
             />
           </Field>
@@ -161,17 +155,21 @@ function MediaAssetCard({
             <TextInput
               id={`media-attribution-${asset.id}`}
               name="attribution"
-              defaultValue={asset.attribution ?? ""}
+              defaultValue={asset.attribution ?? ''}
             />
           </Field>
           <Field label="Licens" htmlFor={`media-license-${asset.id}`} hint="Valfritt">
-            <TextInput id={`media-license-${asset.id}`} name="license" defaultValue={asset.license ?? ""} />
+            <TextInput
+              id={`media-license-${asset.id}`}
+              name="license"
+              defaultValue={asset.license ?? ''}
+            />
           </Field>
           <Field label="Anteckningar" htmlFor={`media-notes-${asset.id}`} hint="Valfritt">
             <TextArea
               id={`media-notes-${asset.id}`}
               name="notes"
-              defaultValue={asset.notes ?? ""}
+              defaultValue={asset.notes ?? ''}
               className="min-h-16"
             />
           </Field>
@@ -254,10 +252,7 @@ export function WordMediaSection({ word }: { word: WordDetailData }) {
           <Field label="Alt-text" htmlFor="media-new-alt" hint="Valfritt">
             <TextInput id="media-new-alt" name="altText" />
           </Field>
-          <MediaAssetImageFields
-            mediaTypeFieldId="media-new-type"
-            initialMediaType="IMAGE"
-          />
+          <MediaAssetImageFields mediaTypeFieldId="media-new-type" initialMediaType="IMAGE" />
           <Field label="Anteckningar" htmlFor="media-new-notes" hint="Valfritt">
             <TextArea id="media-new-notes" name="notes" className="min-h-16" />
           </Field>

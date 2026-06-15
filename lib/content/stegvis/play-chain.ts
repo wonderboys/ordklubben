@@ -1,12 +1,9 @@
-import { pickPrimaryClue } from "@/lib/content/stegvis/clue-display";
-import type { StegvisGeneratorCorpus } from "@/lib/content/stegvis/generator/types";
-import type {
-  StegvisChainStep,
-  StegvisPuzzleBundle,
-} from "@/lib/content/stegvis/types";
-import { findPathWithWordCount } from "@/lib/content/stegvis/word-graph/search";
-import { normalizeGraphWord } from "@/lib/content/stegvis/word-graph/utils";
-import { normalizeStegvisWord } from "@/lib/game/stegvis";
+import { pickPrimaryClue } from '@/lib/content/stegvis/clue-display';
+import type { StegvisGeneratorCorpus } from '@/lib/content/stegvis/generator/types';
+import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
+import { findPathWithWordCount } from '@/lib/content/stegvis/word-graph/search';
+import { normalizeGraphWord } from '@/lib/content/stegvis/word-graph/utils';
+import { normalizeStegvisWord } from '@/lib/game/stegvis';
 
 export const STEGVIS_MIDDLE_STEP_COUNT = 5;
 export const STEGVIS_CHAIN_WORD_COUNT = STEGVIS_MIDDLE_STEP_COUNT + 2;
@@ -16,11 +13,11 @@ function toDisplayClue(clue: string | null): string {
     return clue.trim();
   }
 
-  return "Nyckel saknas";
+  return 'Nyckel saknas';
 }
 
 export function countMiddleSteps(chain: StegvisChainStep[]): number {
-  return chain.filter((step) => step.role === "middle").length;
+  return chain.filter((step) => step.role === 'middle').length;
 }
 
 export function chainMeetsPlayRequirement(chain: StegvisChainStep[]): boolean {
@@ -36,17 +33,12 @@ export function buildChainStepsFromPath(
     const graphAnswer = normalizeGraphWord(answer);
     const word = corpus.wordsByAnswer.get(graphAnswer);
     const primary = word ? pickPrimaryClue(word.clues) : null;
-    const role =
-      index === 0
-        ? "start"
-        : index === path.length - 1
-          ? "target"
-          : "middle";
+    const role = index === 0 ? 'start' : index === path.length - 1 ? 'target' : 'middle';
 
     return {
       answer: normalized,
-      displayAnswer: normalized.toLocaleUpperCase("sv-SE"),
-      clueText: word ? toDisplayClue(primary?.text ?? null) : normalized.toLocaleUpperCase("sv-SE"),
+      displayAnswer: normalized.toLocaleUpperCase('sv-SE'),
+      clueText: word ? toDisplayClue(primary?.text ?? null) : normalized.toLocaleUpperCase('sv-SE'),
       wordId: word?.id ?? null,
       role,
     };

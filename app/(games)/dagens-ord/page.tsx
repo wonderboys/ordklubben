@@ -1,6 +1,6 @@
-import { DagensOrdGame } from "@/components/games/dagens-ord/dagens-ord-game";
-import { GameShell } from "@/components/games/game-shell";
-import { MobileInsetShell } from "@/components/layout/mobile-inset-shell";
+import { DagensOrdGame } from '@/components/games/dagens-ord/dagens-ord-game';
+import { GameShell } from '@/components/games/game-shell';
+import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 
 export default function DagensOrdPage() {
   return (

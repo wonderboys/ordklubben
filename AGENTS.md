@@ -1,7 +1,9 @@
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
 This project uses a newer Next.js version with breaking changes. Before making framework-level changes, read the relevant guide in `node_modules/next/dist/docs/` and check for deprecations.
+
 <!-- END:nextjs-agent-rules -->
 
 # Ordklubben Agent Guide

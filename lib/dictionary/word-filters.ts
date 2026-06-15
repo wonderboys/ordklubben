@@ -1,4 +1,4 @@
-import { normalizeSwedish } from "./normalize-swedish";
+import { normalizeSwedish } from './normalize-swedish';
 import type {
   CefrLevel,
   FilterReason,
@@ -8,9 +8,9 @@ import type {
   RawWordSource,
   SeedCandidate,
   WordEntry,
-} from "./wordlist-types";
+} from './wordlist-types';
 
-export const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(["A1", "A2", "B1", "B2"]);
+export const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(['A1', 'A2', 'B1', 'B2']);
 
 export const ABBREV_CONSONANT_BLOCK_PATTERN = /^[bcdfghjklmnpqrstvwxz]{3,5}$/;
 export const ABBREV_ORG_PATTERN = /^[bcdfghjklmnpqrstvwxz]{2,4}a$/;
@@ -27,26 +27,16 @@ export const CEFR_PRIORITY_SCORE: Record<CefrLevel, number> = {
 const SWEDISH_LETTER_PATTERN = /^[a-zåäö]+$/;
 const PROPER_NOUN_PATTERN = /^[A-ZÅÄÖ][a-zåäö]+$/;
 const UPPERCASE_WORD_PATTERN = /^[A-ZÅÄÖ]+$/;
-const VERB_LIKE_ENDINGS = [
-  "ade",
-  "ande",
-  "ar",
-  "at",
-  "er",
-  "or",
-  "ade",
-  "ast",
-  "ing",
-];
+const VERB_LIKE_ENDINGS = ['ade', 'ande', 'ar', 'at', 'er', 'or', 'ade', 'ast', 'ing'];
 const PLACEHOLDER_SEEDS = new Set([
-  "abcdef",
-  "banan",
-  "foobar",
-  "demo",
-  "dummy",
-  "testad",
-  "tester",
-  "spelar",
+  'abcdef',
+  'banan',
+  'foobar',
+  'demo',
+  'dummy',
+  'testad',
+  'tester',
+  'spelar',
 ]);
 
 function hasDigits(value: string) {
@@ -62,7 +52,7 @@ function hasDisallowedSymbols(value: string) {
 }
 
 export function cleanRawWord(rawValue: string) {
-  return rawValue.trim().replace(/^\uFEFF/, "");
+  return rawValue.trim().replace(/^\uFEFF/, '');
 }
 
 export function normalizeWordCandidate(rawValue: string) {
@@ -75,31 +65,31 @@ export function detectBaseFilterReason(
   options: { minLength: number; maxLength?: number },
 ): FilterReason | null {
   if (!rawValue.trim()) {
-    return "empty";
+    return 'empty';
   }
 
   if (hasWhitespace(rawValue.trim())) {
-    return "contains_whitespace";
+    return 'contains_whitespace';
   }
 
   if (hasDigits(rawValue)) {
-    return "contains_digits";
+    return 'contains_digits';
   }
 
   if (hasDisallowedSymbols(rawValue)) {
-    return "contains_symbol";
+    return 'contains_symbol';
   }
 
   if (!SWEDISH_LETTER_PATTERN.test(normalizedWord)) {
-    return "not_swedish_letters";
+    return 'not_swedish_letters';
   }
 
   if (normalizedWord.length < options.minLength) {
-    return "too_short";
+    return 'too_short';
   }
 
   if (options.maxLength && normalizedWord.length > options.maxLength) {
-    return "too_long";
+    return 'too_long';
   }
 
   return null;
@@ -140,7 +130,7 @@ export function filterWordEntry(
     looksLikeProperNoun(entry.raw) &&
     !isAllUppercaseWord(entry.raw)
   ) {
-    return { ok: false, reason: "proper_noun" };
+    return { ok: false, reason: 'proper_noun' };
   }
 
   return { ok: true, word: normalizedWord };
@@ -164,10 +154,7 @@ export function isObviousPhrase(rawValue: string) {
   const trimmed = cleanRawWord(rawValue);
 
   return (
-    hasWhitespace(trimmed) ||
-    /[()]/.test(trimmed) ||
-    /[/\\]/.test(trimmed) ||
-    trimmed.includes("…")
+    hasWhitespace(trimmed) || /[()]/.test(trimmed) || /[/\\]/.test(trimmed) || trimmed.includes('…')
   );
 }
 
@@ -188,21 +175,14 @@ export function scoreKellyFrequency(rank: number | null) {
 }
 
 export function scoreSeedCandidate(candidate: SeedCandidate) {
-  const diversityScore = new Set(candidate.word.split("")).size;
+  const diversityScore = new Set(candidate.word.split('')).size;
   const penalty = isVerbLikeSeed(candidate.word) ? 3 : 0;
-  const preferredBonus = candidate.source === "preferred" ? 1000 : 0;
+  const preferredBonus = candidate.source === 'preferred' ? 1000 : 0;
   const playabilityScore = candidate.playableWordCount * 10;
   const frequencyScore = scoreKellyFrequency(candidate.kellyRank);
   const cefrScore = candidate.cefr ? CEFR_PRIORITY_SCORE[candidate.cefr] : 0;
 
-  return (
-    playabilityScore +
-    frequencyScore +
-    cefrScore +
-    diversityScore -
-    penalty +
-    preferredBonus
-  );
+  return playabilityScore + frequencyScore + cefrScore + diversityScore - penalty + preferredBonus;
 }
 
 export function rankSeedCandidates(candidates: SeedCandidate[]) {
@@ -211,7 +191,7 @@ export function rankSeedCandidates(candidates: SeedCandidate[]) {
       b.score - a.score ||
       b.playableWordCount - a.playableWordCount ||
       (a.kellyRank ?? Number.MAX_SAFE_INTEGER) - (b.kellyRank ?? Number.MAX_SAFE_INTEGER) ||
-      a.word.localeCompare(b.word, "sv-SE")
+      a.word.localeCompare(b.word, 'sv-SE')
     );
   });
 }
@@ -250,16 +230,14 @@ export function buildKellyMetadataMap(
 }
 
 export function matchesAbbreviationPattern(word: string) {
-  return (
-    ABBREV_CONSONANT_BLOCK_PATTERN.test(word) || ABBREV_ORG_PATTERN.test(word)
-  );
+  return ABBREV_CONSONANT_BLOCK_PATTERN.test(word) || ABBREV_ORG_PATTERN.test(word);
 }
 
 export function detectAllowedAbbreviationFilterReason(
   word: string,
   kellyLemmas: ReadonlySet<string>,
   allowedAbbreviations: ReadonlySet<string>,
-): Extract<FilterReason, "abbrev_consonant_block" | "abbrev_org_pattern"> | null {
+): Extract<FilterReason, 'abbrev_consonant_block' | 'abbrev_org_pattern'> | null {
   if (word.length < 3 || word.length > 5) {
     return null;
   }
@@ -277,11 +255,11 @@ export function detectAllowedAbbreviationFilterReason(
   }
 
   if (ABBREV_CONSONANT_BLOCK_PATTERN.test(word)) {
-    return "abbrev_consonant_block";
+    return 'abbrev_consonant_block';
   }
 
   if (ABBREV_ORG_PATTERN.test(word)) {
-    return "abbrev_org_pattern";
+    return 'abbrev_org_pattern';
   }
 
   return null;
@@ -297,14 +275,10 @@ export function filterAllowedAbbreviations(
   const keptAllowlisted: string[] = [];
 
   for (const word of words) {
-    const reason = detectAllowedAbbreviationFilterReason(
-      word,
-      kellyLemmas,
-      allowedAbbreviations,
-    );
+    const reason = detectAllowedAbbreviationFilterReason(word, kellyLemmas, allowedAbbreviations);
 
     if (reason) {
-      recordFilteredWord(filteredExamples, word, reason, "hunspell");
+      recordFilteredWord(filteredExamples, word, reason, 'hunspell');
       continue;
     }
 
@@ -321,8 +295,6 @@ export function filterAllowedAbbreviations(
 
   return {
     words: kept,
-    keptAllowlistedAbbreviations: keptAllowlisted.sort((a, b) =>
-      a.localeCompare(b, "sv-SE"),
-    ),
+    keptAllowlistedAbbreviations: keptAllowlisted.sort((a, b) => a.localeCompare(b, 'sv-SE')),
   };
 }

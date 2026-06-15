@@ -1,5 +1,5 @@
-import { createLetterPool } from "./letter-pool";
-import { normalizeSwedish } from "./normalize-swedish";
+import { createLetterPool } from './letter-pool';
+import { normalizeSwedish } from './normalize-swedish';
 
 export function canBuildWord(word: string, letters: string[]) {
   const normalizedWord = normalizeSwedish(word);

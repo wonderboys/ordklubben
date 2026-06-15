@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { useCallback, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const REVEAL_THRESHOLD = 0.42;
 const BRUSH_RADIUS_RATIO = 0.11;
@@ -15,10 +15,10 @@ function isEmojiClue(clue: string) {
 }
 
 function drawScratchSurface(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  ctx.globalCompositeOperation = "source-over";
+  ctx.globalCompositeOperation = 'source-over';
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = "#b5b5b5";
+  ctx.fillStyle = '#b5b5b5';
   ctx.fillRect(0, 0, width, height);
 
   const highlight = ctx.createRadialGradient(
@@ -29,8 +29,8 @@ function drawScratchSurface(ctx: CanvasRenderingContext2D, width: number, height
     height * 0.3,
     width * 0.55,
   );
-  highlight.addColorStop(0, "rgba(255,255,255,0.35)");
-  highlight.addColorStop(1, "rgba(255,255,255,0)");
+  highlight.addColorStop(0, 'rgba(255,255,255,0.35)');
+  highlight.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = highlight;
   ctx.fillRect(0, 0, width, height);
 
@@ -42,12 +42,12 @@ function drawScratchSurface(ctx: CanvasRenderingContext2D, width: number, height
     height * 0.7,
     width * 0.45,
   );
-  shadow.addColorStop(0, "rgba(0,0,0,0.08)");
-  shadow.addColorStop(1, "rgba(0,0,0,0)");
+  shadow.addColorStop(0, 'rgba(0,0,0,0.08)');
+  shadow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = shadow;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 2;
   const stripeStep = 5;
 
@@ -58,11 +58,11 @@ function drawScratchSurface(ctx: CanvasRenderingContext2D, width: number, height
     ctx.stroke();
   }
 
-  ctx.fillStyle = "rgba(17,17,17,0.55)";
+  ctx.fillStyle = 'rgba(17,17,17,0.55)';
   ctx.font = `900 ${Math.min(width, height) * 0.28}px ui-monospace, monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("?", width / 2, height / 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('?', width / 2, height / 2);
 }
 
 function getScratchedRatio(ctx: CanvasRenderingContext2D, width: number, height: number) {
@@ -89,13 +89,7 @@ type ScratchTileProps = {
   disabled: boolean;
 };
 
-export function ScratchTile({
-  clue,
-  revealed,
-  index,
-  onRevealed,
-  disabled,
-}: ScratchTileProps) {
+export function ScratchTile({ clue, revealed, index, onRevealed, disabled }: ScratchTileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isScratchingRef = useRef(false);
@@ -124,7 +118,7 @@ export function ScratchTile({
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
 
     if (!ctx) {
       return;
@@ -185,7 +179,7 @@ export function ScratchTile({
       return;
     }
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
 
     if (!ctx) {
       return;
@@ -193,7 +187,7 @@ export function ScratchTile({
 
     const { brushRadius } = layoutRef.current;
 
-    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(point.x, point.y, brushRadius, 0, Math.PI * 2);
     ctx.fill();
@@ -227,7 +221,7 @@ export function ScratchTile({
       return;
     }
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
 
     if (!ctx) {
       return;
@@ -311,12 +305,12 @@ export function ScratchTile({
   return (
     <div
       ref={containerRef}
-      aria-label={revealed ? `Ledtråd: ${clue}` : "Skrapa ruta"}
+      aria-label={revealed ? `Ledtråd: ${clue}` : 'Skrapa ruta'}
       className={cn(
-        "relative aspect-[5/4] w-full overflow-hidden border-2",
+        'relative aspect-[5/4] w-full overflow-hidden border-2',
         revealed
-          ? "border-print-ink/20 bg-[#f3efe6]"
-          : "border-print-ink/30 bg-[#f3efe6] shadow-[inset_0_2px_8px_rgba(0,0,0,0.12)]",
+          ? 'border-print-ink/20 bg-[#f3efe6]'
+          : 'border-print-ink/30 bg-[#f3efe6] shadow-[inset_0_2px_8px_rgba(0,0,0,0.12)]',
       )}
     >
       <div className="flex size-full items-center justify-center px-2 py-2 text-center">
@@ -324,10 +318,10 @@ export function ScratchTile({
           <motion.span
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
             className={cn(
-              "leading-snug text-print-ink",
-              isEmoji ? "text-[clamp(1.75rem,7vw,2.25rem)]" : "text-xs font-medium sm:text-sm",
+              'leading-snug text-print-ink',
+              isEmoji ? 'text-[clamp(1.75rem,7vw,2.25rem)]' : 'text-xs font-medium sm:text-sm',
             )}
           >
             {clue}
@@ -335,8 +329,8 @@ export function ScratchTile({
         ) : (
           <span
             className={cn(
-              "leading-snug text-print-ink",
-              isEmoji ? "text-[clamp(1.75rem,7vw,2.25rem)]" : "text-xs font-medium sm:text-sm",
+              'leading-snug text-print-ink',
+              isEmoji ? 'text-[clamp(1.75rem,7vw,2.25rem)]' : 'text-xs font-medium sm:text-sm',
             )}
           >
             {clue}

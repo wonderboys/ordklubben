@@ -1,12 +1,12 @@
-import { allowedSvWords } from "@/data/words";
-import { type StegvisPuzzle } from "@/data/stegvis/puzzles";
+import { allowedSvWords } from '@/data/words';
+import { type StegvisPuzzle } from '@/data/stegvis/puzzles';
 import {
   normalizeStegvisWord,
   validateStegvisSampleSolution as validateStegvisSampleSolutionCore,
   validateStegvisStep as validateStegvisStepCore,
   type StegvisSampleSolutionValidation,
   type StegvisValidationResult,
-} from "@/lib/game/stegvis-validation";
+} from '@/lib/game/stegvis-validation';
 
 export type StegvisRound = {
   puzzle: StegvisPuzzle;
@@ -24,13 +24,11 @@ export {
   type StegvisValidationContext,
   type StegvisValidationReason,
   type StegvisValidationResult,
-} from "@/lib/game/stegvis-validation";
+} from '@/lib/game/stegvis-validation';
 
-const allowedWordSet = new Set(
-  allowedSvWords.map((word) => normalizeStegvisWord(word)),
-);
+const allowedWordSet = new Set(allowedSvWords.map((word) => normalizeStegvisWord(word)));
 
-const STEGVIS_STEP_LETTERS = "abcdefghijklmnopqrstuvwxyzåäö";
+const STEGVIS_STEP_LETTERS = 'abcdefghijklmnopqrstuvwxyzåäö';
 const DEFAULT_MAX_STEP_OPTIONS = 6;
 
 export function countMatchingLetters(a: string, b: string) {
@@ -67,8 +65,7 @@ export function getAllValidStegvisNextWords(
         continue;
       }
 
-      const candidate =
-        current.slice(0, index) + letter + current.slice(index + 1);
+      const candidate = current.slice(0, index) + letter + current.slice(index + 1);
 
       if (allowedWords.has(candidate) && !usedWords.has(candidate)) {
         candidates.add(candidate);
@@ -79,10 +76,7 @@ export function getAllValidStegvisNextWords(
   return [...candidates];
 }
 
-export function rankStegvisStepOptions(
-  candidates: string[],
-  targetWord: string,
-) {
+export function rankStegvisStepOptions(candidates: string[], targetWord: string) {
   const target = normalizeStegvisWord(targetWord);
 
   return [...candidates].sort((left, right) => {
@@ -93,7 +87,7 @@ export function rankStegvisStepOptions(
       return targetMatchDiff;
     }
 
-    return left.localeCompare(right, "sv");
+    return left.localeCompare(right, 'sv');
   });
 }
 
@@ -107,19 +101,12 @@ export function getStegvisStepOptions(
   } = {},
 ) {
   const maxOptions = options.maxOptions ?? DEFAULT_MAX_STEP_OPTIONS;
-  const candidates = getAllValidStegvisNextWords(
-    currentWord,
-    chain,
-    options.allowedWords,
-  );
+  const candidates = getAllValidStegvisNextWords(currentWord, chain, options.allowedWords);
 
   return rankStegvisStepOptions(candidates, targetWord).slice(0, maxOptions);
 }
 
-export function getStegvisTargetProximityHint(
-  currentWord: string,
-  targetWord: string,
-) {
+export function getStegvisTargetProximityHint(currentWord: string, targetWord: string) {
   const current = normalizeStegvisWord(currentWord);
   const target = normalizeStegvisWord(targetWord);
   const matches = countMatchingLetters(current, target);
@@ -129,29 +116,25 @@ export function getStegvisTargetProximityHint(
   }
 
   if (matches === current.length - 1) {
-    return "Närmare målet.";
+    return 'Närmare målet.';
   }
 
-  return `${matches} ${matches === 1 ? "bokstav matchar" : "bokstäver matchar"} målet.`;
+  return `${matches} ${matches === 1 ? 'bokstav matchar' : 'bokstäver matchar'} målet.`;
 }
 
-export function getStegvisStepFeedback(
-  previousWord: string,
-  nextWord: string,
-  targetWord: string,
-) {
+export function getStegvisStepFeedback(previousWord: string, nextWord: string, targetWord: string) {
   const previousMatches = countMatchingLetters(previousWord, targetWord);
   const nextMatches = countMatchingLetters(nextWord, targetWord);
 
   if (nextMatches > previousMatches) {
-    return "Du närmar dig målet.";
+    return 'Du närmar dig målet.';
   }
 
   if (nextMatches < previousMatches) {
-    return "Ny väg upptäckt.";
+    return 'Ny väg upptäckt.';
   }
 
-  return "Bra steg.";
+  return 'Bra steg.';
 }
 
 export function createStegvisRound(puzzle: StegvisPuzzle): StegvisRound {
@@ -191,20 +174,12 @@ export function getDailyPuzzleIndex(puzzles: StegvisPuzzle[], date = new Date())
   return dayNumber % puzzles.length;
 }
 
-export function pickDailyPuzzle(
-  puzzles: StegvisPuzzle[],
-  date = new Date(),
-): StegvisPuzzle {
+export function pickDailyPuzzle(puzzles: StegvisPuzzle[], date = new Date()): StegvisPuzzle {
   return puzzles[getDailyPuzzleIndex(puzzles, date)] ?? puzzles[0];
 }
 
-export function pickRandomPuzzle(
-  puzzles: StegvisPuzzle[],
-  excludeId?: string,
-) {
-  const candidates = excludeId
-    ? puzzles.filter((puzzle) => puzzle.id !== excludeId)
-    : puzzles;
+export function pickRandomPuzzle(puzzles: StegvisPuzzle[], excludeId?: string) {
+  const candidates = excludeId ? puzzles.filter((puzzle) => puzzle.id !== excludeId) : puzzles;
 
   if (candidates.length === 0) {
     return puzzles[0];

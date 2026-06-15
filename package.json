@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings=0",
+    "lint:fix": "eslint --fix --max-warnings=0",
+    "lint:staged": "lint-staged",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "check:legacy-design": "node scripts/check-legacy-design.mjs",
     "check:stegvis": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-puzzles.ts",
     "check:stegvis-graph": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-graph.ts",
@@ -18,7 +22,16 @@
     "seed:emojirebus": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-emojirebus.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy"
+    "prisma:deploy": "prisma migrate deploy",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,md,css}": [
+      "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "eslint --fix --max-warnings=0"
+    ]
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -44,6 +57,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
+    "lint-staged": "17.0.7",
+    "prettier": "3.8.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

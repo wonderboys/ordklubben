@@ -1,5 +1,5 @@
 export type StegvisGeneratorMetrics = {
-  source: "generator" | "static";
+  source: 'generator' | 'static';
   steps?: number;
   chainLength?: number;
   middleSteps?: number;
@@ -11,5 +11,5 @@ export type StegvisGeneratorMetrics = {
 };
 
 export function logStegvisGeneratorMetrics(metrics: StegvisGeneratorMetrics) {
-  console.log("[stegvis:generator]", JSON.stringify(metrics));
+  console.log('[stegvis:generator]', JSON.stringify(metrics));
 }

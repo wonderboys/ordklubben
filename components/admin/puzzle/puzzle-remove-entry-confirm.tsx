@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { adminButtonSecondaryClass } from "@/components/admin/admin-ui";
-import { removePuzzleEntry } from "@/lib/content/puzzle-actions";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from 'react';
+import { adminButtonSecondaryClass } from '@/components/admin/admin-ui';
+import { removePuzzleEntry } from '@/lib/content/puzzle-actions';
+import { cn } from '@/lib/utils';
 
 const adminButtonDangerClass = cn(
-  "admin-control inline-flex h-8 cursor-pointer items-center justify-center rounded-sm border border-print-red bg-print-red px-2.5 font-sans font-medium text-print-surface transition-colors hover:bg-print-red/90",
+  'admin-control inline-flex h-8 cursor-pointer items-center justify-center rounded-sm border border-print-red bg-print-red px-2.5 font-sans font-medium text-print-surface transition-colors hover:bg-print-red/90',
 );
 
 type PuzzleRemoveEntryConfirmProps = {
@@ -34,7 +34,7 @@ export function PuzzleRemoveEntryConfirm({
     cancelRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") {
+      if (event.key !== 'Escape') {
         return;
       }
 
@@ -43,9 +43,9 @@ export function PuzzleRemoveEntryConfirm({
       onCancel();
     }
 
-    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener('keydown', onKeyDown, true);
 
-    return () => window.removeEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [open, onCancel]);
 
   if (!open) {
@@ -68,11 +68,8 @@ export function PuzzleRemoveEntryConfirm({
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <h2
-              id="puzzle-remove-entry-title"
-              className="text-base font-semibold text-print-ink"
-            >
-              Ta bort ordet {word.toLocaleUpperCase("sv-SE")} från flätan?
+            <h2 id="puzzle-remove-entry-title" className="text-base font-semibold text-print-ink">
+              Ta bort ordet {word.toLocaleUpperCase('sv-SE')} från flätan?
             </h2>
             <p className="text-sm text-print-muted">
               Detta påverkar även tillhörande nummer och nyckelkoppling.
@@ -80,7 +77,12 @@ export function PuzzleRemoveEntryConfirm({
           </div>
 
           <div className="flex flex-wrap justify-end gap-2">
-            <button ref={cancelRef} type="button" onClick={onCancel} className={adminButtonSecondaryClass}>
+            <button
+              ref={cancelRef}
+              type="button"
+              onClick={onCancel}
+              className={adminButtonSecondaryClass}
+            >
               Avbryt
             </button>
             <form action={removePuzzleEntry}>

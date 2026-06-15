@@ -3,14 +3,14 @@ import {
   getPlacementCells,
   type PuzzlePlacementInput,
   validatePuzzlePlacement,
-} from "@/lib/content/puzzle/grid";
-import { getAnswerLetters } from "@/lib/content/puzzle/grid-generator-scoring";
-import { getActiveRegionBounds, buildBlockedSet as buildBlockedSetFromBlocks } from "@/lib/content/puzzle/grid-generator-blocks";
+} from '@/lib/content/puzzle/grid';
+import { getAnswerLetters } from '@/lib/content/puzzle/grid-generator-scoring';
+import {
+  getActiveRegionBounds,
+  buildBlockedSet as buildBlockedSetFromBlocks,
+} from '@/lib/content/puzzle/grid-generator-blocks';
 
-export type GeneratorValidationFailure =
-  | "collision"
-  | "adjacency"
-  | "side_word";
+export type GeneratorValidationFailure = 'collision' | 'adjacency' | 'side_word';
 
 export type GeneratorValidationResult =
   | { ok: true }
@@ -19,11 +19,11 @@ export type GeneratorValidationResult =
 type GridRun = {
   row: number;
   col: number;
-  direction: "ACROSS" | "DOWN";
+  direction: 'ACROSS' | 'DOWN';
   letters: string;
 };
 
-type CellKind = "out" | "empty" | "blocked" | "letter";
+type CellKind = 'out' | 'empty' | 'blocked' | 'letter';
 
 function buildBlockedSet(blockedCells: Array<{ row: number; col: number }>) {
   return buildBlockedSetFromBlocks(blockedCells);
@@ -38,31 +38,29 @@ function getCellKind(
   height: number,
 ): CellKind {
   if (row < 0 || row >= height || col < 0 || col >= width) {
-    return "out";
+    return 'out';
   }
 
   const key = `${row}:${col}`;
 
   if (letterMap.has(key)) {
-    return "letter";
+    return 'letter';
   }
 
   if (blocked.has(key)) {
-    return "blocked";
+    return 'blocked';
   }
 
-  return "empty";
+  return 'empty';
 }
 
 function isCapAllowed(kind: CellKind) {
-  return kind === "out" || kind === "empty" || kind === "blocked";
+  return kind === 'out' || kind === 'empty' || kind === 'blocked';
 }
 
 function occupiedCellKeys(entries: PuzzlePlacementInput[]) {
   return new Set(
-    entries.flatMap((entry) =>
-      getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`),
-    ),
+    entries.flatMap((entry) => getPlacementCells(entry).map((cell) => `${cell.row}:${cell.col}`)),
   );
 }
 
@@ -70,7 +68,7 @@ function entryAtCell(
   entries: PuzzlePlacementInput[],
   row: number,
   col: number,
-  direction: "ACROSS" | "DOWN",
+  direction: 'ACROSS' | 'DOWN',
 ) {
   for (const entry of entries) {
     if (entry.direction !== direction) {
@@ -93,7 +91,7 @@ function isValidCrossingNeighbor(options: {
   crossingRow: number;
   crossingCol: number;
   entries: PuzzlePlacementInput[];
-  perpendicularDirection: "ACROSS" | "DOWN";
+  perpendicularDirection: 'ACROSS' | 'DOWN';
 }) {
   const entry = entryAtCell(
     options.entries,
@@ -108,9 +106,7 @@ function isValidCrossingNeighbor(options: {
 
   const cells = getPlacementCells(entry);
 
-  return cells.some(
-    (cell) => cell.row === options.row && cell.col === options.col,
-  );
+  return cells.some((cell) => cell.row === options.row && cell.col === options.col);
 }
 
 export function extractGridRuns(
@@ -131,10 +127,10 @@ export function extractGridRuns(
       }
 
       const startCol = col;
-      let letters = "";
+      let letters = '';
 
       while (col < width && letterMap.has(`${row}:${col}`)) {
-        letters += letterMap.get(`${row}:${col}`) ?? "";
+        letters += letterMap.get(`${row}:${col}`) ?? '';
         col += 1;
       }
 
@@ -142,7 +138,7 @@ export function extractGridRuns(
         runs.push({
           row,
           col: startCol,
-          direction: "ACROSS",
+          direction: 'ACROSS',
           letters,
         });
       }
@@ -159,10 +155,10 @@ export function extractGridRuns(
       }
 
       const startRow = row;
-      let letters = "";
+      let letters = '';
 
       while (row < height && letterMap.has(`${row}:${col}`)) {
-        letters += letterMap.get(`${row}:${col}`) ?? "";
+        letters += letterMap.get(`${row}:${col}`) ?? '';
         row += 1;
       }
 
@@ -170,7 +166,7 @@ export function extractGridRuns(
         runs.push({
           row: startRow,
           col,
-          direction: "DOWN",
+          direction: 'DOWN',
           letters,
         });
       }
@@ -197,15 +193,15 @@ export function validateNoSpuriousWords(
         return false;
       }
 
-      const letters = getAnswerLetters(entry.answerSnapshot).join("");
+      const letters = getAnswerLetters(entry.answerSnapshot).join('');
       return letters === run.letters;
     });
 
     if (matchingEntries.length !== 1) {
       return {
         ok: false,
-        reason: "side_word",
-        message: `Oavsiktligt ${run.direction === "ACROSS" ? "vågrätt" : "lodrätt"} ord: ${run.letters}`,
+        reason: 'side_word',
+        message: `Oavsiktligt ${run.direction === 'ACROSS' ? 'vågrätt' : 'lodrätt'} ord: ${run.letters}`,
       };
     }
   }
@@ -235,7 +231,7 @@ export function validateGeneratorPlacement(options: {
   if (!baseValidation.ok) {
     return {
       ok: false,
-      reason: "collision",
+      reason: 'collision',
       message: baseValidation.message,
     };
   }
@@ -246,7 +242,7 @@ export function validateGeneratorPlacement(options: {
   const occupiedBefore = occupiedCellKeys(existing);
   const allEntries = [...existing, placement];
 
-  if (placement.direction === "ACROSS") {
+  if (placement.direction === 'ACROSS') {
     const beforeKind = getCellKind(
       placement.row,
       placement.col - 1,
@@ -267,8 +263,8 @@ export function validateGeneratorPlacement(options: {
     if (!isCapAllowed(beforeKind) || !isCapAllowed(afterKind)) {
       return {
         ok: false,
-        reason: "adjacency",
-        message: "Ordet får inte ligga direkt intill ett annat ord.",
+        reason: 'adjacency',
+        message: 'Ordet får inte ligga direkt intill ett annat ord.',
       };
     }
   } else {
@@ -292,8 +288,8 @@ export function validateGeneratorPlacement(options: {
     if (!isCapAllowed(beforeKind) || !isCapAllowed(afterKind)) {
       return {
         ok: false,
-        reason: "adjacency",
-        message: "Ordet får inte ligga direkt intill ett annat ord.",
+        reason: 'adjacency',
+        message: 'Ordet får inte ligga direkt intill ett annat ord.',
       };
     }
   }
@@ -302,22 +298,22 @@ export function validateGeneratorPlacement(options: {
     const isCrossing = occupiedBefore.has(`${cell.row}:${cell.col}`);
 
     if (isCrossing) {
-      const existingAcross = entryAtCell(existing, cell.row, cell.col, "ACROSS");
-      const existingDown = entryAtCell(existing, cell.row, cell.col, "DOWN");
+      const existingAcross = entryAtCell(existing, cell.row, cell.col, 'ACROSS');
+      const existingDown = entryAtCell(existing, cell.row, cell.col, 'DOWN');
 
-      if (placement.direction === "ACROSS" && existingAcross) {
+      if (placement.direction === 'ACROSS' && existingAcross) {
         return {
           ok: false,
-          reason: "collision",
-          message: "Korsande ord måste ha motsatt riktning.",
+          reason: 'collision',
+          message: 'Korsande ord måste ha motsatt riktning.',
         };
       }
 
-      if (placement.direction === "DOWN" && existingDown) {
+      if (placement.direction === 'DOWN' && existingDown) {
         return {
           ok: false,
-          reason: "collision",
-          message: "Korsande ord måste ha motsatt riktning.",
+          reason: 'collision',
+          message: 'Korsande ord måste ha motsatt riktning.',
         };
       }
 
@@ -325,7 +321,7 @@ export function validateGeneratorPlacement(options: {
     }
 
     const perpendicularOffsets =
-      placement.direction === "ACROSS"
+      placement.direction === 'ACROSS'
         ? [
             { row: cell.row - 1, col: cell.col },
             { row: cell.row + 1, col: cell.col },
@@ -336,20 +332,13 @@ export function validateGeneratorPlacement(options: {
           ];
 
     for (const neighbor of perpendicularOffsets) {
-      const kind = getCellKind(
-        neighbor.row,
-        neighbor.col,
-        letterMap,
-        blocked,
-        width,
-        height,
-      );
+      const kind = getCellKind(neighbor.row, neighbor.col, letterMap, blocked, width, height);
 
-      if (kind === "out" || kind === "empty" || kind === "blocked") {
+      if (kind === 'out' || kind === 'empty' || kind === 'blocked') {
         continue;
       }
 
-      const perpendicularDirection = placement.direction === "ACROSS" ? "DOWN" : "ACROSS";
+      const perpendicularDirection = placement.direction === 'ACROSS' ? 'DOWN' : 'ACROSS';
       const validCrossing = isValidCrossingNeighbor({
         row: neighbor.row,
         col: neighbor.col,
@@ -362,8 +351,8 @@ export function validateGeneratorPlacement(options: {
       if (!validCrossing) {
         return {
           ok: false,
-          reason: "adjacency",
-          message: "Ordet får inte ligga parallellt intill ett annat ord.",
+          reason: 'adjacency',
+          message: 'Ordet får inte ligga parallellt intill ett annat ord.',
         };
       }
     }
@@ -431,7 +420,7 @@ export function validateFinalGrid(options: {
         ok: false,
         remainingEmptyCount,
         activeRegionEmptyCount,
-        message: "Enbokstavsord är inte tillåtna.",
+        message: 'Enbokstavsord är inte tillåtna.',
       };
     }
   }

@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { GameToast } from "@/components/games/game-toast";
-import { Button } from "@/components/ui/button";
-import { KASTET_ACTIVE_DICE_COUNT } from "@/lib/game/kastet/config";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check } from 'lucide-react';
+import { GameToast } from '@/components/games/game-toast';
+import { Button } from '@/components/ui/button';
+import { KASTET_ACTIVE_DICE_COUNT } from '@/lib/game/kastet/config';
 import {
   buildDiceSettleMotion,
   buildDiceShakeMotion,
   DICE_SHAKE_TIMES,
   getDiceShakeDurationMs,
   getDiceShakeProfile,
-} from "@/lib/game/kastet/dice-motion";
+} from '@/lib/game/kastet/dice-motion';
 import {
   createEmptyKastetRows,
   formatKastetClock,
@@ -20,42 +20,38 @@ import {
   pickRandomKastetPairs,
   validateKastetWord,
   type KastetLetterPair,
-} from "@/lib/game/kastet/pairs";
+} from '@/lib/game/kastet/pairs';
 import {
   calculateKastetScore,
   countKastetTotalLetters,
   countKastetWordLetters,
-} from "@/lib/game/kastet/score";
-import { cn } from "@/lib/utils";
+} from '@/lib/game/kastet/score';
+import { cn } from '@/lib/utils';
 
-type GamePhase = "idle" | "rolling" | "playing" | "won";
+type GamePhase = 'idle' | 'rolling' | 'playing' | 'won';
 
 type RowState = {
   value: string;
-  status: "idle" | "approved" | "error";
+  status: 'idle' | 'approved' | 'error';
   feedback: string | null;
   flashKey: number;
 };
 
-type DiceFace = "blank" | "revealed";
+type DiceFace = 'blank' | 'revealed';
 
 type RollToastState = {
   message: string;
   id: number;
 };
 
-const ROLL_TOASTS = [
-  "🎲 Skakar tärningarna...",
-  "🎲🎲 Kastar...",
-  "🎲🎲 Landar...",
-] as const;
+const ROLL_TOASTS = ['🎲 Skakar tärningarna...', '🎲🎲 Kastar...', '🎲🎲 Landar...'] as const;
 
 const ROLL_TOAST_STEP_MS = 600;
 const ROLL_TOTAL_MS = getDiceShakeDurationMs();
 const LANDING_BOUNCE_MS = 380;
 
 function createRowState(): RowState {
-  return { value: "", status: "idle", feedback: null, flashKey: 0 };
+  return { value: '', status: 'idle', feedback: null, flashKey: 0 };
 }
 
 function BlankDiceFace() {
@@ -106,7 +102,7 @@ function DiceTile({
           ? {
               duration: ROLL_TOTAL_MS / 1000,
               times: [...DICE_SHAKE_TIMES],
-              ease: "easeInOut",
+              ease: 'easeInOut',
               delay: profile.delay,
             }
           : justLanded
@@ -118,17 +114,22 @@ function DiceTile({
             : { duration: 0.2 }
       }
       className="relative aspect-square w-[4.85rem] rounded-[0.35rem] border-[3px] border-print-ink bg-[#f6f2ea] shadow-[5px_5px_0_0_rgba(17,17,17,1)] sm:w-[5.35rem]"
-      style={{ transformOrigin: "center bottom" }}
+      style={{ transformOrigin: 'center bottom' }}
     >
       <div className="flex size-full items-center justify-center overflow-hidden">
-        {face === "blank" ? <BlankDiceFace /> : null}
+        {face === 'blank' ? <BlankDiceFace /> : null}
 
-        {face === "revealed" && label ? (
+        {face === 'revealed' && label ? (
           <motion.span
             key={label}
             initial={{ opacity: 0, scale: 0.65, y: -8, rotate: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 24, delay: 0.05 + profile.delay }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 24,
+              delay: 0.05 + profile.delay,
+            }}
             className="font-mono text-[clamp(1.55rem,6.5vw,2rem)] font-black uppercase tracking-[0.1em] text-print-ink"
           >
             {label}
@@ -143,8 +144,8 @@ function LiveClock({ seconds, frozen }: { seconds: number; frozen?: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-2 font-mono text-2xl font-bold tabular-nums tracking-[0.06em] text-print-ink",
-        frozen && "text-print-green",
+        'flex items-center justify-center gap-2 font-mono text-2xl font-bold tabular-nums tracking-[0.06em] text-print-ink',
+        frozen && 'text-print-green',
       )}
       aria-live="polite"
       aria-label={`Tid ${formatKastetClock(seconds)}`}
@@ -187,7 +188,7 @@ function WordRow({
               initial={{ opacity: 0.55 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
               className="pointer-events-none absolute inset-0 z-10 bg-print-green/35"
             />
           ) : null}
@@ -198,33 +199,33 @@ function WordRow({
           id={inputId}
           type="text"
           value={row.value}
-          disabled={disabled || row.status === "approved"}
+          disabled={disabled || row.status === 'approved'}
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
           placeholder={`Ord som börjar med ${pair}`}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
+            if (event.key === 'Enter') {
               event.preventDefault();
               onValidate();
             }
           }}
           onBlur={onValidate}
           className={cn(
-            "relative w-full border bg-print-surface px-3 py-2.5 text-base uppercase tracking-[0.04em] text-print-ink outline-none transition-colors placeholder:normal-case placeholder:tracking-normal focus:ring-2 focus:ring-inset disabled:opacity-60",
-            row.status === "approved" &&
-              "border-print-green bg-print-green-soft pr-10 text-print-green",
-            row.status === "error" && "border-[var(--color-error)]",
-            row.status === "idle" && "border-print-ink focus:ring-print-ink/25",
+            'relative w-full border bg-print-surface px-3 py-2.5 text-base uppercase tracking-[0.04em] text-print-ink outline-none transition-colors placeholder:normal-case placeholder:tracking-normal focus:ring-2 focus:ring-inset disabled:opacity-60',
+            row.status === 'approved' &&
+              'border-print-green bg-print-green-soft pr-10 text-print-green',
+            row.status === 'error' && 'border-[var(--color-error)]',
+            row.status === 'idle' && 'border-print-ink focus:ring-print-ink/25',
           )}
         />
 
-        {row.status === "approved" ? (
+        {row.status === 'approved' ? (
           <motion.span
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 500, damping: 22 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 22 }}
             className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-print-green"
           >
             <Check className="size-5" strokeWidth={3} aria-hidden="true" />
@@ -232,7 +233,7 @@ function WordRow({
         ) : null}
       </div>
 
-      {row.feedback && row.status === "error" ? (
+      {row.feedback && row.status === 'error' ? (
         <p className="text-xs text-[var(--color-error)]">{row.feedback}</p>
       ) : null}
     </div>
@@ -264,22 +265,23 @@ function ResultCard({
         <p className="font-mono text-sm tabular-nums text-print-muted">
           Tid: {formatKastetClock(elapsedSeconds)}
         </p>
-        <p className="font-mono text-sm font-bold tabular-nums text-print-ink">
-          Poäng: {score}
-        </p>
+        <p className="font-mono text-sm font-bold tabular-nums text-print-ink">Poäng: {score}</p>
       </div>
 
       <ul className="space-y-2 font-mono text-sm uppercase tracking-[0.04em] text-print-ink sm:text-base">
         {pairs.map((pair, index) => {
-          const word = words[index] ?? "—";
-          const letters = word !== "—" ? countKastetWordLetters(word) : 0;
+          const word = words[index] ?? '—';
+          const letters = word !== '—' ? countKastetWordLetters(word) : 0;
 
           return (
-            <li key={`${pair}-${index}`} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <li
+              key={`${pair}-${index}`}
+              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+            >
               <span className="font-bold">
                 {pair} → {word}
               </span>
-              {word !== "—" ? (
+              {word !== '—' ? (
                 <span className="text-xs font-medium text-print-muted">= {letters}</span>
               ) : null}
             </li>
@@ -299,7 +301,7 @@ function ResultCard({
 }
 
 export function KastetGame() {
-  const [phase, setPhase] = useState<GamePhase>("idle");
+  const [phase, setPhase] = useState<GamePhase>('idle');
   const [landedPairs, setLandedPairs] = useState<KastetLetterPair[] | null>(null);
   const [justLanded, setJustLanded] = useState(false);
   const [rollToast, setRollToast] = useState<RollToastState | null>(null);
@@ -365,7 +367,7 @@ export function KastetGame() {
   }, [clearLandBounceTimer, clearPlayTimer, clearRollTimer, clearToastTimeouts]);
 
   useEffect(() => {
-    if (phase !== "playing") {
+    if (phase !== 'playing') {
       return;
     }
 
@@ -410,7 +412,7 @@ export function KastetGame() {
       setRollToast(null);
       setLandedPairs(finalPairs);
       setJustLanded(true);
-      setPhase("playing");
+      setPhase('playing');
       startPlayTimer();
 
       clearLandBounceTimer();
@@ -424,7 +426,7 @@ export function KastetGame() {
   const startRoll = useCallback(() => {
     const finalPairs = pickRandomKastetPairs(KASTET_ACTIVE_DICE_COUNT);
 
-    setPhase("rolling");
+    setPhase('rolling');
     setLandedPairs(null);
     setJustLanded(false);
     setRows(createEmptyKastetRows(createRowState));
@@ -452,7 +454,7 @@ export function KastetGame() {
   ]);
 
   const handleInitialRoll = () => {
-    if (phase !== "idle") {
+    if (phase !== 'idle') {
       return;
     }
 
@@ -460,7 +462,7 @@ export function KastetGame() {
   };
 
   const handleNewCast = () => {
-    if (phase !== "won") {
+    if (phase !== 'won') {
       return;
     }
 
@@ -468,7 +470,7 @@ export function KastetGame() {
   };
 
   const validateRow = (index: number) => {
-    if (phase !== "playing") {
+    if (phase !== 'playing') {
       return;
     }
 
@@ -479,7 +481,7 @@ export function KastetGame() {
 
     const currentRow = rows[index];
 
-    if (currentRow.status === "approved") {
+    if (currentRow.status === 'approved') {
       return;
     }
 
@@ -489,14 +491,14 @@ export function KastetGame() {
     if (result.ok) {
       nextRows[index] = {
         ...currentRow,
-        status: "approved",
+        status: 'approved',
         feedback: null,
         flashKey: currentRow.flashKey + 1,
       };
     } else {
       nextRows[index] = {
         ...currentRow,
-        status: "error",
+        status: 'error',
         feedback: result.message,
         flashKey: currentRow.flashKey,
       };
@@ -508,16 +510,16 @@ export function KastetGame() {
       return;
     }
 
-    const allApproved = nextRows.every((row) => row.status === "approved");
+    const allApproved = nextRows.every((row) => row.status === 'approved');
 
     if (allApproved) {
       stopPlayTimer();
       blurActiveInput();
-      setPhase("won");
+      setPhase('won');
       return;
     }
 
-    const nextIndex = nextRows.findIndex((row) => row.status !== "approved");
+    const nextIndex = nextRows.findIndex((row) => row.status !== 'approved');
     if (nextIndex >= 0) {
       focusInput(nextIndex);
     }
@@ -528,7 +530,7 @@ export function KastetGame() {
       const next = [...current];
       next[index] = {
         value,
-        status: "idle",
+        status: 'idle',
         feedback: null,
         flashKey: current[index]?.flashKey ?? 0,
       };
@@ -536,13 +538,13 @@ export function KastetGame() {
     });
   };
 
-  const isRolling = phase === "rolling";
-  const showRevealedLetters = phase === "playing" || phase === "won";
-  const showTimer = phase === "playing" || phase === "won";
-  const showInputs = phase === "playing";
-  const showResult = phase === "won" && landedPairs != null;
+  const isRolling = phase === 'rolling';
+  const showRevealedLetters = phase === 'playing' || phase === 'won';
+  const showTimer = phase === 'playing' || phase === 'won';
+  const showInputs = phase === 'playing';
+  const showResult = phase === 'won' && landedPairs != null;
 
-  const diceFace: DiceFace = showRevealedLetters ? "revealed" : "blank";
+  const diceFace: DiceFace = showRevealedLetters ? 'revealed' : 'blank';
 
   const resultWords = rows.map((row) => normalizeKastetWord(row.value));
 
@@ -559,7 +561,7 @@ export function KastetGame() {
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-3.5">
           {Array.from({ length: KASTET_ACTIVE_DICE_COUNT }, (_, index) => (
             <DiceTile
-              key={`die-${index}-${showRevealedLetters ? landedPairs?.[index] : "blank"}`}
+              key={`die-${index}-${showRevealedLetters ? landedPairs?.[index] : 'blank'}`}
               dieIndex={index}
               face={diceFace}
               label={landedPairs?.[index]}
@@ -569,9 +571,9 @@ export function KastetGame() {
           ))}
         </div>
 
-        {showTimer ? <LiveClock seconds={elapsedSeconds} frozen={phase === "won"} /> : null}
+        {showTimer ? <LiveClock seconds={elapsedSeconds} frozen={phase === 'won'} /> : null}
 
-        {phase === "idle" ? (
+        {phase === 'idle' ? (
           <Button
             type="button"
             variant="accent"

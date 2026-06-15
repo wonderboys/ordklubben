@@ -1,4 +1,4 @@
-import { createGameStorage } from "@/lib/storage/create-game-storage";
+import { createGameStorage } from '@/lib/storage/create-game-storage';
 
 export type StegvisStats = {
   puzzlesSolved: number;
@@ -14,25 +14,21 @@ export const defaultStegvisStats: StegvisStats = {
   currentStreak: 0,
 };
 
-const stegvisStatsStorage = createGameStorage({
-  storageKey: "ordklubben:stegvis:stats",
-  changeEvent: "ordklubben:stegvis:stats-changed",
+export const stegvisStatsStore = createGameStorage({
+  storageKey: 'ordklubben:stegvis:stats',
+  changeEvent: 'ordklubben:stegvis:stats-changed',
   defaultValue: defaultStegvisStats,
-  logLabel: "Stegvis",
+  logLabel: 'Stegvis',
 });
 
-export const loadStegvisStats = stegvisStatsStorage.load;
-export const saveStegvisStats = stegvisStatsStorage.save;
-export const subscribeToStegvisStats = stegvisStatsStorage.subscribe;
+export const loadStegvisStats = stegvisStatsStore.load;
+export const saveStegvisStats = stegvisStatsStore.save;
+export const subscribeToStegvisStats = stegvisStatsStore.subscribe;
 
-export function updateStegvisStatsAfterSolve(
-  stats: StegvisStats,
-  steps: number,
-): StegvisStats {
+export function updateStegvisStatsAfterSolve(stats: StegvisStats, steps: number): StegvisStats {
   return {
     puzzlesSolved: stats.puzzlesSolved + 1,
-    bestSteps:
-      stats.bestSteps === null ? steps : Math.min(stats.bestSteps, steps),
+    bestSteps: stats.bestSteps === null ? steps : Math.min(stats.bestSteps, steps),
     totalSteps: stats.totalSteps + steps,
     currentStreak: stats.currentStreak + 1,
   };

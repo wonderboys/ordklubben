@@ -1,5 +1,5 @@
-import { type OrdstormStats } from "@/lib/game/ordstorm";
-import { createGameStorage } from "@/lib/storage/create-game-storage";
+import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { createGameStorage } from '@/lib/storage/create-game-storage';
 
 export const defaultOrdstormStats: OrdstormStats = {
   roundsPlayed: 0,
@@ -9,18 +9,18 @@ export const defaultOrdstormStats: OrdstormStats = {
   bestWords: [],
 };
 
-const ordstormStatsStorage = createGameStorage({
-  storageKey: "ordklubben:ordstorm:stats",
-  changeEvent: "ordklubben:stats-changed",
+export const ordstormStatsStore = createGameStorage({
+  storageKey: 'ordklubben:ordstorm:stats',
+  changeEvent: 'ordklubben:stats-changed',
   defaultValue: defaultOrdstormStats,
-  logLabel: "Ordstorm",
-  debugEnvKey: "NEXT_PUBLIC_ORDSTORM_DEBUG",
+  logLabel: 'Ordstorm',
+  debugEnvKey: 'NEXT_PUBLIC_ORDSTORM_DEBUG',
 });
 
-export const defaultStats = defaultOrdstormStats;
-export const loadStats = ordstormStatsStorage.load;
-export const saveStats = ordstormStatsStorage.save;
-export const subscribeToStats = ordstormStatsStorage.subscribe;
+export const defaultStats = ordstormStatsStore.defaultValue;
+export const loadStats = ordstormStatsStore.load;
+export const saveStats = ordstormStatsStore.save;
+export const subscribeToStats = ordstormStatsStore.subscribe;
 
 export function updateStatsAfterRound(
   stats: OrdstormStats,

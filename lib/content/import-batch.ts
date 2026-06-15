@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 
 export type BatchSummary = {
   totalRows: number;
@@ -25,7 +25,7 @@ export type BatchErrorRow = {
 };
 
 export function parseBatchSummary(value: Prisma.JsonValue | null): BatchSummary | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
 
@@ -63,7 +63,7 @@ export function parseBatchErrorRows(value: Prisma.JsonValue | null): BatchErrorR
   }
 
   return value.flatMap((entry) => {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
       return [];
     }
 
@@ -72,15 +72,10 @@ export function parseBatchErrorRows(value: Prisma.JsonValue | null): BatchErrorR
     return [
       {
         rowNumber: Number(record.rowNumber ?? 0),
-        reason: String(record.reason ?? ""),
+        reason: String(record.reason ?? ''),
         answer:
-          record.answer === null || record.answer === undefined
-            ? null
-            : String(record.answer),
-        hint:
-          record.hint === null || record.hint === undefined
-            ? null
-            : String(record.hint),
+          record.answer === null || record.answer === undefined ? null : String(record.answer),
+        hint: record.hint === null || record.hint === undefined ? null : String(record.hint),
       },
     ];
   });

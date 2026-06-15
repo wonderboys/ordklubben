@@ -1,11 +1,7 @@
-import {
-  AdminLinkButton,
-  AdminPanel,
-  AdminPanelEmpty,
-} from "@/components/admin/admin-ui";
-import { wordDetailHref } from "@/lib/content/word-detail-path";
-import type { WordDetailData } from "@/components/admin/word-detail/types";
-import { WordMetadataOverviewCard } from "./word-metadata-section";
+import { AdminLinkButton, AdminPanel, AdminPanelEmpty } from '@/components/admin/admin-ui';
+import { wordDetailHref } from '@/lib/content/word-detail-path';
+import type { WordDetailData } from '@/components/admin/word-detail/types';
+import { WordMetadataOverviewCard } from './word-metadata-section';
 
 function formatCount(count: number, singular: string, plural: string) {
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
@@ -13,7 +9,7 @@ function formatCount(count: number, singular: string, plural: string) {
 
 export function WordOverviewSection({ word }: { word: WordDetailData }) {
   const pendingCount = word.hintCandidates.filter(
-    (proposal) => proposal.status === "PENDING",
+    (proposal) => proposal.status === 'PENDING',
   ).length;
   const latestHint = word.hints[0];
   const themeNames = word.themes.map(({ theme }) => theme.name);
@@ -23,16 +19,16 @@ export function WordOverviewSection({ word }: { word: WordDetailData }) {
       <AdminPanel
         title="Nycklar"
         footer={
-          <AdminLinkButton href={wordDetailHref(word.id, "keys")} variant="secondary">
+          <AdminLinkButton href={wordDetailHref(word.id, 'keys')} variant="secondary">
             Hantera nycklar
           </AdminLinkButton>
         }
       >
         <div className="space-y-3 text-sm">
           <div className="space-y-1 text-print-ink">
-            <p>{formatCount(word.hints.length, "nyckel", "nycklar")}</p>
+            <p>{formatCount(word.hints.length, 'nyckel', 'nycklar')}</p>
             <p className="text-print-muted">
-              {formatCount(pendingCount, "väntande förslag", "väntande förslag")}
+              {formatCount(pendingCount, 'väntande förslag', 'väntande förslag')}
             </p>
           </div>
 
@@ -50,21 +46,19 @@ export function WordOverviewSection({ word }: { word: WordDetailData }) {
       <AdminPanel
         title="Teman"
         footer={
-          <AdminLinkButton href={wordDetailHref(word.id, "themes")} variant="secondary">
+          <AdminLinkButton href={wordDetailHref(word.id, 'themes')} variant="secondary">
             Hantera teman
           </AdminLinkButton>
         }
       >
         {themeNames.length > 0 ? (
           <div className="space-y-3 text-sm">
-            <p className="text-print-ink">
-              {formatCount(themeNames.length, "tema", "teman")}
-            </p>
+            <p className="text-print-ink">{formatCount(themeNames.length, 'tema', 'teman')}</p>
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.04em] text-print-muted">
                 Valda teman
               </p>
-              <p className="mt-1 leading-relaxed text-print-ink">{themeNames.join(", ")}</p>
+              <p className="mt-1 leading-relaxed text-print-ink">{themeNames.join(', ')}</p>
             </div>
           </div>
         ) : (
@@ -75,14 +69,14 @@ export function WordOverviewSection({ word }: { word: WordDetailData }) {
       <AdminPanel
         title="Lexikon"
         footer={
-          <AdminLinkButton href={wordDetailHref(word.id, "lexicon")} variant="secondary">
+          <AdminLinkButton href={wordDetailHref(word.id, 'lexicon')} variant="secondary">
             Hantera lexikon
           </AdminLinkButton>
         }
       >
         <div className="space-y-3 text-sm">
           <p className="text-print-ink">
-            {formatCount(word.lexicalEntries.length, "lexikal post", "lexikala poster")}
+            {formatCount(word.lexicalEntries.length, 'lexikal post', 'lexikala poster')}
           </p>
           <p className="text-print-muted">
             Lexikala relationer — inte spelnycklar. Kan användas som underlag för AI senare.

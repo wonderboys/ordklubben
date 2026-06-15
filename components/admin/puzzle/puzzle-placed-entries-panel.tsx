@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import type { ContentStatus, HintType, PuzzleDirection } from "@prisma/client";
-import { AdminStatusBadge } from "@/components/admin/admin-ui";
-import { PUZZLE_DIRECTION_LABELS } from "@/lib/content/constants";
-import { getAnswerLength } from "@/lib/content/puzzle/grid";
-import { cn } from "@/lib/utils";
+import type { ContentStatus, HintType, PuzzleDirection } from '@prisma/client';
+import { AdminStatusBadge } from '@/components/admin/admin-ui';
+import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
+import { getAnswerLength } from '@/lib/content/puzzle/grid';
+import { cn } from '@/lib/utils';
 
 export type PuzzlePlacedEntryHint = {
   id: string;
@@ -30,12 +30,12 @@ export type PuzzlePlacedEntry = {
   availableHints: PuzzlePlacedEntryHint[];
 };
 
-export function entryMissingHint(entry: Pick<PuzzlePlacedEntry, "hintId" | "hintSnapshot">) {
+export function entryMissingHint(entry: Pick<PuzzlePlacedEntry, 'hintId' | 'hintSnapshot'>) {
   return !entry.hintId && !entry.hintSnapshot;
 }
 
 export function countEntriesMissingHint(
-  entries: Array<Pick<PuzzlePlacedEntry, "hintId" | "hintSnapshot">>,
+  entries: Array<Pick<PuzzlePlacedEntry, 'hintId' | 'hintSnapshot'>>,
 ) {
   return entries.filter(entryMissingHint).length;
 }
@@ -71,7 +71,7 @@ function sortPlacedEntries(entries: PuzzlePlacedEntry[]) {
       return left.col - right.col;
     }
 
-    return left.answerSnapshot.localeCompare(right.answerSnapshot, "sv-SE");
+    return left.answerSnapshot.localeCompare(right.answerSnapshot, 'sv-SE');
   });
 }
 
@@ -99,8 +99,8 @@ export function PuzzlePlacedEntriesPanel({
   return (
     <ul
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-1.5",
-        disabled && "pointer-events-none opacity-45",
+        'flex min-h-0 flex-1 flex-col gap-1.5',
+        disabled && 'pointer-events-none opacity-45',
         className,
       )}
     >
@@ -118,21 +118,21 @@ export function PuzzlePlacedEntriesPanel({
               disabled={disabled}
               onClick={() => onSelectEntry(entry.id)}
               className={cn(
-                "flex w-full cursor-pointer flex-col gap-1 rounded-sm border px-3 py-2.5 text-left transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-print-ink/25 focus-visible:ring-offset-1",
+                'flex w-full cursor-pointer flex-col gap-1 rounded-sm border px-3 py-2.5 text-left transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-print-ink/25 focus-visible:ring-offset-1',
                 isSelected
-                  ? "border-print-ink/25 border-l-2 border-l-print-ink bg-print-bg/70 shadow-sm"
-                  : "border-print-ink/10 bg-print-surface hover:border-print-ink/20 hover:bg-print-ink/[0.04] active:bg-print-ink/[0.06]",
+                  ? 'border-print-ink/25 border-l-2 border-l-print-ink bg-print-bg/70 shadow-sm'
+                  : 'border-print-ink/10 bg-print-surface hover:border-print-ink/20 hover:bg-print-ink/[0.04] active:bg-print-ink/[0.06]',
               )}
             >
               <div className="flex items-baseline gap-2">
                 <span
                   className={cn(
-                    "w-5 shrink-0 text-xs font-semibold tabular-nums",
-                    isSelected ? "text-print-ink" : "text-print-muted",
+                    'w-5 shrink-0 text-xs font-semibold tabular-nums',
+                    isSelected ? 'text-print-ink' : 'text-print-muted',
                   )}
                 >
-                  {entry.number ?? "–"}
+                  {entry.number ?? '–'}
                 </span>
                 <span className="truncate text-sm font-semibold uppercase tracking-wide text-print-ink">
                   {entry.answerSnapshot}

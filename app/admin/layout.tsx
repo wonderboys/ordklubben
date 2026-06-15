@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import { AdminLayoutShell } from "@/components/admin/admin-layout-shell";
+import type { Metadata } from 'next';
+import { AdminLayoutShell } from '@/components/admin/admin-layout-shell';
 
 export const metadata: Metadata = {
-  title: "Admin",
+  title: 'Admin',
   robots: {
     index: false,
     follow: false,

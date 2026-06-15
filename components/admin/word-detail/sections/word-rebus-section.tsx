@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from 'lucide-react';
 import {
   AdminActionGroup,
   AdminPanel,
@@ -12,12 +12,8 @@ import {
   TextArea,
   TextInput,
   adminButtonTertiaryClass,
-} from "@/components/admin/admin-ui";
-import {
-  createRebusEntry,
-  deleteRebusEntry,
-  updateRebusEntry,
-} from "@/lib/content/actions";
+} from '@/components/admin/admin-ui';
+import { createRebusEntry, deleteRebusEntry, updateRebusEntry } from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
   HINT_DIFFICULTY_OPTIONS,
@@ -26,20 +22,14 @@ import {
   WORD_SOURCE_LABELS,
   formatHintDifficulty,
   formatWordSourceWithReference,
-} from "@/lib/content/constants";
-import type { WordDetailData, WordDetailRebusEntry } from "@/components/admin/word-detail/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/content/constants';
+import type { WordDetailData, WordDetailRebusEntry } from '@/components/admin/word-detail/types';
+import { cn } from '@/lib/utils';
 
-const REBUS_TAB = "rebus";
-const NEW_ENTRY_FORM_ID = "new-rebus-entry";
+const REBUS_TAB = 'rebus';
+const NEW_ENTRY_FORM_ID = 'new-rebus-entry';
 
-function RebusEntryCard({
-  wordId,
-  entry,
-}: {
-  wordId: string;
-  entry: WordDetailRebusEntry;
-}) {
+function RebusEntryCard({ wordId, entry }: { wordId: string; entry: WordDetailRebusEntry }) {
   const editFormId = `rebus-edit-${entry.id}`;
 
   return (
@@ -57,16 +47,14 @@ function RebusEntryCard({
         <p className="mt-2 text-[clamp(1.75rem,4vw,2.5rem)] font-medium leading-snug tracking-[0.06em] text-print-ink">
           {entry.value}
         </p>
-        {entry.notes ? (
-          <p className="mt-2 text-sm text-print-muted">{entry.notes}</p>
-        ) : null}
+        {entry.notes ? <p className="mt-2 text-sm text-print-muted">{entry.notes}</p> : null}
       </div>
 
       <input id={editFormId} type="checkbox" className="peer/edit sr-only" />
       <div className="border-t border-print-ink/10 px-3 py-2.5 peer-checked/edit:[&_svg]:rotate-180">
         <label
           htmlFor={editFormId}
-          className={cn(adminButtonTertiaryClass, "inline-flex items-center gap-1.5")}
+          className={cn(adminButtonTertiaryClass, 'inline-flex items-center gap-1.5')}
         >
           <ChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform" />
           Redigera
@@ -103,10 +91,10 @@ function RebusEntryCard({
               <SelectInput
                 id={`rebus-difficulty-${entry.id}`}
                 name="difficulty"
-                defaultValue={entry.difficulty == null ? "" : String(entry.difficulty)}
+                defaultValue={entry.difficulty == null ? '' : String(entry.difficulty)}
               >
                 {HINT_DIFFICULTY_OPTIONS.map((option) => (
-                  <option key={option.value || "unset"} value={option.value}>
+                  <option key={option.value || 'unset'} value={option.value}>
                     {option.label}
                   </option>
                 ))}
@@ -130,7 +118,7 @@ function RebusEntryCard({
             <TextArea
               id={`rebus-notes-${entry.id}`}
               name="notes"
-              defaultValue={entry.notes ?? ""}
+              defaultValue={entry.notes ?? ''}
               className="min-h-16"
             />
           </Field>

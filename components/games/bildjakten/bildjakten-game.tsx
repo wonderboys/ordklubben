@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { GameToast, useGameToast } from "@/components/games/game-toast";
-import { Button } from "@/components/ui/button";
-import { normalizeNormalizedAnswerInput } from "@/lib/content/normalize-answer";
-import type { BildjaktPuzzle } from "@/lib/game/bildjakten/types";
-import { cn } from "@/lib/utils";
+import Image from 'next/image';
+import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { GameToast, useGameToast } from '@/components/games/game-toast';
+import { Button } from '@/components/ui/button';
+import { normalizeNormalizedAnswerInput } from '@/lib/content/normalize-answer';
+import type { BildjaktPuzzle } from '@/lib/game/bildjakten/types';
+import { cn } from '@/lib/utils';
 
-type GuessState = "idle" | "wrong" | "won";
+type GuessState = 'idle' | 'wrong' | 'won';
 
 type BildjaktenGameProps = {
   puzzles: BildjaktPuzzle[];
@@ -19,8 +19,8 @@ function PuzzleImage({ puzzle, won }: { puzzle: BildjaktPuzzle; won: boolean }) 
   return (
     <div
       className={cn(
-        "relative mx-auto aspect-square w-full max-w-[18rem] overflow-hidden border-[3px] border-print-ink bg-[#f6f2ea] shadow-[5px_5px_0_0_rgba(17,17,17,1)] sm:max-w-[20rem]",
-        won && "border-print-green shadow-[5px_5px_0_0_rgba(2,134,102,0.55)]",
+        'relative mx-auto aspect-square w-full max-w-[18rem] overflow-hidden border-[3px] border-print-ink bg-[#f6f2ea] shadow-[5px_5px_0_0_rgba(17,17,17,1)] sm:max-w-[20rem]',
+        won && 'border-print-green shadow-[5px_5px_0_0_rgba(2,134,102,0.55)]',
       )}
     >
       <Image
@@ -38,30 +38,23 @@ function PuzzleImage({ puzzle, won }: { puzzle: BildjaktPuzzle; won: boolean }) 
 export function BildjaktenGame({ puzzles }: BildjaktenGameProps) {
   const { toast, showToast } = useGameToast(1400);
   const [index, setIndex] = useState(0);
-  const [guess, setGuess] = useState("");
-  const [guessState, setGuessState] = useState<GuessState>("idle");
+  const [guess, setGuess] = useState('');
+  const [guessState, setGuessState] = useState<GuessState>('idle');
 
   const puzzle = puzzles[index];
   const isLastPuzzle = index >= puzzles.length - 1;
-  const isWon = guessState === "won";
+  const isWon = guessState === 'won';
 
-  const normalizedGuess = useMemo(
-    () => normalizeNormalizedAnswerInput(guess),
-    [guess],
-  );
+  const normalizedGuess = useMemo(() => normalizeNormalizedAnswerInput(guess), [guess]);
 
   if (!puzzle) {
-    return (
-      <p className="text-center text-sm text-print-muted">
-        Inga bilder att gissa på ännu.
-      </p>
-    );
+    return <p className="text-center text-sm text-print-muted">Inga bilder att gissa på ännu.</p>;
   }
 
   const advancePuzzle = () => {
     setIndex((current) => current + 1);
-    setGuess("");
-    setGuessState("idle");
+    setGuess('');
+    setGuessState('idle');
   };
 
   const handleSubmit = () => {
@@ -70,13 +63,13 @@ export function BildjaktenGame({ puzzles }: BildjaktenGameProps) {
     }
 
     if (normalizedGuess === puzzle.normalizedAnswer) {
-      setGuessState("won");
-      showToast("Rätt!", "win");
+      setGuessState('won');
+      showToast('Rätt!', 'win');
       return;
     }
 
-    setGuessState("wrong");
-    showToast("Inte rätt — försök igen", "error");
+    setGuessState('wrong');
+    showToast('Inte rätt — försök igen', 'error');
   };
 
   return (
@@ -117,15 +110,15 @@ export function BildjaktenGame({ puzzles }: BildjaktenGameProps) {
           placeholder="Skriv ordet"
           onChange={(event) => {
             setGuess(event.target.value);
-            if (guessState === "wrong") {
-              setGuessState("idle");
+            if (guessState === 'wrong') {
+              setGuessState('idle');
             }
           }}
           className={cn(
-            "w-full border bg-print-surface px-3 py-2.5 text-base uppercase tracking-[0.04em] text-print-ink outline-none placeholder:normal-case placeholder:tracking-normal focus:ring-2 focus:ring-inset disabled:opacity-60",
-            isWon && "border-print-green bg-print-green-soft text-print-green",
-            guessState === "wrong" && "border-[var(--color-error)]",
-            guessState === "idle" && "border-print-ink focus:ring-print-ink/25",
+            'w-full border bg-print-surface px-3 py-2.5 text-base uppercase tracking-[0.04em] text-print-ink outline-none placeholder:normal-case placeholder:tracking-normal focus:ring-2 focus:ring-inset disabled:opacity-60',
+            isWon && 'border-print-green bg-print-green-soft text-print-green',
+            guessState === 'wrong' && 'border-[var(--color-error)]',
+            guessState === 'idle' && 'border-print-ink focus:ring-print-ink/25',
           )}
         />
 
@@ -153,7 +146,13 @@ export function BildjaktenGame({ puzzles }: BildjaktenGameProps) {
           </p>
 
           {!isLastPuzzle ? (
-            <Button type="button" variant="accent" size="lg" className="w-full" onClick={advancePuzzle}>
+            <Button
+              type="button"
+              variant="accent"
+              size="lg"
+              className="w-full"
+              onClick={advancePuzzle}
+            >
               Nästa bild
             </Button>
           ) : (

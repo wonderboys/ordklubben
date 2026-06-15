@@ -1,16 +1,13 @@
-import { canBuildWord } from "@/lib/dictionary/can-build-word";
-import {
-  hasOnlySwedishLetters,
-  normalizeSwedish,
-} from "@/lib/dictionary/normalize-swedish";
+import { canBuildWord } from '@/lib/dictionary/can-build-word';
+import { hasOnlySwedishLetters, normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 export type WordValidationReason =
-  | "empty"
-  | "invalid_characters"
-  | "invalid_length"
-  | "already_found"
-  | "not_allowed"
-  | "cannot_build";
+  | 'empty'
+  | 'invalid_characters'
+  | 'invalid_length'
+  | 'already_found'
+  | 'not_allowed'
+  | 'cannot_build';
 
 export type WordValidationResult =
   | { ok: true; word: string }
@@ -39,15 +36,15 @@ export function validateWord({
   const word = normalizeSwedish(value);
 
   if (!word.length) {
-    return { ok: false, word, reason: "empty" };
+    return { ok: false, word, reason: 'empty' };
   }
 
   if (!hasOnlySwedishLetters(word)) {
-    return { ok: false, word, reason: "invalid_characters" };
+    return { ok: false, word, reason: 'invalid_characters' };
   }
 
   if (word.length < minLength || word.length > maxLength) {
-    return { ok: false, word, reason: "invalid_length" };
+    return { ok: false, word, reason: 'invalid_length' };
   }
 
   const blockedWordSet = new Set(
@@ -55,15 +52,15 @@ export function validateWord({
   );
 
   if (blockedWordSet.has(word)) {
-    return { ok: false, word, reason: "already_found" };
+    return { ok: false, word, reason: 'already_found' };
   }
 
   if (!allowedWords.has(word)) {
-    return { ok: false, word, reason: "not_allowed" };
+    return { ok: false, word, reason: 'not_allowed' };
   }
 
   if (!canBuildWord(word, letters)) {
-    return { ok: false, word, reason: "cannot_build" };
+    return { ok: false, word, reason: 'cannot_build' };
   }
 
   return { ok: true, word };

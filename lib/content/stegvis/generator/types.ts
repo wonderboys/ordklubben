@@ -1,7 +1,7 @@
-import type { WordBankWordWithClues } from "@/lib/content/word-bank/types";
-import type { WordGraph } from "@/lib/content/stegvis/word-graph/types";
+import type { WordBankWordWithClues } from '@/lib/content/word-bank/types';
+import type { WordGraph } from '@/lib/content/stegvis/word-graph/types';
 
-export type StegvisDifficultyBand = "EASY" | "MEDIUM" | "HARD";
+export type StegvisDifficultyBand = 'EASY' | 'MEDIUM' | 'HARD';
 
 export const DEFAULT_STEGVIS_GENERATOR_OPTIONS = {
   length: 4,
