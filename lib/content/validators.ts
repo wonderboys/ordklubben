@@ -2,21 +2,21 @@ import { z } from "zod";
 import type { HintType } from "@prisma/client";
 import {
   CONTENT_STATUSES,
-  DEFAULT_HINT_FORMAT,
   DEFAULT_HINT_TONE,
   DEFAULT_HINT_TYPE,
-  HINT_FORMAT_SELECT_OPTIONS,
-  HINT_FORMATS,
   HINT_TONES,
   HINT_TYPE_SELECT_OPTIONS,
   HINT_TYPES,
   IMPORT_BATCH_TYPES,
   LEXICAL_ENTRY_TYPES,
+  MEDIA_TYPES,
   PART_OF_SPEECH_VALUES,
   PUZZLE_DIRECTIONS,
   PUZZLE_STATUSES,
   PUZZLE_TYPE_SELECT_OPTIONS,
+  WORD_RELATION_TYPES,
   WORD_SOURCES,
+  GRAMMATICAL_GENDERS,
 } from "@/lib/content/constants";
 
 function emptyToUndefined(value: unknown) {
@@ -70,13 +70,6 @@ function optionalHintTypeField() {
   }, z.enum(hintTypeValues));
 }
 
-function optionalHintFormatField() {
-  return z.preprocess((value) => {
-    const normalized = emptyToUndefined(value);
-    return normalized ?? DEFAULT_HINT_FORMAT;
-  }, z.enum(HINT_FORMAT_SELECT_OPTIONS));
-}
-
 function optionalHintToneField() {
   return z.preprocess((value) => {
     const normalized = emptyToUndefined(value);
@@ -97,6 +90,13 @@ function optionalPartOfSpeechField() {
     const normalized = emptyToUndefined(value);
     return normalized ?? null;
   }, z.enum(PART_OF_SPEECH_VALUES).nullable());
+}
+
+function optionalGrammaticalGenderField() {
+  return z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? null;
+  }, z.enum(GRAMMATICAL_GENDERS).nullable());
 }
 
 function requiredTextField(label: string) {
@@ -126,8 +126,48 @@ export const updateWordSchema = z.object({
     const normalized = emptyToUndefined(value);
     return normalized ?? "manual";
   }, z.enum(WORD_SOURCES)),
-  partOfSpeech: optionalPartOfSpeechField(),
   notes: optionalTextField(),
+});
+
+export const upsertWordLanguageDataSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  partOfSpeech: optionalPartOfSpeechField(),
+  gender: optionalGrammaticalGenderField(),
+  lemma: optionalTextField(),
+  pronunciation: optionalTextField(),
+  definiteSingular: optionalTextField(),
+  indefinitePlural: optionalTextField(),
+  definitePlural: optionalTextField(),
+});
+
+export const createWordRelationSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  targetWordId: requiredTextField("Målord-ID"),
+  relationType: z.enum(WORD_RELATION_TYPES),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  notes: optionalTextField(),
+});
+
+export const updateWordRelationSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  relationId: requiredTextField("Relations-ID"),
+  targetWordId: requiredTextField("Målord-ID"),
+  relationType: z.enum(WORD_RELATION_TYPES),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  notes: optionalTextField(),
+});
+
+export const deleteWordRelationSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  relationId: requiredTextField("Relations-ID"),
 });
 
 export const archiveWordSchema = z.object({
@@ -163,11 +203,89 @@ export const deleteLexicalEntrySchema = z.object({
   entryId: requiredTextField("Post-ID"),
 });
 
+function optionalContentStatusField() {
+  return z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "DRAFT";
+  }, z.enum(CONTENT_STATUSES));
+}
+
+export const createRebusEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  value: requiredTextField("Rebus"),
+  difficulty: optionalHintDifficultyField(),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  notes: optionalTextField(),
+  status: optionalContentStatusField(),
+});
+
+export const updateRebusEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  entryId: requiredTextField("Post-ID"),
+  value: requiredTextField("Rebus"),
+  difficulty: optionalHintDifficultyField(),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  notes: optionalTextField(),
+  status: optionalContentStatusField(),
+});
+
+export const deleteRebusEntrySchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  entryId: requiredTextField("Post-ID"),
+});
+
+export const createMediaAssetSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  mediaType: z.enum(MEDIA_TYPES),
+  title: optionalTextField(),
+  altText: optionalTextField(),
+  prompt: optionalTextField(),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  attribution: optionalTextField(),
+  license: optionalTextField(),
+  notes: optionalTextField(),
+  status: optionalContentStatusField(),
+});
+
+export const updateMediaAssetSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  assetId: requiredTextField("Media-ID"),
+  mediaType: z.enum(MEDIA_TYPES),
+  title: optionalTextField(),
+  altText: optionalTextField(),
+  prompt: optionalTextField(),
+  source: z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    return normalized ?? "manual";
+  }, z.enum(WORD_SOURCES)),
+  sourceReference: optionalTextField(),
+  attribution: optionalTextField(),
+  license: optionalTextField(),
+  notes: optionalTextField(),
+  status: optionalContentStatusField(),
+});
+
+export const deleteMediaAssetSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+  assetId: requiredTextField("Media-ID"),
+});
+
 export const createHintSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
   text: requiredTextField("Nyckeltext"),
   type: z.enum(HINT_TYPES),
-  format: z.enum(HINT_FORMATS),
   status: z.enum(CONTENT_STATUSES),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
@@ -186,7 +304,6 @@ export const updateHintSchema = z.object({
   hintId: requiredTextField("Nyckel-ID"),
   text: requiredTextField("Nyckeltext"),
   type: optionalHintTypeField(),
-  format: optionalHintFormatField(),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
   notes: optionalTextField(),
@@ -218,7 +335,6 @@ export const createHintCandidateSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
   text: requiredTextField("Nyckeltext"),
   type: optionalHintTypeField(),
-  format: optionalHintFormatField(),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
   notes: optionalTextField(),
@@ -234,13 +350,16 @@ export const approveEditedHintCandidateSchema = z.object({
   candidateId: requiredTextField("Kandidat-ID"),
   text: requiredTextField("Nyckeltext"),
   type: optionalHintTypeField(),
-  format: optionalHintFormatField(),
   difficulty: optionalHintDifficultyField(),
   tone: optionalHintToneField(),
   notes: optionalTextField(),
 });
 
 export const generateHintCandidatesSchema = z.object({
+  wordId: requiredTextField("Ord-ID"),
+});
+
+export const generateMediaSuggestionSchema = z.object({
   wordId: requiredTextField("Ord-ID"),
 });
 

@@ -16,7 +16,6 @@ import {
   HINT_CANDIDATE_STATUSES,
   HINT_CANDIDATE_STATUS_LABELS,
   formatHintDifficulty,
-  formatHintFormat,
   formatHintSource,
   formatHintTone,
   formatHintType,
@@ -112,7 +111,6 @@ export default async function AdminProposalsPage({
             "Status",
             "Ord",
             "Typ",
-            "Format",
             "Svårighet",
             "Ton",
             "Källa",
@@ -134,7 +132,6 @@ export default async function AdminProposalsPage({
                 </Link>
               </td>
               <td className="text-print-muted">{formatHintType(proposal.type)}</td>
-              <td className="text-print-muted">{formatHintFormat(proposal.format)}</td>
               <td className="text-print-muted">
                 {formatHintDifficulty(proposal.difficulty)}
               </td>

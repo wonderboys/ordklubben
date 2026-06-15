@@ -1,6 +1,10 @@
+export { WordLanguagePanel, WordLanguageSection } from "./word-language-section";
 export { WordKeysSection } from "./word-keys-section";
 export { WordLexiconPanel, WordLexiconSection } from "./word-lexicon-section";
+export { WordMediaPanel, WordMediaSection } from "./word-media-section";
 export { WordMetadataOverviewCard, WordMetadataPanel } from "./word-metadata-section";
 export { WordOverviewSection } from "./word-overview-section";
 export { WordPlaceholderSection } from "./word-placeholder-section";
+export { WordRebusPanel, WordRebusSection } from "./word-rebus-section";
+export { WordRelationsPanel, WordRelationsSection } from "./word-relations-section";
 export { WordThemesSection } from "./word-themes-section";

@@ -3,7 +3,6 @@ import type { HintTone } from "@/lib/content/constants";
 import type { HintCandidateDraft } from "@/lib/content/ai/types";
 
 const AI_SOURCE = "ai";
-const AI_FORMAT = "TEXT" as const;
 
 const TYPE_METADATA: Record<
   "DEFINITION" | "PARAPHRASE" | "ASSOCIATION" | "SYNONYM" | "WORDPLAY" | "EXAMPLE",
@@ -34,7 +33,6 @@ export function applyHintCandidateDefaults(
   return {
     text,
     type,
-    format: AI_FORMAT,
     difficulty: metadata.difficulty,
     tone: metadata.tone,
     source: AI_SOURCE,

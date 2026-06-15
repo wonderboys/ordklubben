@@ -38,6 +38,42 @@ export const games = [
     description: "Förvandla ett ord till ett annat. Ett steg i taget.",
   },
   {
+    id: "emojirebus",
+    title: "Emojirebus",
+    href: "/emojirebus",
+    status: "playable",
+    badgeLabel: "Test",
+    description: "Gissa ordet utifrån emojis. Tidig test av en ny spelidé.",
+    libraryDescription: "Gissa ordet utifrån emojis.",
+  },
+  {
+    id: "kastet",
+    title: "Kastet",
+    href: "/kastet",
+    status: "playable",
+    badgeLabel: "Test",
+    description: "Skaka bokstavstärningarna och bygg ord av det du får.",
+    libraryDescription: "Kasta tärningar och bygg ord.",
+  },
+  {
+    id: "skrapet",
+    title: "Skrapet",
+    href: "/skrapet",
+    status: "playable",
+    badgeLabel: "Test",
+    description: "Skrapa fram ledtrådar och gissa ordet innan du avslöjar för mycket.",
+    libraryDescription: "Skrapa ledtrådar och gissa ordet.",
+  },
+  {
+    id: "bildjakten",
+    title: "Bildjakten",
+    href: "/test/bildjakten",
+    status: "playable",
+    badgeLabel: "Test",
+    description: "Gissa ordet utifrån bilden. Tidig test av en ny spelidé.",
+    libraryDescription: "Gissa ordet utifrån bilden.",
+  },
+  {
     id: "ordflata",
     title: "Ordfläta",
     href: "/ordflata",
@@ -49,7 +85,21 @@ export const games = [
   },
 ] as const satisfies readonly GameDefinition[];
 
-export const libraryGames = games;
+export const testGames = games.filter(
+  (game): game is (typeof games)[number] =>
+    game.id === "emojirebus" ||
+    game.id === "kastet" ||
+    game.id === "skrapet" ||
+    game.id === "bildjakten",
+);
+
+export const libraryGames = games.filter(
+  (game): game is (typeof games)[number] =>
+    game.id !== "emojirebus" &&
+    game.id !== "kastet" &&
+    game.id !== "skrapet" &&
+    game.id !== "bildjakten",
+);
 
 export const homeGames = games.filter(
   (game): game is (typeof games)[number] =>

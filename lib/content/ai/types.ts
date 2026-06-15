@@ -1,9 +1,8 @@
-import type { HintFormat, HintType } from "@prisma/client";
+import type { HintType } from "@prisma/client";
 
 export type HintCandidateDraft = {
   text: string;
   type: HintType;
-  format?: HintFormat;
   difficulty?: number;
   tone?: string;
   source: string;
@@ -28,4 +27,24 @@ export type GenerateHintCandidatesResult = {
     accepted: number;
     skippedInvalid: number;
   };
+};
+
+export type MediaSuggestionDraft = {
+  title: string;
+  altText: string;
+  prompt: string;
+  notes?: string;
+};
+
+export type GenerateMediaSuggestionInput = {
+  wordId: string;
+  answer: string;
+  normalizedAnswer: string;
+  language: string;
+};
+
+export type GenerateMediaSuggestionResult = {
+  suggestion: MediaSuggestionDraft;
+  model?: string;
+  promptVersion?: string;
 };

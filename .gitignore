@@ -22,6 +22,10 @@
 
 # misc
 .DS_Store
+
+# uploaded media (keep directory via .gitkeep)
+/public/uploads/media/*
+!/public/uploads/media/.gitkeep
 *.pem
 
 # debug

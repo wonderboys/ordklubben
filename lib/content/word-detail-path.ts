@@ -1,7 +1,11 @@
 export const WORD_DETAIL_TABS = [
   "overview",
+  "language",
   "lexicon",
+  "relations",
   "keys",
+  "rebus",
+  "media",
   "themes",
   "history",
   "statistics",
@@ -50,6 +54,7 @@ export function wordDetailPathFromForm(wordId: string, formData: FormData) {
   const tab = formData.get("tab");
   const candidateStatus = formData.get("candidateStatus");
   const entryType = formData.get("entryType");
+  const relationType = formData.get("relationType");
 
   const resolvedTab = normalizeWordDetailTab(typeof tab === "string" ? tab : undefined);
 
@@ -59,6 +64,9 @@ export function wordDetailPathFromForm(wordId: string, formData: FormData) {
   }
   if (typeof entryType === "string" && entryType) {
     params.entryType = entryType;
+  }
+  if (typeof relationType === "string" && relationType) {
+    params.relationType = relationType;
   }
 
   return wordDetailHref(wordId, resolvedTab, params);

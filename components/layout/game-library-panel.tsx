@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { GameLibraryTile } from "@/components/games/game-library-tile";
 import { MonoLabel, SectionTitle } from "@/components/ui/typography";
-import { libraryGames } from "@/lib/games/registry";
+import { libraryGames, testGames } from "@/lib/games/registry";
 import { cn } from "@/lib/utils";
 
 type AccountNavItem = {
@@ -42,6 +42,20 @@ export function GameLibraryPanel({ id, open, onClose }: GameLibraryPanelProps) {
             </div>
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
               {libraryGames.map((game) => (
+                <li key={game.id}>
+                  <GameLibraryTile game={game} onNavigate={onClose} />
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="space-y-4 border-t border-print-ink/10 pt-6">
+            <div className="space-y-1">
+              <MonoLabel muted>Tester</MonoLabel>
+              <SectionTitle className="text-lg sm:text-xl">Prova nya idéer</SectionTitle>
+            </div>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+              {testGames.map((game) => (
                 <li key={game.id}>
                   <GameLibraryTile game={game} onNavigate={onClose} />
                 </li>

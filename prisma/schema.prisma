@@ -44,12 +44,10 @@ enum HintType {
   OTHER
 }
 
-enum HintFormat {
-  TEXT
+enum MediaType {
   IMAGE
   AUDIO
-  EMOJI
-  HYBRID
+  VIDEO
 }
 
 enum ImportBatchStatus {
@@ -90,6 +88,19 @@ enum PuzzleDirection {
   DOWN
 }
 
+enum GrammaticalGender {
+  EN
+  ETT
+}
+
+enum WordRelationType {
+  SYNONYM
+  ANTONYM
+  RELATED
+  COMPOSED_OF
+  PART_OF
+}
+
 model Word {
   id               String              @id @default(cuid())
   answer           String
@@ -99,7 +110,6 @@ model Word {
   status           ContentStatus       @default(DRAFT)
   source           String              @default("manual")
   sourceReference  String?
-  partOfSpeech     PartOfSpeech?
   difficulty       Int?
   frequency        Int?
   crosswordScore   Int?
@@ -112,6 +122,11 @@ model Word {
   puzzleEntries    PuzzleEntry[]
   lexicalEntries         WordLexicalEntry[]
   linkedLexicalEntries   WordLexicalEntry[] @relation("LexicalLinkedWord")
+  rebusEntries           RebusEntry[]
+  mediaAssets            MediaAsset[]
+  languageData           WordLanguageData?
+  outgoingRelations      WordRelation[]     @relation("WordRelationSource")
+  incomingRelations      WordRelation[]     @relation("WordRelationTarget")
 
   @@index([answer])
   @@index([status])
@@ -140,13 +155,49 @@ model WordLexicalEntry {
   @@index([linkedWordId])
 }
 
+/// Grammatical and morphological properties of a word — not meanings or playable hints.
+model WordLanguageData {
+  id            String             @id @default(cuid())
+  wordId        String             @unique
+  word          Word               @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  partOfSpeech  PartOfSpeech?
+  gender        GrammaticalGender?
+  lemma         String?
+  pronunciation String?
+  /// Noun inflections and future morphological forms, e.g. definiteSingular, indefinitePlural.
+  inflections   Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([partOfSpeech])
+}
+
+/// Structured links between Word rows — distinct from lexical meaning entries.
+model WordRelation {
+  id              String           @id @default(cuid())
+  sourceWordId    String
+  sourceWord      Word             @relation("WordRelationSource", fields: [sourceWordId], references: [id], onDelete: Cascade)
+  targetWordId    String
+  targetWord      Word             @relation("WordRelationTarget", fields: [targetWordId], references: [id], onDelete: Cascade)
+  relationType    WordRelationType
+  source          String           @default("manual")
+  sourceReference String?
+  notes           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([sourceWordId, targetWordId, relationType])
+  @@index([sourceWordId])
+  @@index([targetWordId])
+  @@index([relationType])
+}
+
 model Hint {
   id         String        @id @default(cuid())
   wordId     String
   word       Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
   text       String
   type       HintType      @default(DEFINITION)
-  format     HintFormat    @default(TEXT)
   status     ContentStatus @default(DRAFT)
   difficulty Int?
   tone       String?
@@ -168,7 +219,6 @@ model HintCandidate {
   word           Word                @relation(fields: [wordId], references: [id], onDelete: Cascade)
   text           String
   type           HintType            @default(DEFINITION)
-  format         HintFormat          @default(TEXT)
   status         HintCandidateStatus @default(PENDING)
   difficulty     Int?
   tone           String?
@@ -184,6 +234,47 @@ model HintCandidate {
 
   @@index([wordId])
   @@index([status])
+}
+
+model RebusEntry {
+  id              String        @id @default(cuid())
+  wordId          String
+  word            Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  value           String
+  difficulty      Int?
+  source          String        @default("manual")
+  sourceReference String?
+  notes           String?       @db.Text
+  status          ContentStatus @default(DRAFT)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([wordId, value])
+  @@index([wordId])
+  @@index([status])
+}
+
+model MediaAsset {
+  id              String        @id @default(cuid())
+  wordId          String
+  word            Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  mediaType       MediaType
+  title           String?
+  altText         String?
+  prompt          String?       @db.Text
+  source          String        @default("manual")
+  sourceReference String?
+  attribution     String?
+  license         String?
+  notes           String?       @db.Text
+  filePath        String?
+  status          ContentStatus @default(DRAFT)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([wordId])
+  @@index([status])
+  @@index([mediaType])
 }
 
 model Theme {

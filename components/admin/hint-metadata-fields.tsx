@@ -1,14 +1,12 @@
+import type { HintType } from "@prisma/client";
 import {
   Field,
   SelectInput,
 } from "@/components/admin/admin-ui";
 import {
-  DEFAULT_HINT_FORMAT,
   DEFAULT_HINT_TONE,
   DEFAULT_HINT_TYPE,
   HINT_DIFFICULTY_OPTIONS,
-  HINT_FORMAT_LABELS,
-  HINT_FORMAT_SELECT_OPTIONS,
   HINT_TONE_LABELS,
   HINT_TONES,
   HINT_TYPE_LABELS,
@@ -16,12 +14,10 @@ import {
   formatHintSource,
   isSelectableHintType,
 } from "@/lib/content/constants";
-import type { HintFormat, HintType } from "@prisma/client";
 
 type HintMetadataFieldsProps = {
   idPrefix: string;
   typeDefaultValue?: HintType;
-  formatDefaultValue?: HintFormat;
   difficultyDefaultValue?: number | null;
   toneDefaultValue?: string | null;
   source?: string | null;
@@ -31,7 +27,6 @@ type HintMetadataFieldsProps = {
 export function HintMetadataFields({
   idPrefix,
   typeDefaultValue = DEFAULT_HINT_TYPE,
-  formatDefaultValue = DEFAULT_HINT_FORMAT,
   difficultyDefaultValue = null,
   toneDefaultValue = DEFAULT_HINT_TONE,
   source,
@@ -54,19 +49,6 @@ export function HintMetadataFields({
             {HINT_TYPE_SELECT_OPTIONS.map((value) => (
               <option key={value} value={value}>
                 {HINT_TYPE_LABELS[value]}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-        <Field label="Format" htmlFor={`${idPrefix}-format`} hint={compact ? "Valfritt" : undefined}>
-          <SelectInput
-            id={`${idPrefix}-format`}
-            name="format"
-            defaultValue={formatDefaultValue}
-          >
-            {HINT_FORMAT_SELECT_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {HINT_FORMAT_LABELS[value]}
               </option>
             ))}
           </SelectInput>

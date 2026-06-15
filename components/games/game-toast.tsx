@@ -82,20 +82,26 @@ type GameToastProps = {
   tone?: GameToastTone;
   toastId?: number;
   className?: string;
+  /** inline = above relative parent; fixed-top-center = viewport top, outside game flow */
+  placement?: "inline" | "fixed-top-center";
 };
+
+const PLACEMENT_CLASSNAME = {
+  inline: "pointer-events-none absolute inset-x-0 -top-9 z-20 flex justify-center md:-top-10",
+  "fixed-top-center":
+    "pointer-events-none fixed top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-50 flex w-full max-w-[min(100%,24rem)] -translate-x-1/2 justify-center px-4",
+} as const;
 
 export function GameToast({
   message,
   tone = "info",
   toastId,
   className,
+  placement = "inline",
 }: GameToastProps) {
   return (
     <div
-      className={cn(
-        "pointer-events-none absolute inset-x-0 -top-9 z-20 flex justify-center md:-top-10",
-        className,
-      )}
+      className={cn(PLACEMENT_CLASSNAME[placement], className)}
       aria-live="polite"
       aria-atomic="true"
     >

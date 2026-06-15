@@ -1,4 +1,4 @@
-import { CalendarDays, Grid3x3, Route, Zap, type LucideIcon } from "lucide-react";
+import { CalendarDays, Dices, Grid3x3, ImageIcon, Route, Smile, Ticket, Zap, type LucideIcon } from "lucide-react";
 import type { GameId } from "@/lib/games/registry";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,10 @@ const GAME_ICONS: Record<GameId, LucideIcon> = {
   "dagens-ord": CalendarDays,
   ordstorm: Zap,
   stegvis: Route,
+  emojirebus: Smile,
+  kastet: Dices,
+  skrapet: Ticket,
+  bildjakten: ImageIcon,
   ordflata: Grid3x3,
 };
 

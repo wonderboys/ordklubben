@@ -1,4 +1,4 @@
-import type { HintFormat, HintType, PrismaClient } from "@prisma/client";
+import type { HintType, PrismaClient } from "@prisma/client";
 import { hintTextsMatch, trimHintText } from "@/lib/content/normalize-hint";
 import { normalizeApprovedHintMetadata } from "@/lib/content/normalize-hint-metadata";
 
@@ -7,7 +7,6 @@ type ApproveCandidateInput = {
   candidateId: string;
   text: string;
   type: HintType;
-  format?: HintFormat;
   difficulty?: number;
   tone?: string;
   source?: string;
@@ -47,7 +46,6 @@ export async function approveCandidateAsHint(
 
   const metadata = normalizeApprovedHintMetadata({
     type: input.type,
-    format: input.format,
     difficulty: input.difficulty,
     tone: input.tone,
   });
@@ -72,7 +70,6 @@ export async function approveCandidateAsHint(
         wordId: input.wordId,
         text,
         type: metadata.type,
-        format: metadata.format,
         status: "DRAFT",
         difficulty: metadata.difficulty,
         tone: metadata.tone,
@@ -89,7 +86,6 @@ export async function approveCandidateAsHint(
         approvedHintId: createdHint.id,
         text,
         type: metadata.type,
-        format: metadata.format,
         difficulty: metadata.difficulty,
         tone: metadata.tone,
         notes: input.notes ?? candidate.notes,

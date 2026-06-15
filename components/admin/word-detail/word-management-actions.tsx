@@ -14,8 +14,6 @@ import {
 import { archiveWord, updateWord } from "@/lib/content/actions";
 import {
   CONTENT_STATUSES,
-  PART_OF_SPEECH_LABELS,
-  PART_OF_SPEECH_VALUES,
   STATUS_LABELS,
   WORD_SOURCES,
   WORD_SOURCE_LABELS,
@@ -102,20 +100,6 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
                 <Field label="Språk" htmlFor="language">
                   <TextInput id="language" name="language" defaultValue={word.language} required />
                 </Field>
-                <Field label="Ordklass" htmlFor="partOfSpeech">
-                  <SelectInput
-                    id="partOfSpeech"
-                    name="partOfSpeech"
-                    defaultValue={word.partOfSpeech ?? ""}
-                  >
-                    <option value="">Ej satt</option>
-                    {PART_OF_SPEECH_VALUES.map((value) => (
-                      <option key={value} value={value}>
-                        {PART_OF_SPEECH_LABELS[value]}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
                 <div className="sm:col-span-2">
                 <Field label="Källa" htmlFor="source">
                   <SelectInput id="source" name="source" defaultValue={word.source}>
@@ -157,7 +141,8 @@ export function WordManagementActions({ word }: { word: WordDetailData }) {
           </p>
           <p className="mt-2 text-xs text-print-muted">
             {relationCounts.hints} nycklar · {relationCounts.hintCandidates} förslag ·{" "}
-            {relationCounts.lexicalEntries} lexikonposter · {relationCounts.themes} teman
+            {relationCounts.lexicalEntries} lexikonposter · {relationCounts.wordRelations} relationer ·{" "}
+            {relationCounts.themes} teman
             {relationCounts.puzzleEntries > 0
               ? ` · ${relationCounts.puzzleEntries} pusselplaceringar`
               : ""}

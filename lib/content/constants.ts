@@ -1,15 +1,17 @@
 import type {
   ContentStatus,
+  GrammaticalGender,
   HintCandidateStatus,
-  HintFormat,
   HintType,
   ImportBatchStatus,
   ImportBatchType,
   LexicalEntryType,
+  MediaType,
   PartOfSpeech,
   PuzzleDirection,
   PuzzleStatus,
   PuzzleType,
+  WordRelationType,
 } from "@prisma/client";
 
 export const CONTENT_STATUSES: ContentStatus[] = [
@@ -99,6 +101,41 @@ export function formatPartOfSpeech(value: PartOfSpeech | null | undefined) {
   return PART_OF_SPEECH_LABELS[value];
 }
 
+export const GRAMMATICAL_GENDERS: GrammaticalGender[] = ["EN", "ETT"];
+
+export const GRAMMATICAL_GENDER_LABELS: Record<GrammaticalGender, string> = {
+  EN: "En (utrum)",
+  ETT: "Ett (neutrum)",
+};
+
+export function formatGrammaticalGender(value: GrammaticalGender | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  return GRAMMATICAL_GENDER_LABELS[value];
+}
+
+export const WORD_RELATION_TYPES: WordRelationType[] = [
+  "SYNONYM",
+  "ANTONYM",
+  "RELATED",
+  "COMPOSED_OF",
+  "PART_OF",
+];
+
+export const WORD_RELATION_TYPE_LABELS: Record<WordRelationType, string> = {
+  SYNONYM: "Synonym",
+  ANTONYM: "Antonym",
+  RELATED: "Relaterat",
+  COMPOSED_OF: "Sammansatt av",
+  PART_OF: "Del av",
+};
+
+export function formatWordRelationType(type: WordRelationType) {
+  return WORD_RELATION_TYPE_LABELS[type];
+}
+
 /** Lexical entry types — meaning and relations, not playable hints. */
 export const LEXICAL_ENTRY_TYPES: LexicalEntryType[] = [
   "DEFINITION",
@@ -118,6 +155,18 @@ export const LEXICAL_ENTRY_TYPE_LABELS: Record<LexicalEntryType, string> = {
 
 export function formatLexicalEntryType(type: LexicalEntryType) {
   return LEXICAL_ENTRY_TYPE_LABELS[type];
+}
+
+export const MEDIA_TYPES: MediaType[] = ["IMAGE", "AUDIO", "VIDEO"];
+
+export const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
+  IMAGE: "Bild",
+  AUDIO: "Ljud",
+  VIDEO: "Video",
+};
+
+export function formatMediaType(type: MediaType) {
+  return MEDIA_TYPE_LABELS[type];
 }
 
 export const HINT_CANDIDATE_STATUSES: HintCandidateStatus[] = [
@@ -149,36 +198,6 @@ export const HINT_TYPE_SELECT_OPTIONS = [
 ] as const satisfies readonly HintType[];
 
 export const DEFAULT_HINT_TYPE: HintType = "DEFINITION";
-
-export const HINT_FORMATS: HintFormat[] = [
-  "TEXT",
-  "IMAGE",
-  "AUDIO",
-  "EMOJI",
-  "HYBRID",
-];
-
-export const HINT_FORMAT_SELECT_OPTIONS = [
-  "TEXT",
-  "IMAGE",
-  "AUDIO",
-  "EMOJI",
-  "HYBRID",
-] as const satisfies readonly HintFormat[];
-
-export const DEFAULT_HINT_FORMAT: HintFormat = "TEXT";
-
-export const HINT_FORMAT_LABELS: Record<HintFormat, string> = {
-  TEXT: "Text",
-  IMAGE: "Bild",
-  AUDIO: "Ljud",
-  EMOJI: "Emoji",
-  HYBRID: "Hybrid",
-};
-
-export function formatHintFormat(format: HintFormat) {
-  return HINT_FORMAT_LABELS[format];
-}
 
 export function isSelectableHintType(
   type: HintType,

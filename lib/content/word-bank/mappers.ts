@@ -39,7 +39,6 @@ export function mapWordBankClue(hint: WordBankClueRow): WordBankClue {
     wordId: hint.wordId,
     text: hint.text,
     type: hint.type,
-    format: hint.format,
     status: hint.status,
     difficulty: hint.difficulty,
     tone: hint.tone,

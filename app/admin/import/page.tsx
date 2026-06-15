@@ -81,7 +81,7 @@ export default async function AdminImportPage({
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Nycklar</p>
               <p>
-                `answer`, `hint`, `type`, `format`, `difficulty`, `tone`, `source`, `notes`,
+                `answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`,
                 `theme`, `wordStatus`, `hintStatus` (valfria utom answer och hint)
               </p>
             </div>
@@ -99,8 +99,8 @@ export default async function AdminImportPage({
             <div>
               <p className="font-bold uppercase tracking-[0.04em]">Regler</p>
               <p>
-                `answer` krävs alltid. `hint` krävs för nyckelimport. Tom `type` blir `DEFINITION`, tom
-                `format` blir `TEXT`. Okända värden mappas till säkra standarder. `theme` kopplar ordet
+                `answer` krävs alltid. `hint` krävs för nyckelimport. Tom `type` blir `DEFINITION`.
+                Okända värden mappas till säkra standarder. `theme` kopplar ordet
                 till tema. `wordStatus` och `hintStatus` kan
                 vara `DRAFT` eller `APPROVED` och override:ar default per rad. Befintliga ord och nycklar
                 ändras inte.

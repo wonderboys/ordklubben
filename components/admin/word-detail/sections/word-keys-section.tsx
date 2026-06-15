@@ -33,7 +33,6 @@ import {
   HINT_CANDIDATE_STATUS_LABELS,
   STATUS_LABELS,
   formatHintDifficulty,
-  formatHintFormat,
   formatHintSource,
   formatHintTone,
   formatHintType,
@@ -46,7 +45,6 @@ const KEYS_TAB = "keys";
 
 type HintMetadataItem = {
   type: WordDetailData["hints"][number]["type"];
-  format: WordDetailData["hints"][number]["format"];
   difficulty: number | null;
   tone: string | null;
   source: string | null;
@@ -61,10 +59,6 @@ function HintMetadataDisplay({ item }: { item: HintMetadataItem }) {
       <div>
         <dt className="text-print-muted">Typ</dt>
         <dd className="mt-0.5 text-print-ink">{formatHintType(item.type)}</dd>
-      </div>
-      <div>
-        <dt className="text-print-muted">Format</dt>
-        <dd className="mt-0.5 text-print-ink">{formatHintFormat(item.format)}</dd>
       </div>
       <div>
         <dt className="text-print-muted">Svårighet</dt>
@@ -176,7 +170,6 @@ function HintCard({
           <HintMetadataFields
             idPrefix={`hint-edit-${hint.id}`}
             typeDefaultValue={hint.type}
-            formatDefaultValue={hint.format}
             difficultyDefaultValue={hint.difficulty}
             toneDefaultValue={hint.tone}
             source={hint.source}
@@ -292,7 +285,6 @@ function ProposalCard({
               <HintMetadataFields
                 idPrefix={`proposal-edit-${proposal.id}`}
                 typeDefaultValue={proposal.type}
-                formatDefaultValue={proposal.format}
                 difficultyDefaultValue={proposal.difficulty}
                 toneDefaultValue={proposal.tone}
                 source={proposal.source}

@@ -37,7 +37,6 @@ export const wordBankClueSelect = {
   wordId: true,
   text: true,
   type: true,
-  format: true,
   status: true,
   difficulty: true,
   tone: true,

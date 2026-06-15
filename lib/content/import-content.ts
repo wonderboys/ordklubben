@@ -1,6 +1,5 @@
 import type {
   ContentStatus,
-  HintFormat,
   HintType,
   ImportBatchType,
   PrismaClient,
@@ -8,7 +7,6 @@ import type {
 } from "@prisma/client";
 import {
   normalizeHintSource,
-  parseHintFormatInput,
   parseHintTypeInput,
 } from "@/lib/content/normalize-hint-metadata";
 import type { BatchSummary } from "@/lib/content/import-batch";
@@ -70,10 +68,6 @@ function parseOptionalInteger(value: string, label: string) {
 
 function parseHintType(value: string): HintType {
   return parseHintTypeInput(value);
-}
-
-function parseHintFormat(value: string): HintFormat {
-  return parseHintFormatInput(value);
 }
 
 function parseContentStatus(
@@ -575,7 +569,6 @@ export async function importContent({
           wordId: word.id,
           text: hintText,
           type: parseHintType(row.type ?? ""),
-          format: parseHintFormat(row.format ?? ""),
           status: hintStatusForRow,
           difficulty: rowDifficulty.value,
           tone: row.tone?.trim() || undefined,

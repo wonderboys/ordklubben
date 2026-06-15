@@ -16,8 +16,11 @@ export function WordDetailHeader({ word }: { word: WordDetailData }) {
 
   const summaryParts = [
     formatWordSource(word.source),
-    word.partOfSpeech ? formatPartOfSpeech(word.partOfSpeech) : null,
+    word.languageData?.partOfSpeech
+      ? formatPartOfSpeech(word.languageData.partOfSpeech)
+      : null,
     formatCount(word.lexicalEntries.length, "lexikal post", "lexikala poster"),
+    formatCount(word.relations.length, "relation", "relationer"),
     formatCount(word.hints.length, "nyckel", "nycklar"),
     pendingCount > 0
       ? `${formatCount(word.hintCandidates.length, "förslag", "förslag")} (${pendingCount} väntar)`

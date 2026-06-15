@@ -6,7 +6,6 @@ import {
 } from "@/components/admin/admin-ui";
 import { WordManagementActions } from "@/components/admin/word-detail/word-management-actions";
 import {
-  formatPartOfSpeech,
   formatWordSourceWithReference,
 } from "@/lib/content/constants";
 import type { WordDetailData } from "@/components/admin/word-detail/types";
@@ -43,7 +42,6 @@ export function WordMetadataPanel({
             label: "Källa",
             value: formatWordSourceWithReference(word.source, word.sourceReference),
           },
-          { label: "Ordklass", value: formatPartOfSpeech(word.partOfSpeech) },
           { label: "Språk", value: word.language },
           { label: "Längd", value: `${word.length} tecken` },
           {

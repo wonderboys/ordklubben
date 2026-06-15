@@ -1,6 +1,5 @@
-import type { HintFormat, HintType } from "@prisma/client";
+import type { HintType } from "@prisma/client";
 import {
-  DEFAULT_HINT_FORMAT,
   DEFAULT_HINT_TONE,
   DEFAULT_HINT_TYPE,
   HINT_TONES,
@@ -22,16 +21,6 @@ const HINT_TYPE_INPUT_ALIASES: Record<string, HintType> = {
   ÖVRIGT: "PARAPHRASE",
 };
 
-const HINT_FORMAT_INPUT_ALIASES: Record<string, HintFormat> = {
-  TEXT: "TEXT",
-  IMAGE: "IMAGE",
-  BILD: "IMAGE",
-  AUDIO: "AUDIO",
-  LJUD: "AUDIO",
-  EMOJI: "EMOJI",
-  HYBRID: "HYBRID",
-};
-
 export function parseHintTypeInput(value: string): HintType {
   const trimmed = value.trim();
 
@@ -41,17 +30,6 @@ export function parseHintTypeInput(value: string): HintType {
 
   const normalized = trimmed.toLocaleUpperCase("sv-SE");
   return HINT_TYPE_INPUT_ALIASES[normalized] ?? DEFAULT_HINT_TYPE;
-}
-
-export function parseHintFormatInput(value: string): HintFormat {
-  const trimmed = value.trim();
-
-  if (trimmed.length === 0) {
-    return DEFAULT_HINT_FORMAT;
-  }
-
-  const normalized = trimmed.toLocaleUpperCase("sv-SE");
-  return HINT_FORMAT_INPUT_ALIASES[normalized] ?? DEFAULT_HINT_FORMAT;
 }
 
 export function resolveHintType(type: HintType | null | undefined): HintType {
@@ -64,10 +42,6 @@ export function resolveHintType(type: HintType | null | undefined): HintType {
   }
 
   return type;
-}
-
-export function resolveHintFormat(format: HintFormat | null | undefined): HintFormat {
-  return format ?? DEFAULT_HINT_FORMAT;
 }
 
 export function resolveHintDifficulty(
@@ -90,13 +64,11 @@ export function resolveHintTone(tone: string | null | undefined) {
 
 export function normalizeApprovedHintMetadata(input: {
   type?: HintType | null;
-  format?: HintFormat | null;
   difficulty?: number | null;
   tone?: string | null;
 }) {
   return {
     type: resolveHintType(input.type),
-    format: resolveHintFormat(input.format),
     difficulty: resolveHintDifficulty(input.difficulty),
     tone: resolveHintTone(input.tone),
   };

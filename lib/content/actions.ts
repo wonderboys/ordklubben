@@ -4,9 +4,11 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateHintCandidates } from "@/lib/content/ai/generate-hint-candidates";
+import { generateMediaSuggestion } from "@/lib/content/ai/generate-media-suggestion";
 import { partitionDuplicateHintCandidateDrafts } from "@/lib/content/ai/filter-hint-candidate-drafts";
 import { logSkippedHintCandidates } from "@/lib/content/ai/hint-candidate-skip-log";
 import { AiHintGenerationError } from "@/lib/content/ai/parse-hint-candidates-response";
+import { AiMediaGenerationError } from "@/lib/content/ai/parse-media-suggestion-response";
 import { approveCandidateAsHint } from "@/lib/content/hint-candidate";
 import { normalizeHintText, trimHintText } from "@/lib/content/normalize-hint";
 import {
@@ -18,22 +20,37 @@ import {
   createHintCandidateSchema,
   createHintSchema,
   createLexicalEntrySchema,
+  createMediaAssetSchema,
+  createRebusEntrySchema,
+  createWordRelationSchema,
   createThemeSchema,
   createWordSchema,
   deleteLexicalEntrySchema,
+  deleteMediaAssetSchema,
+  deleteRebusEntrySchema,
+  deleteWordRelationSchema,
   generateHintCandidatesSchema,
+  generateMediaSuggestionSchema,
   hintCandidateActionSchema,
   importContentSchema,
   removeThemeFromWordSchema,
   updateHintSchema,
   updateHintStatusSchema,
   updateLexicalEntrySchema,
+  updateMediaAssetSchema,
+  updateRebusEntrySchema,
+  updateWordRelationSchema,
   updateWordSchema,
+  upsertWordLanguageDataSchema,
 } from "@/lib/content/validators";
 import {
   normalizeApprovedHintMetadata,
   normalizeHintSource,
 } from "@/lib/content/normalize-hint-metadata";
+import {
+  buildWordInflectionsFromForm,
+  serializeWordInflections,
+} from "@/lib/content/word-language";
 import { getPrisma } from "@/lib/db/prisma";
 import {
   isValidAnswerFormat,
@@ -48,6 +65,10 @@ import {
 } from "@/lib/content/normalize-word-source";
 import { importContent } from "@/lib/content/import-content";
 import { importLexicon } from "@/lib/content/import-lexicon";
+import {
+  deleteMediaImageFile,
+  saveMediaImageUpload,
+} from "@/lib/content/media-upload";
 import { wordDetailPathFromForm } from "@/lib/content/word-detail-path";
 
 function redirectToWord(
@@ -72,7 +93,27 @@ function redirectWithMessage(
 }
 
 function getFormValues(formData: FormData) {
-  return Object.fromEntries(formData.entries());
+  const values: Record<string, FormDataEntryValue> = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      continue;
+    }
+
+    values[key] = value;
+  }
+
+  return values;
+}
+
+function getMediaImageUploadFile(formData: FormData) {
+  const value = formData.get("image");
+
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  return value;
 }
 
 function getWordIdsFromForm(formData: FormData) {
@@ -205,7 +246,6 @@ export async function updateWord(formData: FormData) {
         status: parsed.data.status,
         language: parsed.data.language,
         source: normalizeWordSource(parsed.data.source),
-        partOfSpeech: parsed.data.partOfSpeech,
         notes: parsed.data.notes,
       },
     });
@@ -377,6 +417,453 @@ export async function deleteLexicalEntry(formData: FormData) {
   redirectToWord(parsed.data.wordId, formData, "success", "Lexikal post togs bort.");
 }
 
+export async function upsertWordLanguageData(formData: FormData) {
+  const parsed = upsertWordLanguageDataSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const inflections = buildWordInflectionsFromForm({
+    definiteSingular: parsed.data.definiteSingular,
+    indefinitePlural: parsed.data.indefinitePlural,
+    definitePlural: parsed.data.definitePlural,
+  });
+
+  const prisma = getPrisma();
+
+  await prisma.wordLanguageData.upsert({
+    where: { wordId: parsed.data.wordId },
+    create: {
+      wordId: parsed.data.wordId,
+      partOfSpeech: parsed.data.partOfSpeech,
+      gender: parsed.data.gender,
+      lemma: parsed.data.lemma,
+      pronunciation: parsed.data.pronunciation,
+      inflections: serializeWordInflections(inflections),
+    },
+    update: {
+      partOfSpeech: parsed.data.partOfSpeech,
+      gender: parsed.data.gender,
+      lemma: parsed.data.lemma,
+      pronunciation: parsed.data.pronunciation,
+      inflections: serializeWordInflections(inflections),
+    },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Språkdata sparades.");
+}
+
+export async function createWordRelation(formData: FormData) {
+  const parsed = createWordRelationSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  if (parsed.data.wordId === parsed.data.targetWordId) {
+    redirectToWord(
+      parsed.data.wordId,
+      formData,
+      "error",
+      "Ett ord kan inte relateras till sig självt.",
+    );
+  }
+
+  const prisma = getPrisma();
+
+  try {
+    await prisma.wordRelation.create({
+      data: {
+        sourceWordId: parsed.data.wordId,
+        targetWordId: parsed.data.targetWordId,
+        relationType: parsed.data.relationType,
+        source: normalizeWordSource(parsed.data.source),
+        sourceReference: parsed.data.sourceReference,
+        notes: parsed.data.notes,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "Relationen finns redan för det här ordparet.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Relationen skapades.");
+}
+
+export async function updateWordRelation(formData: FormData) {
+  const parsed = updateWordRelationSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  if (parsed.data.wordId === parsed.data.targetWordId) {
+    redirectToWord(
+      parsed.data.wordId,
+      formData,
+      "error",
+      "Ett ord kan inte relateras till sig självt.",
+    );
+  }
+
+  const prisma = getPrisma();
+  const relation = await prisma.wordRelation.findFirst({
+    where: {
+      id: parsed.data.relationId,
+      sourceWordId: parsed.data.wordId,
+    },
+    select: { id: true },
+  });
+
+  if (!relation) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Relationen kunde inte hittas.");
+  }
+
+  try {
+    await prisma.wordRelation.update({
+      where: { id: parsed.data.relationId },
+      data: {
+        targetWordId: parsed.data.targetWordId,
+        relationType: parsed.data.relationType,
+        source: normalizeWordSource(parsed.data.source),
+        sourceReference: parsed.data.sourceReference,
+        notes: parsed.data.notes,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "Relationen finns redan för det här ordparet.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Relationen uppdaterades.");
+}
+
+export async function deleteWordRelation(formData: FormData) {
+  const parsed = deleteWordRelationSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const relation = await prisma.wordRelation.findFirst({
+    where: {
+      id: parsed.data.relationId,
+      sourceWordId: parsed.data.wordId,
+    },
+    select: { id: true },
+  });
+
+  if (!relation) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Relationen kunde inte hittas.");
+  }
+
+  await prisma.wordRelation.delete({
+    where: { id: parsed.data.relationId },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Relationen togs bort.");
+}
+
+export async function createRebusEntry(formData: FormData) {
+  const parsed = createRebusEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const value = parsed.data.value.trim();
+  const prisma = getPrisma();
+
+  try {
+    await prisma.rebusEntry.create({
+      data: {
+        wordId: parsed.data.wordId,
+        value,
+        difficulty: parsed.data.difficulty,
+        source: normalizeWordSource(parsed.data.source),
+        sourceReference: parsed.data.sourceReference,
+        notes: parsed.data.notes,
+        status: parsed.data.status,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "En rebus med samma värde finns redan för ordet.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen skapades.");
+}
+
+export async function updateRebusEntry(formData: FormData) {
+  const parsed = updateRebusEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const value = parsed.data.value.trim();
+  const prisma = getPrisma();
+
+  try {
+    await prisma.rebusEntry.update({
+      where: { id: parsed.data.entryId },
+      data: {
+        value,
+        difficulty: parsed.data.difficulty,
+        source: normalizeWordSource(parsed.data.source),
+        sourceReference: parsed.data.sourceReference,
+        notes: parsed.data.notes,
+        status: parsed.data.status,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirectToWord(
+        parsed.data.wordId,
+        formData,
+        "error",
+        "En rebus med samma värde finns redan för ordet.",
+      );
+    }
+
+    throw error;
+  }
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen uppdaterades.");
+}
+
+export async function deleteRebusEntry(formData: FormData) {
+  const parsed = deleteRebusEntrySchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  await prisma.rebusEntry.delete({
+    where: { id: parsed.data.entryId },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Rebusen togs bort.");
+}
+
+export async function createMediaAsset(formData: FormData) {
+  const parsed = createMediaAssetSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  let filePath: string | undefined;
+
+  if (parsed.data.mediaType === "IMAGE") {
+    const imageFile = getMediaImageUploadFile(formData);
+
+    if (imageFile) {
+      try {
+        filePath = await saveMediaImageUpload(imageFile);
+      } catch (error) {
+        redirectToWord(
+          parsed.data.wordId,
+          formData,
+          "error",
+          error instanceof Error ? error.message : "Bilduppladdningen misslyckades.",
+        );
+      }
+    }
+  }
+
+  const prisma = getPrisma();
+  await prisma.mediaAsset.create({
+    data: {
+      wordId: parsed.data.wordId,
+      mediaType: parsed.data.mediaType,
+      title: parsed.data.title,
+      altText: parsed.data.altText,
+      prompt: parsed.data.prompt,
+      source: normalizeWordSource(parsed.data.source),
+      sourceReference: parsed.data.sourceReference,
+      attribution: parsed.data.attribution,
+      license: parsed.data.license,
+      notes: parsed.data.notes,
+      filePath,
+      status: parsed.data.status,
+    },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet skapades.");
+}
+
+export async function updateMediaAsset(formData: FormData) {
+  const parsed = updateMediaAssetSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const existing = await prisma.mediaAsset.findUnique({
+    where: { id: parsed.data.assetId },
+    select: { filePath: true },
+  });
+
+  if (!existing) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Mediaobjektet hittades inte.");
+  }
+
+  let nextFilePath = existing.filePath;
+
+  if (parsed.data.mediaType === "IMAGE") {
+    const imageFile = getMediaImageUploadFile(formData);
+
+    if (imageFile) {
+      try {
+        const savedPath = await saveMediaImageUpload(imageFile);
+
+        if (existing.filePath && existing.filePath !== savedPath) {
+          await deleteMediaImageFile(existing.filePath);
+        }
+
+        nextFilePath = savedPath;
+      } catch (error) {
+        redirectToWord(
+          parsed.data.wordId,
+          formData,
+          "error",
+          error instanceof Error ? error.message : "Bilduppladdningen misslyckades.",
+        );
+      }
+    }
+  }
+
+  await prisma.mediaAsset.update({
+    where: { id: parsed.data.assetId },
+    data: {
+      mediaType: parsed.data.mediaType,
+      title: parsed.data.title,
+      altText: parsed.data.altText,
+      prompt: parsed.data.prompt,
+      source: normalizeWordSource(parsed.data.source),
+      sourceReference: parsed.data.sourceReference,
+      attribution: parsed.data.attribution,
+      license: parsed.data.license,
+      notes: parsed.data.notes,
+      filePath: nextFilePath,
+      status: parsed.data.status,
+    },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet uppdaterades.");
+}
+
+export async function deleteMediaAsset(formData: FormData) {
+  const parsed = deleteMediaAssetSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const existing = await prisma.mediaAsset.findUnique({
+    where: { id: parsed.data.assetId },
+    select: { filePath: true },
+  });
+
+  await prisma.mediaAsset.delete({
+    where: { id: parsed.data.assetId },
+  });
+
+  await deleteMediaImageFile(existing?.filePath);
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(parsed.data.wordId, formData, "success", "Mediaobjektet togs bort.");
+}
+
 export async function createHint(formData: FormData) {
   const parsed = createHintSchema.safeParse(getFormValues(formData));
 
@@ -392,7 +879,6 @@ export async function createHint(formData: FormData) {
   const prisma = getPrisma();
   const metadata = normalizeApprovedHintMetadata({
     type: parsed.data.type,
-    format: parsed.data.format,
     difficulty: parsed.data.difficulty,
     tone: parsed.data.tone,
   });
@@ -402,7 +888,6 @@ export async function createHint(formData: FormData) {
       wordId: parsed.data.wordId,
       text: parsed.data.text,
       type: metadata.type,
-      format: metadata.format,
       status: parsed.data.status,
       difficulty: metadata.difficulty,
       tone: metadata.tone,
@@ -455,7 +940,6 @@ export async function updateHint(formData: FormData) {
 
   const metadata = normalizeApprovedHintMetadata({
     type: parsed.data.type,
-    format: parsed.data.format,
     difficulty: parsed.data.difficulty,
     tone: parsed.data.tone,
   });
@@ -466,7 +950,6 @@ export async function updateHint(formData: FormData) {
     data: {
       text: trimHintText(parsed.data.text),
       type: metadata.type,
-      format: metadata.format,
       difficulty: metadata.difficulty,
       tone: metadata.tone,
       notes: parsed.data.notes,
@@ -696,7 +1179,6 @@ export async function createHintCandidate(formData: FormData) {
   const prisma = getPrisma();
   const metadata = normalizeApprovedHintMetadata({
     type: parsed.data.type,
-    format: parsed.data.format,
     difficulty: parsed.data.difficulty,
     tone: parsed.data.tone,
   });
@@ -706,7 +1188,6 @@ export async function createHintCandidate(formData: FormData) {
       wordId: parsed.data.wordId,
       text: trimHintText(parsed.data.text),
       type: metadata.type,
-      format: metadata.format,
       difficulty: metadata.difficulty,
       tone: metadata.tone,
       notes: parsed.data.notes,
@@ -739,7 +1220,6 @@ export async function approveHintCandidate(formData: FormData) {
     select: {
       text: true,
       type: true,
-      format: true,
       difficulty: true,
       tone: true,
       source: true,
@@ -756,7 +1236,6 @@ export async function approveHintCandidate(formData: FormData) {
     candidateId: parsed.data.candidateId,
     text: candidate.text,
     type: candidate.type,
-    format: candidate.format,
     difficulty: candidate.difficulty ?? undefined,
     tone: candidate.tone ?? undefined,
     source: candidate.source,
@@ -801,7 +1280,6 @@ export async function approveEditedHintCandidate(formData: FormData) {
     candidateId: parsed.data.candidateId,
     text: parsed.data.text,
     type: parsed.data.type,
-    format: parsed.data.format,
     difficulty: parsed.data.difficulty,
     tone: parsed.data.tone,
     source: candidate.source,
@@ -1010,7 +1488,6 @@ export async function generateHintCandidatesAction(formData: FormData) {
       wordId: word.id,
       text: trimHintText(candidate.text),
       type: candidate.type,
-      format: candidate.format ?? "TEXT",
       difficulty: candidate.difficulty,
       tone: candidate.tone,
       source: candidate.source,
@@ -1026,6 +1503,78 @@ export async function generateHintCandidatesAction(formData: FormData) {
     formData,
     "success",
     buildHintGenerationSuccessMessage(uniqueCandidates.length, skippedTotal),
+  );
+}
+
+export async function generateMediaSuggestionAction(formData: FormData) {
+  const parsed = generateMediaSuggestionSchema.safeParse(getFormValues(formData));
+
+  if (!parsed.success) {
+    redirectToWord(
+      String(formData.get("wordId") ?? ""),
+      formData,
+      "error",
+      getValidationErrorMessage(),
+    );
+  }
+
+  const prisma = getPrisma();
+  const word = await prisma.word.findUnique({
+    where: { id: parsed.data.wordId },
+    select: {
+      id: true,
+      answer: true,
+      normalizedAnswer: true,
+      language: true,
+    },
+  });
+
+  if (!word) {
+    redirectToWord(parsed.data.wordId, formData, "error", "Ordet kunde inte hittas.");
+  }
+
+  let generated;
+
+  try {
+    generated = await generateMediaSuggestion({
+      wordId: word.id,
+      answer: word.answer,
+      normalizedAnswer: word.normalizedAnswer,
+      language: word.language,
+    });
+  } catch (error) {
+    const message =
+      error instanceof AiMediaGenerationError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "AI-generering misslyckades. Inget mediaförslag skapades.";
+
+    redirectToWord(parsed.data.wordId, formData, "error", message);
+  }
+
+  const { suggestion } = generated;
+
+  await prisma.mediaAsset.create({
+    data: {
+      wordId: word.id,
+      mediaType: "IMAGE",
+      status: "DRAFT",
+      source: "ai",
+      sourceReference: "openai",
+      title: suggestion.title,
+      altText: suggestion.altText,
+      prompt: suggestion.prompt,
+      notes: suggestion.notes,
+    },
+  });
+
+  revalidateWordPage(parsed.data.wordId);
+  redirectToWord(
+    parsed.data.wordId,
+    formData,
+    "success",
+    "Ett AI-genererat mediaförslag skapades som utkast.",
   );
 }
 

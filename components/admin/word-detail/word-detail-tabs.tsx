@@ -8,8 +8,12 @@ import {
 
 const TAB_LABELS: Record<WordDetailTab, string> = {
   overview: "Översikt",
+  language: "Språk",
   lexicon: "Lexikon",
+  relations: "Relationer",
   keys: "Nycklar",
+  rebus: "Rebus",
+  media: "Media",
   themes: "Teman",
   history: "Historik",
   statistics: "Statistik",
