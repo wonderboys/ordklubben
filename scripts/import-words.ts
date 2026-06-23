@@ -6,10 +6,10 @@ import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-a
 
 const prisma = new PrismaClient();
 const ROOT_DIR = process.cwd();
-const RAW_DIR = path.join(ROOT_DIR, 'data', 'raw');
-const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell-sv');
+const RAW_DIR = path.join(ROOT_DIR, 'data', 'sources', 'raw');
+const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell');
 const KELLY_DIR = path.join(RAW_DIR, 'kelly');
-const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, 'data', 'words', 'never-allow-sv.ts');
+const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, 'data', 'seed', 'word-filters', 'never-allow-sv.ts');
 
 type ImportMode = 'insert-missing' | 'merge-safe' | 'refresh-source-metadata';
 type RawSourceSelection = 'all' | 'hunspell' | 'kelly';

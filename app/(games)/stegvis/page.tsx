@@ -1,12 +1,13 @@
 import { StegvisGame } from '@/components/games/stegvis/stegvis-game';
 import { GameShell } from '@/components/games/game-shell';
 import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
-import { loadStegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
+import { BodyText } from '@/components/ui/typography';
+import { loadStegvisPlaySessionFromDb } from '@/lib/games/stegvis/content-provider';
 
 export const dynamic = 'force-dynamic';
 
 export default async function StegvisPage() {
-  const session = await loadStegvisPlaySession();
+  const session = await loadStegvisPlaySessionFromDb();
 
   return (
     <MobileInsetShell className="max-md:pb-1">
@@ -17,7 +18,11 @@ export default async function StegvisPage() {
           description="Förvandla ett ord till ett annat genom att ändra en bokstav i taget."
           mobileDescription="Lös ledtrådarna och ta dig stegvis från startordet till målordet."
         >
-          <StegvisGame session={session} />
+          {session ? (
+            <StegvisGame session={session} />
+          ) : (
+            <BodyText>Ingen spelbar Stegvis-kedja finns publicerad i databasen ännu.</BodyText>
+          )}
         </GameShell>
       </div>
     </MobileInsetShell>

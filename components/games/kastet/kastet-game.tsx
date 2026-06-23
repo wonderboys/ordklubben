@@ -6,6 +6,8 @@ import { Check } from 'lucide-react';
 import { GameToast } from '@/components/games/game-toast';
 import { Button } from '@/components/ui/button';
 import { KASTET_ACTIVE_DICE_COUNT } from '@/lib/game/kastet/config';
+import type { KastetContent } from '@/lib/games/kastet/types';
+import { pickRandomKastetPairsFromPool } from '@/lib/games/kastet/rules';
 import {
   buildDiceSettleMotion,
   buildDiceShakeMotion,
@@ -17,9 +19,7 @@ import {
   createEmptyKastetRows,
   formatKastetClock,
   normalizeKastetWord,
-  pickRandomKastetPairs,
   validateKastetWord,
-  type KastetLetterPair,
 } from '@/lib/game/kastet/pairs';
 import {
   calculateKastetScore,
@@ -166,7 +166,7 @@ function WordRow({
   onValidate,
 }: {
   index: number;
-  pair: KastetLetterPair;
+  pair: string;
   row: RowState;
   disabled: boolean;
   setInputRef?: (element: HTMLInputElement | null) => void;
@@ -246,7 +246,7 @@ function ResultCard({
   elapsedSeconds,
   onNewCast,
 }: {
-  pairs: KastetLetterPair[];
+  pairs: string[];
   words: string[];
   elapsedSeconds: number;
   onNewCast: () => void;
@@ -300,9 +300,9 @@ function ResultCard({
   );
 }
 
-export function KastetGame() {
+export function KastetGame({ content }: { content: KastetContent }) {
   const [phase, setPhase] = useState<GamePhase>('idle');
-  const [landedPairs, setLandedPairs] = useState<KastetLetterPair[] | null>(null);
+  const [landedPairs, setLandedPairs] = useState<string[] | null>(null);
   const [justLanded, setJustLanded] = useState(false);
   const [rollToast, setRollToast] = useState<RollToastState | null>(null);
   const [rows, setRows] = useState<RowState[]>(() => createEmptyKastetRows(createRowState));
@@ -408,7 +408,7 @@ export function KastetGame() {
   }, [clearToastTimeouts]);
 
   const finishRoll = useCallback(
-    (finalPairs: KastetLetterPair[]) => {
+    (finalPairs: string[]) => {
       setRollToast(null);
       setLandedPairs(finalPairs);
       setJustLanded(true);
@@ -424,7 +424,7 @@ export function KastetGame() {
   );
 
   const startRoll = useCallback(() => {
-    const finalPairs = pickRandomKastetPairs(KASTET_ACTIVE_DICE_COUNT);
+    const finalPairs = pickRandomKastetPairsFromPool(content.pairPool, KASTET_ACTIVE_DICE_COUNT);
 
     setPhase('rolling');
     setLandedPairs(null);
@@ -446,6 +446,7 @@ export function KastetGame() {
     }, ROLL_TOTAL_MS);
   }, [
     clearLandBounceTimer,
+    content.pairPool,
     clearPlayTimer,
     clearRollTimer,
     clearToastTimeouts,

@@ -10,8 +10,8 @@ import {
   formatSkrapetClock,
   normalizeSkrapetGuess,
   pickRandomSkrapetPuzzle,
-  type SkrapetPuzzle,
-} from '@/lib/game/skrapet/puzzles';
+} from '@/lib/games/skrapet/rules';
+import type { SkrapetPuzzle } from '@/lib/games/skrapet/types';
 
 // TODO: Dagens Skrap — same word for all players each day.
 // TODO: Difficulty tiers — Easy 8 clues, Normal 6, Hard 4.
@@ -78,9 +78,9 @@ function pickRandomUnrevealedIndex(revealed: boolean[]) {
   return unrevealed[Math.floor(Math.random() * unrevealed.length)] ?? null;
 }
 
-export function SkrapetGame() {
+export function SkrapetGame({ puzzles }: { puzzles: SkrapetPuzzle[] }) {
   const { toast, showToast } = useGameToast(1400);
-  const [puzzle, setPuzzle] = useState<SkrapetPuzzle>(() => pickRandomSkrapetPuzzle());
+  const [puzzle, setPuzzle] = useState<SkrapetPuzzle>(() => pickRandomSkrapetPuzzle(puzzles)!);
   const [revealed, setRevealed] = useState<boolean[]>(() =>
     createInitialRevealed(puzzle.clues.length),
   );
@@ -133,9 +133,10 @@ export function SkrapetGame() {
 
   const resetRound = useCallback(
     (nextPuzzle?: SkrapetPuzzle) => {
-      const picked = nextPuzzle ?? pickRandomSkrapetPuzzle();
-      setPuzzle(picked);
-      setRevealed(createInitialRevealed(picked.clues.length));
+      const picked = nextPuzzle ?? pickRandomSkrapetPuzzle(puzzles);
+      const pickedPuzzle = picked ?? puzzle;
+      setPuzzle(pickedPuzzle);
+      setRevealed(createInitialRevealed(pickedPuzzle.clues.length));
       setPhase('playing');
       setGuess('');
       setElapsedSeconds(0);
@@ -143,7 +144,7 @@ export function SkrapetGame() {
       startedAtRef.current = null;
       clearTimer();
     },
-    [clearTimer],
+    [clearTimer, puzzle, puzzles],
   );
 
   const revealTile = useCallback(

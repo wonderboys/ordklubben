@@ -1,35 +1,29 @@
-import { notFound } from 'next/navigation';
 import { OrdflataGame } from '@/components/games/ordflata/ordflata-game';
 import { GameShell } from '@/components/games/game-shell';
 import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 import { BodyText } from '@/components/ui/typography';
-import { loadOrdflataAlphaPuzzle } from '@/lib/content/ordflata-alpha';
-import { isDatabaseConfigured } from '@/lib/db/prisma';
+import { loadOrdflataPuzzle } from '@/lib/games/ordflata/content-provider';
+
+export const dynamic = 'force-dynamic';
 
 export default async function OrdflataPage() {
-  if (!isDatabaseConfigured()) {
+  const puzzle = await loadOrdflataPuzzle();
+
+  if (!puzzle) {
     return (
       <MobileInsetShell>
         <div className="mx-auto w-full max-w-[42rem]">
           <GameShell
             eyebrow="Alpha"
             title="Ordfläta"
-            description="Den här testversionen kräver databasanslutning."
-            mobileDescription="Kräver databasanslutning."
+            description="Ordflätan hämtas nu från databasens publiceringslager."
+            mobileDescription="Ingen publicerad fläta ännu."
           >
-            <BodyText>
-              Sätt `DATABASE_URL` och starta Postgres innan du testar Ordfläta Alpha.
-            </BodyText>
+            <BodyText>Ingen publicerad Ordfläta finns i databasen ännu.</BodyText>
           </GameShell>
         </div>
       </MobileInsetShell>
     );
-  }
-
-  const puzzle = await loadOrdflataAlphaPuzzle();
-
-  if (!puzzle) {
-    notFound();
   }
 
   return (

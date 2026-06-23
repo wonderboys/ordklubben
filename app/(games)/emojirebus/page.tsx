@@ -2,27 +2,11 @@ import { EmojirebusGame } from '@/components/games/emojirebus/emojirebus-game';
 import { GameShell } from '@/components/games/game-shell';
 import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
 import { BodyText } from '@/components/ui/typography';
-import { loadEmojirebusPuzzle } from '@/lib/content/emojirebus';
-import { isDatabaseConfigured } from '@/lib/db/prisma';
+import { loadEmojirebusPuzzle } from '@/lib/games/emojirebus/content-provider';
+
+export const dynamic = 'force-dynamic';
 
 export default async function EmojirebusPage() {
-  if (!isDatabaseConfigured()) {
-    return (
-      <MobileInsetShell>
-        <div className="mx-auto w-full max-w-[28rem]">
-          <GameShell
-            eyebrow="Test"
-            title="Emojirebus"
-            description="Den här testversionen kräver databasanslutning."
-            mobileDescription="Kräver databasanslutning."
-          >
-            <BodyText>Sätt `DATABASE_URL` och starta Postgres innan du testar Emojirebus.</BodyText>
-          </GameShell>
-        </div>
-      </MobileInsetShell>
-    );
-  }
-
   const puzzle = await loadEmojirebusPuzzle();
 
   return (

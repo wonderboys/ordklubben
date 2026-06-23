@@ -277,11 +277,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
   );
 
   const allowedWordSet = useMemo(() => {
-    if (!allowedWords || allowedWords.length === 0) {
-      return undefined;
-    }
-
-    return new Set(allowedWords.map((word) => normalizeStegvisWord(word)));
+    return new Set((allowedWords ?? []).map((word) => normalizeStegvisWord(word)));
   }, [allowedWords]);
 
   const chain = activeBundle.chain;

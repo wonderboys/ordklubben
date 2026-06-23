@@ -18,6 +18,7 @@ import {
   DAGENS_ORD_REVEAL_ANIMATION_MS,
   DAGENS_ORD_REVEAL_STEP_MS,
   DAGENS_ORD_WORD_LENGTH,
+  createDailyRound,
   evaluateGuess,
   getKeyboardLetterStates,
   isDagensOrdLost,
@@ -27,12 +28,8 @@ import {
   type DagensOrdLetterFeedback,
   type DagensOrdRound,
 } from '@/lib/game/dagens-ord';
-import {
-  loadOrCreateDailyRound,
-  persistDailyRound,
-  resolveDailyStatus,
-} from '@/lib/game/dagens-ord-daily-session';
 import { GAME_TOAST_MESSAGES, GameToast, useGameToast } from '@/components/games/game-toast';
+import type { DagensOrdWordCatalog } from '@/lib/games/dagens-ord/types';
 import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 const ROW_SHAKE_TRANSITION = { duration: 0.46, ease: 'easeInOut' as const };
@@ -117,7 +114,58 @@ function GridCell({
   );
 }
 
-export function DagensOrdGame() {
+function loadSavedRound(catalog: DagensOrdWordCatalog): DagensOrdRound {
+  const raw = window.localStorage.getItem('ordklubben:dagens-ord:daily');
+
+  if (!raw) {
+    return createDailyRound(catalog);
+  }
+
+  try {
+    const saved = JSON.parse(raw) as {
+      dayKey?: string;
+      targetWord?: string;
+      guesses?: DagensOrdGuess[];
+    };
+
+    if (
+      saved.dayKey === catalog.dayKey &&
+      saved.targetWord === catalog.targetWord &&
+      Array.isArray(saved.guesses)
+    ) {
+      return {
+        dayKey: saved.dayKey,
+        targetWord: saved.targetWord,
+        guesses: saved.guesses,
+        currentInput: '',
+      };
+    }
+  } catch {
+    // Ignore malformed saved state.
+  }
+
+  return createDailyRound(catalog);
+}
+
+function persistRound(round: DagensOrdRound) {
+  const status = isDagensOrdWon(round.guesses, round.targetWord)
+    ? 'won'
+    : isDagensOrdLost(round.guesses, round.targetWord)
+      ? 'lost'
+      : 'playing';
+
+  window.localStorage.setItem(
+    'ordklubben:dagens-ord:daily',
+    JSON.stringify({
+      dayKey: round.dayKey,
+      targetWord: round.targetWord,
+      guesses: round.guesses,
+      status,
+    }),
+  );
+}
+
+export function DagensOrdGame({ catalog }: { catalog: DagensOrdWordCatalog }) {
   const [round, setRound] = useState<DagensOrdRound | null>(null);
   const [revealing, setRevealing] = useState<RevealingGuess | null>(null);
   const [rowShakeNonce, setRowShakeNonce] = useState(0);
@@ -126,10 +174,15 @@ export function DagensOrdGame() {
   const { toast, showToast, clearToast } = useGameToast();
   const wasFinishedRef = useRef(false);
   const shouldClearRowAfterShakeRef = useRef(false);
+  const allowedWordSet = useMemo(() => new Set(catalog.allowedWords), [catalog.allowedWords]);
 
   useEffect(() => {
-    const loadedRound = loadOrCreateDailyRound();
-    const status = resolveDailyStatus(loadedRound.guesses, loadedRound.targetWord);
+    const loadedRound = loadSavedRound(catalog);
+    const status = isDagensOrdWon(loadedRound.guesses, loadedRound.targetWord)
+      ? 'won'
+      : isDagensOrdLost(loadedRound.guesses, loadedRound.targetWord)
+        ? 'lost'
+        : 'playing';
 
     if (status === 'won' || status === 'lost') {
       wasFinishedRef.current = true;
@@ -138,7 +191,7 @@ export function DagensOrdGame() {
     // Hydrate saved daily progress after mount; localStorage is unavailable on server.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only daily restore
     setRound(loadedRound);
-  }, []);
+  }, [catalog]);
 
   const won = round ? isDagensOrdWon(round.guesses, round.targetWord) : false;
   const lost = round ? isDagensOrdLost(round.guesses, round.targetWord) : false;
@@ -209,7 +262,7 @@ export function DagensOrdGame() {
       return;
     }
 
-    if (!isValidDagensOrdGuess(guess)) {
+    if (!isValidDagensOrdGuess(guess, allowedWordSet)) {
       showToast(GAME_TOAST_MESSAGES.invalidWord, 'error');
       shouldClearRowAfterShakeRef.current = true;
       setIsRowShaking(true);
@@ -233,7 +286,7 @@ export function DagensOrdGame() {
       revealedCount: 0,
     });
     clearToast();
-  }, [canEdit, clearToast, round, showToast]);
+  }, [allowedWordSet, canEdit, clearToast, round, showToast]);
 
   const addLetter = useCallback(
     (letter: string) => {
@@ -293,8 +346,7 @@ export function DagensOrdGame() {
             ...current,
             guesses: [...current.guesses, completedGuess],
           };
-          const status = resolveDailyStatus(nextRound.guesses, nextRound.targetWord);
-          persistDailyRound(nextRound, status);
+          persistRound(nextRound);
           return nextRound;
         });
         setRevealing(null);

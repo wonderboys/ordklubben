@@ -8,7 +8,7 @@ import {
   type GenerateStegvisPuzzleResult,
   type StegvisDifficultyBand,
 } from '@/lib/content/stegvis/generator/types';
-import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/server/words';
 import type { WordBankQueryFilters } from '@/lib/content/word-bank/types';
 
 function difficultyBandToFilters(

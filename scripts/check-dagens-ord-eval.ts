@@ -1,6 +1,6 @@
-import { dagensOrdSolutionWords } from '../data/dagens-ord/solution-words.ts';
-import { allowedSvGeneratedWords } from '../data/generated/allowed-sv.generated.ts';
-import { allowedSvWords as allowedSvWordsManual } from '../data/words/allowed-sv.ts';
+import { dagensOrdSolutionWords } from '../data/sources/curated/dagens-ord/solution-words.ts';
+import { allowedSvGeneratedWords } from '../data/legacy/generated/allowed-sv.generated.ts';
+import { allowedSvWords as allowedSvWordsManual } from '../data/legacy/words/allowed-sv.ts';
 import { hasOnlySwedishLetters, normalizeSwedish } from '../lib/dictionary/normalize-swedish.ts';
 
 type LetterFeedback = 'correct' | 'present' | 'absent';

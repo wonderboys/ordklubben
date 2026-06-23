@@ -1,8 +1,14 @@
 import { DagensOrdGame } from '@/components/games/dagens-ord/dagens-ord-game';
 import { GameShell } from '@/components/games/game-shell';
 import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { BodyText } from '@/components/ui/typography';
+import { loadDagensOrdCatalog } from '@/lib/games/dagens-ord/word-provider';
 
-export default function DagensOrdPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function DagensOrdPage() {
+  const catalog = await loadDagensOrdCatalog();
+
   return (
     <MobileInsetShell className="max-md:min-h-[100dvh] max-md:pb-2">
       <div className="mx-auto flex w-full max-w-[40rem] max-md:min-h-[calc(100dvh-3.25rem)] max-md:flex-col">
@@ -16,7 +22,11 @@ export default function DagensOrdPage() {
           className="max-md:flex-1 max-md:gap-3 max-md:py-2 md:items-center"
           headerClassName="w-full max-w-[32rem]"
         >
-          <DagensOrdGame />
+          {catalog ? (
+            <DagensOrdGame catalog={catalog} />
+          ) : (
+            <BodyText>Inga fem-bokstavsord finns publicerade i databasen ännu.</BodyText>
+          )}
         </GameShell>
       </div>
     </MobileInsetShell>

@@ -1,7 +1,7 @@
 import { buildWordGraphForLength } from '@/lib/content/stegvis/word-graph/graph';
 import type { WordGraph, WordGraphLoadOptions } from '@/lib/content/stegvis/word-graph/types';
 import { DEFAULT_WORD_GRAPH_LENGTH } from '@/lib/content/stegvis/word-graph/types';
-import { isWordBankAvailable, listActiveWords } from '@/lib/content/word-bank';
+import { isWordBankAvailable, listActiveWords } from '@/lib/server/words';
 
 /**
  * Loads normalized answers for approved words from ordbanken.

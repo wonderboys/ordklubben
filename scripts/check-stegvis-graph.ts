@@ -1,4 +1,4 @@
-import { stegvisPuzzles } from '../data/stegvis/puzzles.ts';
+import { stegvisPuzzles } from '../data/sources/curated/stegvis/puzzles.ts';
 import {
   buildWordGraph,
   findShortestPath,
