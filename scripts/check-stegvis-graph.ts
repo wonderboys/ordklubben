@@ -1,4 +1,3 @@
-import { stegvisPuzzles } from '../data/sources/curated/stegvis/puzzles.ts';
 import {
   buildWordGraph,
   findShortestPath,
@@ -63,23 +62,6 @@ if (hornToPort) {
 }
 
 check('no path between unrelated lengths', findShortestPath('HORN', 'HORNET', graph) === null);
-
-for (const puzzle of stegvisPuzzles) {
-  if (puzzle.sampleSolution && puzzle.sampleSolution.length >= 2) {
-    const normalizedSolution = puzzle.sampleSolution.map(normalizeGraphWord);
-    const puzzleGraph = buildWordGraph(normalizedSolution);
-
-    for (let index = 0; index < normalizedSolution.length - 1; index += 1) {
-      const left = normalizedSolution[index];
-      const right = normalizedSolution[index + 1];
-      check(`${puzzle.id}: ${left} → ${right} is one letter apart`, isOneLetterApart(left, right));
-    }
-
-    const path = findShortestPath(normalizedSolution[0], normalizedSolution.at(-1)!, puzzleGraph);
-
-    check(`${puzzle.id}: sample solution path is reachable`, path !== null, path?.join(' → '));
-  }
-}
 
 const failed = results.filter((result) => !result.pass);
 

@@ -1,18 +1,16 @@
-import { dagensOrdSolutionWords } from '../data/sources/curated/dagens-ord/solution-words.ts';
-import { allowedSvGeneratedWords } from '../data/legacy/generated/allowed-sv.generated.ts';
-import { allowedSvWords as allowedSvWordsManual } from '../data/legacy/words/allowed-sv.ts';
-import { hasOnlySwedishLetters, normalizeSwedish } from '../lib/dictionary/normalize-swedish.ts';
+// Node-runnable checks for Dagens Ord guess feedback (mirrors lib/games/dagens-ord/rules.ts).
+import { normalizeSwedish } from '../lib/dictionary/normalize-swedish.ts';
 
 type LetterFeedback = 'correct' | 'present' | 'absent';
-
-const allowedSvWords =
-  allowedSvGeneratedWords.length > 0 ? allowedSvGeneratedWords : allowedSvWordsManual;
-
-const allowedSet = new Set(allowedSvWords.map((word) => normalizeSwedish(word)));
 
 function evaluateGuess(guess: string, target: string): LetterFeedback[] {
   const normalizedGuess = normalizeSwedish(guess);
   const normalizedTarget = normalizeSwedish(target);
+
+  if (normalizedGuess.length !== normalizedTarget.length) {
+    return Array<LetterFeedback>(normalizedGuess.length).fill('absent');
+  }
+
   const feedback = Array<LetterFeedback>(normalizedGuess.length).fill('absent');
   const remainingLetters = new Map<string, number>();
 
@@ -60,26 +58,6 @@ function assertEqual(label: string, actual: LetterFeedback[], expected: LetterFe
   }
 
   console.log(`✓ ${label}`);
-}
-
-let solutionErrors = false;
-
-for (const word of dagensOrdSolutionWords) {
-  const normalized = normalizeSwedish(word);
-
-  if (
-    normalized.length !== 5 ||
-    !hasOnlySwedishLetters(normalized) ||
-    !allowedSet.has(normalized)
-  ) {
-    console.error(`✗ solution word invalid: ${word}`);
-    solutionErrors = true;
-    process.exitCode = 1;
-  }
-}
-
-if (!solutionErrors) {
-  console.log(`✓ ${dagensOrdSolutionWords.length} solution words validated`);
 }
 
 assertEqual('mamma vs momma', evaluateGuess('momma', 'mamma'), [

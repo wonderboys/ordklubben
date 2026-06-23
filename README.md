@@ -61,12 +61,10 @@ components/
   ui/
 data/
   raw/
-    hunspell-sv/
+    hunspell/
     kelly/
-  words/
-    allowed-sv.ts
-    common-sv.ts
-    seed-words-sv.ts
+  seed/
+    word-filters/
 hooks/
   use-ordstorm-stats.ts
   use-stegvis-stats.ts
@@ -88,7 +86,7 @@ Arkitektur i korthet:
 - `lib/dictionary/` innehåller svensk normalisering, ordregler och ordlisteverktyg
 - `lib/content/` innehåller contentmodell, import, pusselgeneratorer och adminlogik
 - `lib/storage/` innehåller defensiv browser storage utan backendkrav
-- `data/` innehåller rådata och vissa kvarvarande manuella stödlistor under migrationen till DB-driven ordkälla
+- `data/` innehåller råimportkällor och manuella filterregler — inte spelruntime
 
 ## Ordstorm
 
@@ -109,49 +107,48 @@ Nuvarande gameplay:
 
 ## Ordlistor
 
-Repo:t innehåller fortfarande några lokala ordfiler:
+Spel hämtar ord från Postgres via `lib/server/words/` och spelspecifika providers.
 
-- `data/words/seed-words-sv.ts`: sexbokstavsord som används för att skapa rundans bokstäver
-- `data/words/common-sv.ts`: vanliga svenska ord som flera framtida spel kan återanvända
-- `data/words/allowed-sv.ts`: extra godkända ord som breddar spelbarheten
+Repo:t innehåller bara råkällor och importstöd under `data/`:
 
-De här filerna är nu att betrakta som övergångsmaterial. Målet är:
+- `data/raw/hunspell/sv_SE.dic` — bred Hunspell/SFOL-täckning
+- `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv` — frekvens och CEFR-metadata
+- `data/seed/word-filters/*.ts` — manuella block- och allowlist-regler vid import
 
-- rådata i `data/raw/`
-- import till Postgres
-- DB-driven ordkälla för spel
-
-All normalisering och validering går via `lib/dictionary/`:
+All normalisering och validering i spel går via `lib/dictionary/`:
 
 - `normalize-swedish.ts`: trim, casing och stöd för svenska tecken
 - `can-build-word.ts`: kontrollerar att ett ord faktiskt kan byggas av sexbokstavsrundan
 - `validate-word.ts`: samlar Ordstorms ordregler i en ren, testbar funktion
 - `letter-pool.ts`: bokstavsräkning och bokstavsblandning
-- `word-filters.ts`: filterregler för importerade ordlistor
-- `wordlist-types.ts`: typer för pipeline, rapport och seed-kandidater
 
 ## Orddatapipeline
 
 Rådata läggs lokalt i:
 
-- `data/raw/hunspell-sv/`
+- `data/raw/hunspell/`
 - `data/raw/kelly/`
 
 Stödda källor:
 
-- Hunspell/SFOL för `allowed`-ord
-- Kelly-listan eller annan Språkbanken-export för `common`-ord
+- Hunspell/SFOL för bred ordtäckning
+- Kelly-listan eller annan Språkbanken-export för frekvens och spelbarhet
 
 Stödda filformat:
 
 - Hunspell `.dic`
-- enkel `.txt`
-- enkel `.csv`
+- Kelly `.csv` (semikolonseparerad export)
 
 Script:
 
 ```bash
-npm run import:raw-words
+npm run import:words
+```
+
+Valfria flaggor:
+
+```bash
+npm run import:words -- --source=kelly --mode=merge-safe
 ```
 
 Scriptet:
@@ -159,36 +156,15 @@ Scriptet:
 - läser lokala råfiler från `data/raw/`
 - normaliserar svenska ord till lowercase
 - stödjer `å`, `ä`, `ö`
-- filtrerar bort siffror, bindestreck, specialtecken och för korta ord
-- försöker filtrera bort namn/proper nouns
-- filtrerar bort störande tekniska/organisatoriska förkortningar från `allowed` (t.ex. `dns`, `nsa`, `ssl`) med ett konservativt mönsterfilter ankrat i Kelly och en manuell allowlist i `data/words/allowed-abbrev-sv.ts`
+- filtrerar bort ogiltiga format och proper nouns
+- tillämpar `data/seed/word-filters/never-allow-sv.ts`
 - importerar ord och källmetadata till Postgres
-- skapar `ImportBatch`
-- sparar provenance per ordkälla i databasen
+- skapar `ImportBatch` och `WordSourceRecord` per källa
 
-Seed-regler i pipelinen:
+Manuella filterfiler:
 
-- exakt 6 bokstäver
-- prioriteras från `common`-listan
-- minst 15 byggbara Ordstorm-ord
-- sorteras efter spelbarhet
-- placeholder-liknande ord undviks
-- verb-liknande former nedprioriteras
-
-Allowed abbreviation filter:
-
-- gäller bara korta `allowed`-ord (3–5 bokstäver)
-- behåller ord som finns i Kelly, innehåller `å`/`ä`/`ö`, eller finns i `allowed-abbrev-sv.ts`
-- filtrerar annars bort Hunspell-only-förkortningar som matchar konsonantblock eller org-/akronymmönster
-- syftet är att minska brus från tekniska akronymer i Ordstorm utan att ta bort vanliga svenska kortord
-
-Seed quality notes:
-
-- `allowed`-listan får vara relativt generös för att bredda spelbarheten
-- `seed`-listan ska vara striktare och kännas mer kurerad
-- dåliga seed-ord kan blockeras manuellt i `data/words/never-seed-sv.ts`
-- bra seed-ord kan prioriteras manuellt i `data/words/preferred-seed-sv.ts`
-- oönskade allowed-ord kan blockeras manuellt i `data/words/never-allow-sv.ts`
+- `never-allow-sv.ts` — blockera ord från import
+- `never-seed-sv.ts`, `preferred-seed-sv.ts`, `allowed-abbrev-sv.ts` — importstöd (kopplas in vid behov)
 
 ## Källor Och Licens
 
@@ -226,7 +202,7 @@ Git hooks:
 När du arbetar med orddata:
 
 ```bash
-npm run import:raw-words
+npm run import:words
 ```
 
 ## Contentdatabas
@@ -375,8 +351,8 @@ Rekommenderat testflöde:
 
 ## Nästa steg
 
-- lägga in riktiga Hunspell- och Kelly-filer i `data/raw/`
-- köra `npm run build:wordlists` och granska seed-rapporten
+- lägga in riktiga Hunspell- och Kelly-filer i `data/raw/` om de saknas
+- köra `npm run import:words` mot en dev-databas
 - lägga till seedad daily-logik ovanpå samma seed-words-struktur
 - skapa gemensam statistikmodell för fler spel
 - lägga till lättare ljud eller haptik för ännu skarpare mobil feedback

@@ -5,5 +5,4 @@ out
 coverage
 public/uploads
 data/raw
-data/generated
 package-lock.json

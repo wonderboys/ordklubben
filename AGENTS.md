@@ -126,7 +126,7 @@ Architecture shape:
 - `lib/dictionary/` contains Swedish word rules, normalization, and wordlist tooling
 - `lib/server/words/` contains DB-backed word access
 - `lib/storage/` contains browser persistence only
-- `data/` contains raw import sources, seed filters, and legacy migration artifacts
+- `data/` contains raw import sources and seed filter rules only
 
 Important boundaries:
 
@@ -142,27 +142,25 @@ Ord quality matters. Treat the word pipeline as product infrastructure.
 Current model:
 
 - active runtime words come from the database via `lib/server/words/`
-- raw local source files live in `data/sources/raw/`
-- curated import inputs live in `data/sources/curated/`
-- seed and filter inputs live in `data/seed/`
-- generated legacy artifacts live in `data/legacy/generated/`
-- raw word import runs through `scripts/import-words.ts`
+- raw local source files live in `data/raw/`
+- manual import filter rules live in `data/seed/word-filters/`
+- raw word import runs through `scripts/import-words.ts` (`npm run import:words`)
 
 Source intent:
 
-- Hunspell/SFOL style inputs support broad allowed-word coverage
-- Kelly/Språkbanken style inputs support more common player-friendly words
+- Hunspell/SFOL style inputs support broad word coverage
+- Kelly/Språkbanken style inputs support frequency and playability metadata
 
 Runtime rule:
 
 - no active game route should read directly from `data/`
 - all game word access should go through DB-backed providers
-- legacy generated lists are migration support, not runtime fallback
 
 Do not:
 
 - download new lexical data automatically unless explicitly asked
 - silently weaken Swedish normalization or filtering rules
+- add static word lists, generated files, or CSV build outputs under `data/`
 - treat placeholder word data as “good enough” for product decisions
 
 ## Local Storage
@@ -215,7 +213,7 @@ Avoid speculative platform work unless it directly improves current gameplay or 
 
 - make small, incremental improvements
 - verify changes with `npm run lint` and `npm run build`
-- when working on word data, also run `npm run build:wordlists` if relevant
+- when working on word data, also run `npm run import:words` against a dev database if relevant
 - avoid large refactors unless the user explicitly asks for one
 - preserve working behavior while improving internals
 - prefer reversible changes over sweeping rewrites

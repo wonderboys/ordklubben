@@ -158,8 +158,7 @@ Värt att notera:
 
 - aktiv route laddar nu från DB-only provider
 - ord och nycklar hämtas via `Word` och godkända `Hint`
-- generatorn bygger en spelbar kedja från ordbanken
-- äldre statiska pussel finns kvar som kuraterad källa under `data/sources/curated/stegvis/puzzles.ts`, men används inte av aktiva route-flödet
+- generatorn bygger en spelbar kedja från ordbanken i databasen
 
 ### Önskad datakälla
 

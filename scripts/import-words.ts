@@ -6,7 +6,7 @@ import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-a
 
 const prisma = new PrismaClient();
 const ROOT_DIR = process.cwd();
-const RAW_DIR = path.join(ROOT_DIR, 'data', 'sources', 'raw');
+const RAW_DIR = path.join(ROOT_DIR, 'data', 'raw');
 const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell');
 const KELLY_DIR = path.join(RAW_DIR, 'kelly');
 const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, 'data', 'seed', 'word-filters', 'never-allow-sv.ts');
