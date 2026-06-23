@@ -17,11 +17,14 @@ export function validateStegvisChainStep(
   previousWord: string,
   expectedWord: string,
   chainSoFar: string[],
-  allowedWords?: Set<string>,
+  allowedWords: Set<string>,
 ): StegvisChainStepValidationResult {
-  const stepResult: StegvisValidationResult = allowedWords
-    ? validateStegvisStep(previousWord, input, chainSoFar, allowedWords)
-    : validateStegvisStep(previousWord, input, chainSoFar);
+  const stepResult: StegvisValidationResult = validateStegvisStep(
+    previousWord,
+    input,
+    chainSoFar,
+    allowedWords,
+  );
 
   if (!stepResult.valid) {
     return {

@@ -1,4 +1,4 @@
-import type { StegvisPuzzle } from '@/data/stegvis/puzzles';
+import type { StegvisPuzzle } from '@/lib/games/stegvis/types';
 import { normalizeAnswer } from '@/lib/content/normalize-answer';
 import { formatStegvisEndpointClue } from '@/lib/content/stegvis/clue-display';
 import type {
@@ -10,7 +10,7 @@ import {
   getWordWithClues,
   getWordWithCluesByNormalizedAnswer,
   isWordBankAvailable,
-} from '@/lib/content/word-bank';
+} from '@/lib/server/words';
 import { normalizeStegvisWord } from '@/lib/game/stegvis';
 
 function displayStegvisAnswer(answer: string): string {

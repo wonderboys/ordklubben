@@ -7,7 +7,7 @@ import {
 } from '@/lib/content/stegvis/play-chain';
 import type { StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
 import { buildStegvisGeneratorCorpus } from '@/lib/content/stegvis/generator/generate-corpus';
-import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/server/words';
 
 const GENERATOR_RETRY_ATTEMPTS = 5;
 

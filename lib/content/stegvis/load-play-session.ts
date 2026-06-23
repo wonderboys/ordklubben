@@ -11,7 +11,7 @@ import {
   tryGeneratePlayBundle,
 } from '@/lib/content/stegvis/resolve-play-bundle';
 import type { StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
-import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/content/word-bank';
+import { isWordBankAvailable, listActiveWordsWithClues } from '@/lib/server/words';
 import { pickDailyPuzzle } from '@/lib/game/stegvis';
 import { normalizeStegvisWord } from '@/lib/game/stegvis';
 

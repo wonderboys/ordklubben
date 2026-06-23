@@ -15,13 +15,14 @@ import { type WordValidationReason, validateWord } from '@/lib/dictionary/valida
 import {
   GAME_DURATION_SECONDS,
   ORDSTORM_RECENT_SEED_LIMIT,
-  ORDSTORM_WORD_SET,
+  createOrdstormLexicon,
   createRound,
   getRoundPotentialScore,
   getWordScore,
   isOrdstormCommonWord,
   splitOrdstormWordsByCategory,
   type OrdstormRound,
+  type OrdstormWordCatalog,
 } from '@/lib/game/ordstorm';
 import {
   getLetterTilePlayState,
@@ -72,7 +73,7 @@ const lettersVariants: Variants = {
   }),
 };
 
-export function OrdstormGame() {
+export function OrdstormGame({ catalog }: { catalog: OrdstormWordCatalog }) {
   const [round, setRound] = useState<OrdstormRound | null>(null);
   const [phase, setPhase] = useState<GamePhase>('pregame');
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
@@ -100,6 +101,7 @@ export function OrdstormGame() {
   const inputShellRef = useRef<HTMLDivElement>(null);
   const startTimeoutRef = useRef<number | null>(null);
   const feedbackTimeoutRef = useRef<number | null>(null);
+  const lexicon = useMemo(() => createOrdstormLexicon(catalog), [catalog]);
 
   const isPlaying = phase === 'playing';
   const isStarting = phase === 'starting';
@@ -111,8 +113,8 @@ export function OrdstormGame() {
   const showMobileSubmit = isPlaying && (input.length >= 3 || !inputFocused);
   const availableWords = round?.validWords.length ?? 0;
   const roundWordCategories = useMemo(
-    () => splitOrdstormWordsByCategory(round?.validWords ?? []),
-    [round],
+    () => splitOrdstormWordsByCategory(round?.validWords ?? [], lexicon.commonWordSet),
+    [lexicon.commonWordSet, round],
   );
   const availableCommonWords = roundWordCategories.commonWords.length;
   const availableOtherAcceptedWords = roundWordCategories.otherAcceptedWords.length;
@@ -122,8 +124,8 @@ export function OrdstormGame() {
   );
   const foundWordSet = useMemo(() => new Set(foundWords), [foundWords]);
   const foundCommonWords = useMemo(
-    () => foundWords.filter((word) => isOrdstormCommonWord(word)),
-    [foundWords],
+    () => foundWords.filter((word) => isOrdstormCommonWord(word, lexicon.commonWordSet)),
+    [foundWords, lexicon.commonWordSet],
   );
   const missedCommonWords = useMemo(
     () => roundWordCategories.commonWords.filter((word) => !foundWordSet.has(word)),
@@ -301,7 +303,7 @@ export function OrdstormGame() {
   }, []);
 
   const startRound = useCallback(() => {
-    const nextRound = createRound(recentSeedWordsRef.current);
+    const nextRound = createRound(lexicon, recentSeedWordsRef.current);
     rememberSeedWord(nextRound.seedWord);
     persistedRoundRef.current = false;
     setRound(nextRound);
@@ -336,7 +338,7 @@ export function OrdstormGame() {
       setFeedbackNonce((current) => current + 1);
       focusInput();
     }, START_SEQUENCE_MS);
-  }, [focusInput, rememberSeedWord]);
+  }, [focusInput, lexicon, rememberSeedWord]);
 
   const submitWord = useCallback(() => {
     if (!isPlaying || !round) {
@@ -346,7 +348,7 @@ export function OrdstormGame() {
     const result = validateWord({
       value: input,
       letters: round.letters,
-      allowedWords: ORDSTORM_WORD_SET,
+      allowedWords: lexicon.wordSet,
       blockedWords: foundWordSet,
     });
 
@@ -379,7 +381,16 @@ export function OrdstormGame() {
     setSuccessPulse((current) => current + 1);
     scheduleFeedbackReset(SUCCESS_RESET_MS);
     keepInputFocused();
-  }, [foundWordSet, foundWords, input, isPlaying, keepInputFocused, round, scheduleFeedbackReset]);
+  }, [
+    foundWordSet,
+    foundWords,
+    input,
+    isPlaying,
+    keepInputFocused,
+    lexicon.wordSet,
+    round,
+    scheduleFeedbackReset,
+  ]);
 
   const toggleTileIndex = useCallback(
     (index: number) => {

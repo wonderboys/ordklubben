@@ -1,4 +1,4 @@
-import type { StegvisPuzzle } from '@/data/stegvis/puzzles';
+import type { StegvisPuzzle } from '@/lib/games/stegvis/types';
 
 export type StegvisWordEndpoint = {
   wordId: string | null;
