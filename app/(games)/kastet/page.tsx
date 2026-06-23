@@ -1,8 +1,14 @@
 import { KastetGame } from '@/components/games/kastet/kastet-game';
 import { GameShell } from '@/components/games/game-shell';
 import { MobileInsetShell } from '@/components/layout/mobile-inset-shell';
+import { BodyText } from '@/components/ui/typography';
+import { loadKastetContent } from '@/lib/games/kastet/content-provider';
 
-export default function KastetPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function KastetPage() {
+  const content = await loadKastetContent();
+
   return (
     <MobileInsetShell className="max-md:pb-2">
       <div className="mx-auto w-full max-w-[32rem]">
@@ -14,7 +20,11 @@ export default function KastetPage() {
           compactMobile
           hideEyebrowOnMobile
         >
-          <KastetGame />
+          {content ? (
+            <KastetGame content={content} />
+          ) : (
+            <BodyText>Inget Kastet-underlag finns publicerat i databasen ännu.</BodyText>
+          )}
         </GameShell>
       </div>
     </MobileInsetShell>

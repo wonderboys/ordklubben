@@ -1,6 +1,7 @@
 import type { PuzzleDirection } from '@prisma/client';
 import { getAnswerLength } from '@/lib/content/puzzle/grid';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
+import { normalizeOrdflataAnswer } from '@/lib/games/ordflata/rules';
 
 export type OrdflataPlayerEntry = {
   id: string;
@@ -20,13 +21,6 @@ export type OrdflataPlayerPuzzle = {
   entries: OrdflataPlayerEntry[];
   blockedCells: Array<{ row: number; col: number }>;
 };
-
-function normalizeAnswer(answerSnapshot: string) {
-  return answerSnapshot
-    .trim()
-    .toLocaleUpperCase('sv-SE')
-    .replace(/[\s'’\-‐‑‒–—]+/g, '');
-}
 
 const playableWordGridWhere = {
   type: 'WORD_GRID' as const,
@@ -106,7 +100,7 @@ export async function loadOrdflataAlphaPuzzle(): Promise<OrdflataPlayerPuzzle | 
       direction: entry.direction,
       number: entry.number,
       length: getAnswerLength(entry.answerSnapshot),
-      answer: normalizeAnswer(entry.answerSnapshot),
+      answer: normalizeOrdflataAnswer(entry.answerSnapshot),
       clue: entry.hintSnapshot ?? entry.hint?.text ?? 'Ingen nyckel',
     })),
     blockedCells: puzzle.blockedCells.map((cell) => ({
