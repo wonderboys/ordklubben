@@ -2,80 +2,101 @@
 
 Senast uppdaterad: 2026-06-23
 
-Det här dokumentet mappar varje spel i repo:t till:
+Det här dokumentet är en konkret audit av spelens datakällor i kodbasen just nu, med fokus på hur vi tar dem mot en gemensam Postgres-baserad innehållsmodell.
 
-- route
-- datakälla idag
-- önskad datakälla
-- modeller som behövs
-- vad som saknas
-- rekommenderad nästa åtgärd
+Målet på sikt:
 
-Målet är att göra det tydligt vilka spel som redan har en riktig innehållsmodell, vilka som fortfarande drivs av lokala prototypdata och var nästa steg bör tas.
+- alla spel ska i möjligaste mån bygga på samma Postgres-källa
+- `Word` ska vara grundobjektet för ord
+- spelspecifika pussel ska modelleras ovanpå `Word` och dess metadata
+- lokala TS-filer ska vara fallback eller migreringssteg, inte slutlig produktionskälla
 
 ## Översikt
 
-| Spel       | Route              | Datakälla idag                                                 | Mognad idag               |
-| ---------- | ------------------ | -------------------------------------------------------------- | ------------------------- |
-| Dagens Ord | `/dagens-ord`      | lokala ordfiler + lokal daglig state                           | lokal produktionsprototyp |
-| Ordstorm   | `/ordstorm`        | genererade/manuella ordlistor + localStorage                   | lokal produktionsprototyp |
-| Stegvis    | `/stegvis`         | hybrid: statiska pussel + DB-word bank                         | hybrid                    |
-| Ordfläta   | `/ordflata`        | Prisma `Puzzle`/`PuzzleEntry`/`Hint`                           | DB-driven alpha           |
-| Emojirebus | `/emojirebus`      | Prisma `Word` + `RebusEntry`                                   | DB-driven test            |
-| Kastet     | `/kastet`          | hårdkodade bokstavspar i kod                                   | ren prototyp              |
-| Skrapet    | `/skrapet`         | hårdkodade pussel i kod                                        | ren prototyp              |
-| Bildjakten | `/test/bildjakten` | Prisma `MediaAsset` + `Word`, fallback till lokal prototypdata | hybrid                    |
-| Daily      | `/daily`           | ingen speldata, endast placeholder                             | placeholder               |
+| Spel       | Route              | Datakälla idag                                                 | Ska använda                | Status       |
+| ---------- | ------------------ | -------------------------------------------------------------- | -------------------------- | ------------ |
+| Dagens Ord | `/dagens-ord`      | importerade/lokala ordlistor + lokal daily state               | `Word`                     | ej kopplad   |
+| Ordstorm   | `/ordstorm`        | importerade/genererade ordlistor + localStorage                | `Word`                     | ej kopplad   |
+| Stegvis    | `/stegvis`         | generator + statiska pussel + `Word`/`Hint`                    | `Word` + `Hint`            | delvis       |
+| Ordfläta   | `/ordflata`        | Prisma `Puzzle` + `PuzzleEntry` + `Hint` + `Word`              | `Word` + `Hint`            | beta         |
+| Bildjakten | `/test/bildjakten` | Prisma `MediaAsset` + `Word`, fallback till lokal prototypdata | `Word` + `MediaAsset`      | kopplad test |
+| Rebus      | `/emojirebus`      | Prisma `Word` + `RebusEntry`                                   | `Word` + `RebusEntry`      | test         |
+| Kastet     | `/kastet`          | hårdkodade bokstavspar i kod                                   | `Word` senare              | test         |
+| Skrapet    | `/skrapet`         | hårdkodade pussel i kod                                        | `Hint`/`MediaAsset` senare | test         |
+
+## Delade byggstenar i Postgres idag
+
+Följande Prisma-modeller finns redan och är relevanta för flera spel:
+
+- `Word`
+- `WordLanguageData`
+- `WordRelation`
+- `Hint`
+- `HintCandidate`
+- `RebusEntry`
+- `MediaAsset`
+- `Theme`
+- `WordTheme`
+- `Puzzle`
+- `PuzzleEntry`
+- `PuzzleBlockedCell`
+
+Värt att notera:
+
+- `PuzzleType` innehåller redan `DAILY_WORD` och `STEPWISE`
+- i nuläget används `Puzzle` i praktiken bara konkret av Ordfläta-flödet
+- Dagens Ord, Ordstorm, Kastet och Skrapet läser inte från Postgres i spelläget idag
 
 ## Dagens Ord
 
 - Route: `/dagens-ord`
-- Kodväg:
+- Kodvägar:
   - `app/(games)/dagens-ord/page.tsx`
   - `lib/game/dagens-ord.ts`
   - `lib/game/dagens-ord-daily-session.ts`
   - `data/dagens-ord/solution-words.ts`
+  - `data/words/index.ts`
   - `lib/storage/dagens-ord-daily.ts`
 
 ### Datakälla idag
 
-- Lösningsord kommer från lokal, kurerad fil: `data/dagens-ord/solution-words.ts`
-- Giltiga gissningar kommer från `allowedSvWords` via `data/words/index.ts`
-- Daglig progress sparas i browser storage via `ordklubben:dagens-ord:daily`
+- lösningsord kommer från lokal fil: `data/dagens-ord/solution-words.ts`
+- giltiga gissningar kommer från `allowedSvWords` i `data/words/index.ts`
+- dagens val görs via datumindex i kod, inte via publicerad DB-post
+- daglig progress sparas i browser storage
 
 ### Önskad datakälla
 
-- DB-driven daglig publicering
-- Lösningsord bör hämtas från ordbanken (`Word`) men väljas via en publicerad daglig entitet, inte via datumindex över en fil
-- Gissningslexikon kan fortsatt bygga på ordpipeline, men bör ha en tydlig publicerad källa eller snapshot för spelet
+- `Word` som källa för själva ordet
+- en publicerad daglig pusselmodell i Postgres som pekar ut exakt vilket `Word` som gäller ett visst datum
 
 ### Modeller som behövs
 
-- Befintliga modeller som kan återanvändas:
+- finns redan:
   - `Word`
   - eventuellt `WordLanguageData`
-- Nya modeller som saknas:
-  - `DailyEdition` eller `GameEdition`
-  - `DailyWordPuzzle` eller motsvarande spelspecifik modell
-  - eventuell snapshot-tabell för dagens lösningsord och tillåtet lexikon
+- saknas:
+  - en spelbar daglig modell, till exempel `DailyWordPuzzle`
+  - alternativt en utbyggnad av `Puzzle`/`PuzzleEntry` som faktiskt används för `PuzzleType.DAILY_WORD`
 
 ### Vad som saknas
 
-- Ingen DB-modell för vilket ord som är “dagens ord”
-- Ingen publiceringsmodell för datum, status, fallback, ersättningsord
-- Ingen redaktionell kö eller QA för dagliga lösningsord
-- Ingen relation mellan spelet och ett valt `Word`
+- ingen DB-koppling i spelläget
+- ingen publiceringsmodell för datum, status eller ersättningsord
+- ingen relation mellan Dagens Ord och ett valt `Word`
+- ingen redaktionell QA-kedja för dagliga lösningsord
 
 ### Rekommenderad nästa åtgärd
 
-- Inför en minimal DB-modell för daglig publicering:
-  - `DailyWordPuzzle(id, wordId, publishDate, status)`
-- Behåll nuvarande lokala allowed-lista tills vidare, men flytta lösningsordet först
+- koppla först lösningsordet till Postgres
+- minsta rimliga steg:
+  - inför `DailyWordPuzzle(id, wordId, publishDate, status)`
+- behåll tillåtna gissningar från ordpipeline tills lösningsordskopplingen är stabil
 
 ## Ordstorm
 
 - Route: `/ordstorm`
-- Kodväg:
+- Kodvägar:
   - `app/(games)/ordstorm/page.tsx`
   - `lib/game/ordstorm.ts`
   - `data/words/ordstorm-wordlists.ts`
@@ -84,97 +105,99 @@ Målet är att göra det tydligt vilka spel som redan har en riktig innehållsmo
 
 ### Datakälla idag
 
-- Seed-ord kommer från `seedWordsSvGenerated` med fallback till `data/words/seed-words-sv.ts`
-- Tillåtna och vanliga ord kommer från genererade/manuella ordlistor i `data/words/`
-- Rundor genereras helt i runtime från ordlistorna
-- Statistik sparas i browser storage via `ordklubben:ordstorm:stats`
+- seed-ord kommer från `seedWordsSvGenerated` med fallback till `data/words/seed-words-sv.ts`
+- giltiga ord kommer från `commonSvWords` + `allowedSvWords`
+- hela rundan genereras i runtime direkt från ordlistorna
+- statistik sparas i browser storage
 
 ### Önskad datakälla
 
-- På kort sikt: fortsatt pipeline-byggda ordlistor
-- På medellång sikt: DB-driven ordbank med spelprofil för Ordstorm
-- Seed-ord bör vara kuraterbara och spårbara i datalagret, inte bara exporterade TS-listor
+- `Word` som gemensam ordbank
+- en spelprofil ovanpå `Word` som anger vilka ord som får vara seed, hur bra de spelar och om de ska blockeras
 
 ### Modeller som behövs
 
-- Befintliga modeller som kan återanvändas:
+- finns redan:
   - `Word`
   - `WordLanguageData`
-  - `Theme` / `WordTheme` om teman ska påverka rundor senare
-- Nya modeller som saknas:
-  - `WordGameProfile` eller `WordUsageProfile`
-  - `OrdstormSeed` eller `OrdstormWordProfile`
-  - eventuell `OrdstormDailyRound` om dagliga seedade rundor ska publiceras
+  - `Theme` och `WordTheme` om teman senare ska styra rundor
+- saknas:
+  - `OrdstormWordProfile` eller liknande
+  - eventuell `OrdstormRoundTemplate` om rundor ska kunna publiceras i förväg
 
 ### Vad som saknas
 
-- Ingen DB-källa för seed-ord
-- Ingen modell för Ordstorm-specifik kvalitet, fairness eller blocklist per ord
-- Ingen versionerad snapshot av vilka ord som var giltiga när en runda spelades
-- Ingen redaktionell yta för att kurera seed-poolen
+- ingen Postgres-källa i spelläget
+- ingen DB-modell för seed-kurering
+- ingen Ordstorm-specifik metadata för fairness, svårighet eller blocklist
+- ingen spårbar version av vilka ord som var giltiga vid en viss tidpunkt
 
 ### Rekommenderad nästa åtgärd
 
-- Inför en enkel DB-profil för Ordstorm på ordnivå, t.ex.:
+- flytta seed-kureringen till Postgres först
+- minsta rimliga steg:
   - `OrdstormWordProfile(wordId, isSeedCandidate, seedPriority, playableScore, blocked)`
-- Låt ordpipeline fortsatt mata data, men flytta seed-kureringen till DB först
+- låt ordpipeline fortsätta leverera bulklexikon tills senare
 
 ## Stegvis
 
 - Route: `/stegvis`
-- Kodväg:
+- Kodvägar:
   - `app/(games)/stegvis/page.tsx`
   - `lib/content/stegvis/load-play-session.ts`
-  - `lib/content/stegvis/load-puzzles.ts`
   - `lib/content/stegvis/load-puzzle-bundle.ts`
   - `lib/content/stegvis/resolve-play-bundle.ts`
+  - `lib/content/stegvis/generator/`
   - `data/stegvis/puzzles.ts`
-  - `lib/storage/stegvis-stats.ts`
+  - `lib/content/word-bank/api.ts`
 
 ### Datakälla idag
 
-- Statisk fallbacklista med pussel ligger i `data/stegvis/puzzles.ts`
-- Start- och målord kan slås upp i DB-word bank för ledtrådar via `getWordWithClues(...)`
-- Om DB finns försöker spelet generera en spelbar kedja från `Word` + godkända `Hint`
-- Om generatorn misslyckas används statiska pussel
-- Statistik sparas i browser storage
+- statiska fallbackpussel ligger i `data/stegvis/puzzles.ts`
+- när DB finns hämtas ord och nycklar via word-bank:
+  - `Word`
+  - godkända `Hint`
+- generatorn försöker bygga en spelbar kedja från ordbanken
+- om generatorn misslyckas används statiska pussel
+- dagligt val görs fortfarande via datumindex över en lokal lista
 
 ### Önskad datakälla
 
-- Fullt DB-drivet Stegvis-innehåll
-- Publicerade kedjor bör lagras som riktiga innehållsenheter
-- Generatorn kan fortsatt skapa förslag, men inte vara enda källan till spelbar data
+- `Word` + `Hint` som bas
+- en riktig publicerad Stegvis-modell i Postgres för kedjor, stegordning och publicering
+- generatorn ska producera kandidater, inte vara enda spelkälla
 
 ### Modeller som behövs
 
-- Befintliga modeller som kan återanvändas:
+- finns redan:
   - `Word`
   - `Hint`
-  - `Theme` / `WordTheme`
-- Nya modeller som saknas:
+  - `Theme` och `WordTheme`
+  - enum-stöd finns redan i `PuzzleType.STEPWISE`
+- saknas:
   - `StepwisePuzzle`
   - `StepwiseStep`
-  - eventuell `StepwiseGenerationRun` / `StepwiseCandidate`
-  - daglig publiceringsmodell om Stegvis ska vara dagligt i DB
+  - eventuell `StepwiseCandidate` eller `StepwiseGenerationRun`
 
 ### Vad som saknas
 
-- Ingen Prisma-modell för själva Stegvis-pusslet
-- Ingen ordnad relation för kedjans mellanord
-- Ingen möjlighet att publicera, granska eller arkivera kedjor i DB
-- Statisk fil används fortfarande som primär fallback och delvis primär innehållskälla
+- ingen Prisma-modell för själva Stegvis-pusslet
+- ingen ordnad relation för kedjans mellanord
+- ingen publiceringsmodell för dagliga eller utvalda kedjor
+- lokal fallbacklista är fortfarande viktig del av produktionsflödet
 
 ### Rekommenderad nästa åtgärd
 
-- Modellera Stegvis först, innan ytterligare generatorarbete:
-  - `StepwisePuzzle(id, title, startWordId, targetWordId, minimumSteps, publishDate, status)`
+- detta är det viktigaste modellsteget efter ord-basen
+- minsta rimliga steg:
+  - `StepwisePuzzle(id, startWordId, targetWordId, minimumSteps, publishDate, status)`
   - `StepwiseStep(puzzleId, wordId, position, clueSnapshot)`
-- Migrera innehållet från `data/stegvis/puzzles.ts` till DB
+- migrera sedan innehållet från `data/stegvis/puzzles.ts`
 
 ## Ordfläta
 
 - Route: `/ordflata`
-- Kodväg:
+- Kodvägar:
   - `app/(games)/ordflata/page.tsx`
   - `lib/content/ordflata-alpha.ts`
   - `lib/content/puzzle-actions.ts`
@@ -182,179 +205,52 @@ Målet är att göra det tydligt vilka spel som redan har en riktig innehållsmo
 
 ### Datakälla idag
 
-- Hämtar från Prisma
-- Route kräver `DATABASE_URL`
-- Spelet läser senaste publicerade `Puzzle` med `type = WORD_GRID`
-- Innehåll byggs av:
-  - `Puzzle`
-  - `PuzzleEntry`
-  - `PuzzleBlockedCell`
-  - `Hint`
-  - `Word`
-
-### Önskad datakälla
-
-- Fortsatt DB-driven
-- Men med tydligare spelspecifik modell eller åtminstone starkare semantik kring att `WORD_GRID` faktiskt är Ordfläta
-
-### Modeller som behövs
-
-- Befintliga modeller som redan används:
+- fullt DB-läst i spelläget när `DATABASE_URL` finns
+- spelet hämtar senaste spelbara `Puzzle` med:
+  - `type = WORD_GRID`
+  - publicerat först, annars senaste utkast/review
+- pusslet byggs av:
   - `Puzzle`
   - `PuzzleEntry`
   - `PuzzleBlockedCell`
   - `Word`
   - `Hint`
-- Modeller som sannolikt behövs framåt:
-  - relation till `Theme`
-  - eventuell `OrdflataPuzzle` eller `WordGridPuzzle` om `Puzzle` blir för generell
-
-### Vad som saknas
-
-- Ingen explicit relation mellan pussel och tema
-- Ingen tydlig spelspecifik modell för Ordfläta kontra andra pusseltyper
-- `Puzzle` bär redan flera framtida speltyper, vilket riskerar att späda ut modellen
-
-### Rekommenderad nästa åtgärd
-
-- Minsta säkra steg:
-  - lägg till tema-koppling på pusselnivå
-  - definiera Ordfläta som primär konsument av `WORD_GRID`
-- Nästa större steg:
-  - dela ut `Puzzle` i generisk publicering + spelspecifik grid-modell
-
-## Emojirebus
-
-- Route: `/emojirebus`
-- Kodväg:
-  - `app/(games)/emojirebus/page.tsx`
-  - `lib/content/emojirebus.ts`
-
-### Datakälla idag
-
-- Hämtar från Prisma
-- Väljer första `Word` som har minst en godkänd `RebusEntry`
-- Tar senaste godkända `RebusEntry` per ord
-- Returnerar en enkel spelpayload: `wordId`, `answerLength`, `normalizedAnswer`, `emojiHint`
 
 ### Önskad datakälla
 
-- DB-driven, men via en riktig spelmodell för rebusar
-- Inte “första bästa ord med rebus”, utan publicerade rebuspussel
+- fortsatt Postgres-driven
+- fortsatt byggd på `Word` + `Hint`
+- tydligare semantik kring att `WORD_GRID` faktiskt är Ordfläta i den här produkten
 
 ### Modeller som behövs
 
-- Befintliga modeller som kan återanvändas:
-  - `Word`
-  - `RebusEntry`
-- Nya modeller som saknas:
-  - `RebusPuzzle`
-  - eventuell `RebusPart` om rebusen ska bli mer strukturerad än en enda sträng
-  - publiceringsmodell per rebus
-
-### Vad som saknas
-
-- Ingen modell för ordning, rotation eller publicering
-- Ingen möjlighet att ha flera rebusar för samma ord med tydligt syfte
-- Ingen metadata för svårighet, formatvariant eller spelkontext på pusselnivå
-
-### Rekommenderad nästa åtgärd
-
-- Inför en enkel `RebusPuzzle` som länkar ett ord till en vald rebus:
-  - `RebusPuzzle(id, wordId, rebusEntryId, status, publishDate, difficulty)`
-- Låt `RebusEntry` fortsätta vara råmaterial, men inte spelbar enhet
-
-## Kastet
-
-- Route: `/kastet`
-- Kodväg:
-  - `app/(games)/kastet/page.tsx`
-  - `components/games/kastet/kastet-game.tsx`
-  - `lib/game/kastet/pairs.ts`
-  - `lib/game/kastet/config.ts`
-
-### Datakälla idag
-
-- Helt lokal prototypdata i kod
-- Bokstavspar kommer från konstanten `KASTET_LETTER_PAIRS`
-- Ingen DB
-- Ingen ordbankskoppling
-- Ingen sparad speldata för rundor eller statistik
-
-### Önskad datakälla
-
-- Om spelet ska vidare:
-  - DB-kuraterad pool av starter/prefix eller tärningssidor
-  - koppling till ordbanken för validering och scoring
-
-### Modeller som behövs
-
-- Inga Prisma-modeller används idag
-- Troliga framtida modeller:
-  - `KastetDieFace` eller `KastetPair`
-  - `KastetRoundTemplate`
-  - eventuell `WordGameProfile` för giltiga uppföljningsord
-
-### Vad som saknas
-
-- Ingen modell överhuvudtaget
-- Ingen relation till `Word`
-- Ingen kontroll över vilka bokstavspar som faktiskt ger bra spel
-- Ingen kurateringsyta
-
-### Rekommenderad nästa åtgärd
-
-- Om Kastet ska tas vidare, börja inte med full puzzle-modell
-- Börja med en kuraterad datakälla för bokstavspar:
-  - `KastetPair(value, status, scoreHint, notes)`
-
-## Skrapet
-
-- Route: `/skrapet`
-- Kodväg:
-  - `app/(games)/skrapet/page.tsx`
-  - `lib/game/skrapet/puzzles.ts`
-
-### Datakälla idag
-
-- Helt lokal prototyplista i `SKRAPET_PUZZLES`
-- Varje pussel består av:
-  - `word`
-  - `clues[]`
-- Slumpmässigt urval i runtime
-
-### Önskad datakälla
-
-- DB-driven ord + ledtrådar + publicerad spelbar variant
-- Spelet behöver en riktig innehållsenhet för “det här är ett skrap-pussel”
-
-### Modeller som behövs
-
-- Befintliga modeller som kan återanvändas:
+- används redan:
+  - `Puzzle`
+  - `PuzzleEntry`
+  - `PuzzleBlockedCell`
   - `Word`
   - `Hint`
-  - eventuellt `MediaAsset` för ikon/emoji-ledtrådar i framtiden
-- Nya modeller som saknas:
-  - `SkrapetPuzzle`
-  - `SkrapetClue` eller ordnad relation till flera ledtrådar
+- saknas eller är svagt modellerat:
+  - relation mellan pussel och `Theme`
+  - eventuellt spelspecifik wrapper kring `Puzzle`
 
 ### Vad som saknas
 
-- Ingen DB-modell
-- Ingen ordning eller typning på ledtrådarna
-- Ingen status/publicering
-- Ingen relation till ett underliggande `Word`
+- ingen tydlig tema-koppling på pusselnivå
+- `Puzzle` är generell men produkten saknar ännu tydlig spelsemantik ovanpå modellen
+- ingen separat modell för när andra gridspel behöver annan logik än Ordfläta
 
 ### Rekommenderad nästa åtgärd
 
-- Modellera Skrapet som egen pusseltyp innan mer innehåll produceras:
-  - `SkrapetPuzzle(id, wordId, status, difficulty)`
-  - `SkrapetPuzzleClue(puzzleId, position, clueText, clueType)`
+- behåll nuvarande modell, eftersom det här redan är närmast målbilden
+- nästa steg:
+  - koppla tema till pussel
+  - definiera `WORD_GRID` tydligt som Ordfläta i produktflödet
 
 ## Bildjakten
 
 - Route: `/test/bildjakten`
-- Kodväg:
+- Kodvägar:
   - `app/(games)/test/bildjakten/page.tsx`
   - `lib/game/bildjakten/provider.ts`
   - `lib/game/bildjakten/puzzles.ts`
@@ -362,106 +258,193 @@ Målet är att göra det tydligt vilka spel som redan har en riktig innehållsmo
 
 ### Datakälla idag
 
-- Försöker först ladda från Prisma:
+- försöker först ladda från Prisma:
   - `MediaAsset` där `mediaType = IMAGE` och `status = APPROVED`
   - kopplad `Word` måste också vara `APPROVED`
-- Om DB inte ger spelbara bilder används lokal fallback i `BILDJAKT_PROTOTYPE_PUZZLES`
-- Bild-URL extraheras från:
-  - `filePath`
-  - annars `sourceReference`
-  - annars `notes`
+- om inget spelbart hittas används lokal fallback:
+  - `BILDJAKT_PROTOTYPE_PUZZLES`
+- asset-URL löses från `filePath`, annars `sourceReference`, annars `notes`
 
 ### Önskad datakälla
 
-- DB-driven bildpusselmodell
-- `MediaAsset` bör vara asset-lager, inte spel-pussel i sig
+- `Word` + `MediaAsset`
+- en riktig spelmodell som väljer vilka assets som hör till Bildjakten
 
 ### Modeller som behövs
 
-- Befintliga modeller som kan återanvändas:
+- finns redan:
   - `Word`
   - `MediaAsset`
-- Nya modeller som saknas:
-  - `BildjaktenPuzzle` eller generell `ImagePuzzle`
-  - publiceringsmodell
-  - eventuell relation mellan pussel och valt asset
+- saknas:
+  - `ImagePuzzle` eller `BildjaktenPuzzle`
+  - publiceringsfält på spelnivå, inte bara assetnivå
 
 ### Vad som saknas
 
-- Ingen spelmodell för vilka bilder som hör till Bildjakten
-- Ingen kuraterad ordning eller publicering
-- Ingen garanti att varje `MediaAsset` är avsedd för just detta spel
-- Asset-upplösning via `notes`/`sourceReference` visar att assetmodellen är för lös
+- ingen spelmodell för urval, ordning eller publicering
+- varje godkänd bild kan i praktiken bli spelbar, även om den inte är kuraterad för Bildjakten
+- fallback till lokal prototypdata visar att DB-kopplingen ännu inte är komplett
+- assetupplösning via fria textfält visar att modellen ännu är lös
 
 ### Rekommenderad nästa åtgärd
 
-- Inför en explicit spelmodell:
-  - `ImagePuzzle(id, wordId, mediaAssetId, status, publishDate, difficulty)`
-- Behåll `MediaAsset` som innehållslager, men sluta låta spelet läsa “alla godkända bilder”
+- inför en explicit spelmodell ovanpå assets:
+  - `ImagePuzzle(id, wordId, mediaAssetId, publishDate, status, difficulty)`
+- behåll `MediaAsset` som bibliotek, inte som spelbar enhet i sig
 
-## Daily
+## Rebus
+
+- Route: `/emojirebus`
+- Kodvägar:
+  - `app/(games)/emojirebus/page.tsx`
+  - `lib/content/emojirebus.ts`
+
+### Datakälla idag
+
+- läser från Prisma
+- väljer första `Word` som har minst en godkänd `RebusEntry`
+- väljer senaste godkända `RebusEntry` för det ordet
+- ingen publiceringsordning, ingen rotation, ingen spelspecifik urvalsmodell
+
+### Önskad datakälla
+
+- `Word` + `RebusEntry`
+- en riktig publicerad rebusmodell där rå rebusar och spelbara rebusar är olika nivåer
+
+### Modeller som behövs
+
+- finns redan:
+  - `Word`
+  - `RebusEntry`
+- saknas:
+  - `RebusPuzzle`
+  - eventuell `RebusPart` om formatet blir mer strukturerat
+
+### Vad som saknas
+
+- ingen modell för vilket rebus som ska spelas när
+- ingen tydlig skillnad mellan rå innehållspost och publicerat spel
+- ingen metadata för svårighet, variant eller spelkontext
+
+### Rekommenderad nästa åtgärd
+
+- inför en tunn publiceringsmodell:
+  - `RebusPuzzle(id, wordId, rebusEntryId, publishDate, status, difficulty)`
+- låt `RebusEntry` fortsätta vara råmaterial i admin
+
+## Kastet
+
+- Route: `/kastet`
+- Kodvägar:
+  - `app/(games)/kastet/page.tsx`
+  - `components/games/kastet/kastet-game.tsx`
+  - `lib/game/kastet/pairs.ts`
+  - `lib/game/kastet/config.ts`
+
+### Datakälla idag
+
+- helt hårdkodad prototyp
+- bokstavspar kommer från `KASTET_LETTER_PAIRS`
+- ingen Postgres
+- ingen koppling till `Word`
+
+### Önskad datakälla
+
+- på sikt `Word`, men först när spelets kärnloop är värd att modellera
+- när spelet mognar behövs åtminstone en kuraterad källa för bokstavspar eller tärningssidor
+
+### Modeller som behövs
+
+- finns idag: inga
+- kan behövas senare:
+  - `KastetPair`
+  - eventuell `KastetRoundTemplate`
+  - senare eventuellt koppling till `Word`
+
+### Vad som saknas
+
+- ingen datamodell alls
+- ingen mätning eller kurering av vilka bokstavspar som ger bra spel
+- ingen länk till gemensam ordbank
+
+### Rekommenderad nästa åtgärd
+
+- vänta med större modellering tills spelet är tydligare prioriterat
+- om ni vill ta ett minimisteg:
+  - `KastetPair(value, status, notes)`
+
+## Skrapet
+
+- Route: `/skrapet`
+- Kodvägar:
+  - `app/(games)/skrapet/page.tsx`
+  - `lib/game/skrapet/puzzles.ts`
+
+### Datakälla idag
+
+- helt hårdkodad prototyplista
+- varje pussel är ett lokalt objekt med:
+  - `word`
+  - `clues[]`
+- slumpval i runtime
+
+### Önskad datakälla
+
+- i första hand `Word` + `Hint`
+- senare eventuellt `MediaAsset` för bild- eller emoji-ledtrådar
+- en riktig pusselmodell som håller ordning på clue-sekvensen
+
+### Modeller som behövs
+
+- finns redan som bas:
+  - `Word`
+  - `Hint`
+  - eventuellt `MediaAsset`
+- saknas:
+  - `SkrapetPuzzle`
+  - `SkrapetPuzzleClue`
+
+### Vad som saknas
+
+- ingen DB-modell
+- inga typade ledtrådar
+- ingen relation till underliggande `Word`
+- ingen publicering eller kurering
+
+### Rekommenderad nästa åtgärd
+
+- vänta med större investering tills spelet är tydligare prioriterat
+- om ni går vidare:
+  - `SkrapetPuzzle(id, wordId, status, difficulty)`
+  - `SkrapetPuzzleClue(puzzleId, position, clueText, clueType)`
+
+## Övrig route: Daily
 
 - Route: `/daily`
 - Kodväg:
   - `app/(games)/daily/page.tsx`
 
-### Datakälla idag
+Det här är inte ett eget spel ännu, utan en placeholder för en möjlig daglig hub. Den har ingen egen speldata idag och bör inte styra modelleringen nu.
 
-- Ingen speldata
-- Endast placeholder-sida
+## Tvärgående slutsatser
 
-### Önskad datakälla
+### Vad som redan är nära målbilden
 
-- Ingen egen datakälla om routen bara ska fungera som ingång till dagliga spel
-- Alternativt en samlande publiceringsmodell för “dagens aktiva utmaningar”
+- Ordfläta är tydligast DB-driven i faktiskt spelläge
+- Bildjakten och Rebus återanvänder redan Postgres-innehåll, men saknar publicerad spelmodell
+- Stegvis återanvänder redan `Word` och `Hint`, men saknar sin egen pusselmodell
 
-### Modeller som behövs
+### Var gapet är störst
 
-- Om routen ska leva vidare:
-  - `DailyEdition` / `GameEdition`
-  - relationer till Dagens Ord, Stegvis, Ordfläta eller framtida dagliga spel
+- Dagens Ord och Ordstorm använder fortfarande inga Postgres-modeller i spelläget
+- Stegvis har avancerad logik men ingen riktig spelmodell i Prisma
+- Kastet och Skrapet är rena kodprototyper
 
-### Vad som saknas
+### Rekommenderad prioriteringsordning
 
-- Ingen funktionell roll i innehållsmodellen ännu
-
-### Rekommenderad nästa åtgärd
-
-- Bestäm om `/daily` ska vara:
-  - en hub för dagliga spel, eller
-  - tas bort tills den behövs
-
-## Tvärgående observationer
-
-### 1. Tre olika datalager används parallellt idag
-
-- Lokala filer i `data/`
-- Prisma/Postgres
-- Browser storage
-
-Det fungerar, men gör att varje spel har olika nivå av publicerbarhet och redaktionell kontroll.
-
-### 2. Ordbanken är stark, spelmodellerna är ojämna
-
-- `Word`, `Hint`, `Theme`, `RebusEntry`, `MediaAsset` och `Puzzle` räcker redan långt
-- Det som främst saknas är spelspecifika, publicerbara innehållsenheter
-
-### 3. De mest DB-mogna spelen idag
-
-- Ordfläta
-- Emojirebus
-- Bildjakten (men med svag spelmodell)
-
-### 4. De största innehållsgapen
-
-- Dagens Ord saknar daglig publiceringsmodell
-- Stegvis saknar riktig Prisma-modell trots relativt avancerad logik
-- Skrapet och Kastet saknar helt innehållsmodell
-
-## Rekommenderad prioriteringsordning
-
-1. Modellera `StepwisePuzzle` och migrera bort från `data/stegvis/puzzles.ts`
+1. Modellera `StepwisePuzzle` och flytta bort från `data/stegvis/puzzles.ts`
 2. Modellera `DailyWordPuzzle` för Dagens Ord
-3. Inför explicit `ImagePuzzle` och `RebusPuzzle`
-4. Stärk `Puzzle`-familjen runt Ordfläta med tema/publicering
-5. Vänta med Kastet och Skrapet tills det är beslutat att de ska vidare
+3. Inför `RebusPuzzle` och `ImagePuzzle`
+4. Lägg till tydligare semantik och tema-koppling runt Ordfläta
+5. Låt Ordstorm få en enkel `OrdstormWordProfile` för seed-kurering
+6. Vänta med Kastet och Skrapet tills de är tydligare prioriterade
