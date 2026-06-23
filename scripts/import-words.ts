@@ -3,6 +3,10 @@ import path from 'node:path';
 import { PrismaClient, type ContentStatus } from '@prisma/client';
 import { resolveCanonicalWord } from '../lib/content/word-source-records';
 import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer';
+import {
+  detectAllowedAbbreviationFilterReason,
+  ESTABLISHED_ABBREVIATIONS,
+} from '../lib/dictionary/word-filters';
 
 const prisma = new PrismaClient();
 const ROOT_DIR = process.cwd();
@@ -220,7 +224,27 @@ function filterImportableWord(rawValue: string, options: { minLength: number; ma
   return normalizeAnswer(rawValue);
 }
 
-function loadHunspellImports() {
+function loadKellyLemmaSet() {
+  const lemmas = new Set<string>();
+
+  for (const filePath of listFiles(KELLY_DIR)) {
+    if (!filePath.endsWith('.csv')) {
+      continue;
+    }
+
+    for (const entry of parseKellyCsv(filePath)) {
+      const lemma = normalizeSwedish(cleanRawWord(entry.lemma));
+
+      if (lemma && SWEDISH_WORD_PATTERN.test(lemma)) {
+        lemmas.add(lemma);
+      }
+    }
+  }
+
+  return lemmas;
+}
+
+function loadHunspellImports(kellyLemmas: ReadonlySet<string>) {
   const imports: SourceRecordImport[] = [];
 
   for (const filePath of listFiles(HUNSPELL_DIR)) {
@@ -235,6 +259,16 @@ function loadHunspellImports() {
       });
 
       if (!normalized) {
+        continue;
+      }
+
+      if (
+        detectAllowedAbbreviationFilterReason(
+          normalized.normalizedAnswer,
+          kellyLemmas,
+          ESTABLISHED_ABBREVIATIONS,
+        )
+      ) {
         continue;
       }
 
@@ -545,9 +579,12 @@ async function reconcileWords(wordIds: string[]) {
 async function main() {
   const options = parseArgs();
   const importedAt = new Date();
+  const kellyLemmas = loadKellyLemmaSet();
   const records = dedupeImports(
     [
-      ...(options.source === 'all' || options.source === 'hunspell' ? loadHunspellImports() : []),
+      ...(options.source === 'all' || options.source === 'hunspell'
+        ? loadHunspellImports(kellyLemmas)
+        : []),
       ...(options.source === 'all' || options.source === 'kelly' ? loadKellyImports() : []),
     ].sort((left, right) => left.normalizedAnswer.localeCompare(right.normalizedAnswer, 'sv-SE')),
   );

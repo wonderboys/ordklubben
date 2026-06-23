@@ -65,6 +65,7 @@ data/
     kelly/
   seed/
     word-filters/
+      never-allow-sv.ts
 hooks/
   use-ordstorm-stats.ts
   use-stegvis-stats.ts
@@ -113,7 +114,9 @@ Repo:t innehåller bara råkällor och importstöd under `data/`:
 
 - `data/raw/hunspell/sv_SE.dic` — bred Hunspell/SFOL-täckning
 - `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv` — frekvens och CEFR-metadata
-- `data/seed/word-filters/*.ts` — manuella block- och allowlist-regler vid import
+- `data/seed/word-filters/never-allow-sv.ts` — temporär importblocklista (flyttas till DB senare)
+
+Algoritmiska importregler (t.ex. abbreviation-filter) ligger i `lib/dictionary/word-filters.ts`.
 
 All normalisering och validering i spel går via `lib/dictionary/`:
 
@@ -158,13 +161,11 @@ Scriptet:
 - stödjer `å`, `ä`, `ö`
 - filtrerar bort ogiltiga format och proper nouns
 - tillämpar `data/seed/word-filters/never-allow-sv.ts`
+- tillämpar abbreviation-filter för Hunspell via `lib/dictionary/word-filters.ts`
 - importerar ord och källmetadata till Postgres
 - skapar `ImportBatch` och `WordSourceRecord` per källa
 
-Manuella filterfiler:
-
-- `never-allow-sv.ts` — blockera ord från import
-- `never-seed-sv.ts`, `preferred-seed-sv.ts`, `allowed-abbrev-sv.ts` — importstöd (kopplas in vid behov)
+`data/seed/` är temporär tills never-allow flyttar till DB. Ordstorm seed-kurering ska till `OrdstormWordProfile` i databasen, inte till `data/`.
 
 ## Källor Och Licens
 

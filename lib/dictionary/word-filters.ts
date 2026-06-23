@@ -15,6 +15,20 @@ export const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(['A1', 'A2', 'B1', 'B2']);
 export const ABBREV_CONSONANT_BLOCK_PATTERN = /^[bcdfghjklmnpqrstvwxz]{3,5}$/;
 export const ABBREV_ORG_PATTERN = /^[bcdfghjklmnpqrstvwxz]{2,4}a$/;
 
+/** Established abbreviations kept during Hunspell import despite abbreviation heuristics. */
+export const ESTABLISHED_ABBREVIATIONS: ReadonlySet<string> = new Set([
+  'abc',
+  'dna',
+  'gps',
+  'mms',
+  'mrna',
+  'pdf',
+  'rna',
+  'sms',
+  'usb',
+  'wifi',
+]);
+
 export const CEFR_PRIORITY_SCORE: Record<CefrLevel, number> = {
   A1: 40,
   A2: 30,

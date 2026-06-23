@@ -143,7 +143,9 @@ Current model:
 
 - active runtime words come from the database via `lib/server/words/`
 - raw local source files live in `data/raw/`
-- manual import filter rules live in `data/seed/word-filters/`
+- `data/seed/word-filters/never-allow-sv.ts` is a temporary import blocklist until DB editorial override exists
+- algorithmic import rules live in `lib/dictionary/word-filters.ts`
+- Ordstorm seed curation belongs in DB (`OrdstormWordProfile`), not in `data/`
 - raw word import runs through `scripts/import-words.ts` (`npm run import:words`)
 
 Source intent:

@@ -7,7 +7,7 @@ Det här dokumentet beskriver den DB-first modellen för orddata och råkällor 
 ## Mål
 
 - spel ska inte läsa från `data/*` i runtime
-- `data/` ska bara innehålla externa råkällor och små manuella importregler
+- `data/` ska bara innehålla externa råkällor och tillfälliga manuella importregler
 - import ska skriva till Postgres, inte till statiska ordlistor i repo:t
 - samma ord ska kunna komma från flera källor utan att manuellt kuraterat innehåll skrivs över
 
@@ -22,11 +22,16 @@ data/
       Swedish-Kelly_M3_CEFR.csv
   seed/
     word-filters/
-      allowed-abbrev-sv.ts
       never-allow-sv.ts
-      never-seed-sv.ts
-      preferred-seed-sv.ts
 ```
+
+`data/raw/` innehåller externa råkällor (Hunspell, Kelly).
+
+`data/seed/` är en temporär plats för `never-allow-sv.ts` tills DB-baserad blocklist eller editorial override finns. Målet är att ta bort `data/seed/` helt när blocklistan flyttat till databasen.
+
+Algoritmiska importregler (t.ex. abbreviation-filter och etablerade förkortningar) ligger i `lib/dictionary/word-filters.ts`, inte i `data/`.
+
+Ordstorm seed-kurering (block/prioritet) ska framåt ligga i databasen via `OrdstormWordProfile` — inte i `data/`.
 
 Det finns inga generated-filer, ingen `legacy/`, ingen `sources/`, inga kuraterade TS-listor och inga CSV-builds under `data/`.
 
@@ -47,10 +52,9 @@ Scriptet:
 
 - läser `data/raw/hunspell/*.dic` och `data/raw/kelly/*.csv`
 - tillämpar `data/seed/word-filters/never-allow-sv.ts`
+- tillämpar abbreviation-filter för Hunspell med undantag från `lib/dictionary/word-filters.ts`
 - skriver till Postgres (`Word`, `WordSourceRecord`, `ImportBatch`)
 - stödjer `--source=all|hunspell|kelly` och `--mode=insert-missing|merge-safe|refresh-source-metadata`
-
-Övriga filterfiler under `data/seed/word-filters/` finns kvar som manuella importregler och kan kopplas in i importscriptet vid behov.
 
 ## Datamodell
 
