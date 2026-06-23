@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CircleUserRound } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { GameLibraryPanel } from '@/components/layout/game-library-panel';
 import { cn } from '@/lib/utils';
@@ -44,27 +45,38 @@ export function MainNav() {
           Ordklubben
         </Link>
 
-        <button
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls={menuId}
-          aria-label={menuOpen ? 'Stäng spelbibliotek' : 'Öppna spelbibliotek'}
-          className="flex size-10 cursor-pointer items-center justify-center text-print-ink"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          {menuOpen ? (
-            <span className="relative block size-5" aria-hidden="true">
-              <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-current" />
-              <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current" />
-            </span>
-          ) : (
-            <span className="flex w-5 flex-col gap-[5px]" aria-hidden="true">
-              <span className="h-px w-full bg-current" />
-              <span className="h-px w-full bg-current" />
-              <span className="h-px w-full bg-current" />
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/profile"
+            aria-label="Gå till profil"
+            className="flex size-10 items-center justify-center text-print-ink transition-colors hover:text-print-green"
+            onClick={() => setMenuOpen(false)}
+          >
+            <CircleUserRound className="size-[18px] stroke-[1.5]" />
+          </Link>
+
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            aria-label={menuOpen ? 'Stäng spelbibliotek' : 'Öppna spelbibliotek'}
+            className="flex size-10 cursor-pointer items-center justify-center text-print-ink"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? (
+              <span className="relative block size-5" aria-hidden="true">
+                <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-current" />
+                <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current" />
+              </span>
+            ) : (
+              <span className="flex w-5 flex-col gap-[5px]" aria-hidden="true">
+                <span className="h-px w-full bg-current" />
+                <span className="h-px w-full bg-current" />
+                <span className="h-px w-full bg-current" />
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       <div
