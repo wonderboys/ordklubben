@@ -25,71 +25,76 @@ Dokumentet föreslår också en målstruktur:
 - `lib/games/<game>/rules.ts`
 - `lib/games/<game>/word-provider.ts`
 
+Status efter steg 1-4 i migreringen:
+
+- inga aktiva spelrutter läser längre direkt från `data/`
+- `data/words` har tagits bort som runtime-katalog
+- aktiv runtime använder nu DB-baserade providers i `lib/server/words` och `lib/games/<game>/`
+- detaljerade filsektioner längre ned beskriver fortfarande ursprungsfilerna som migrationsunderlag, men inte längre aktiv spelruntime
+
 ## Sammanfattning
 
 ### Filer som bör importeras till databasen
 
-- `data/raw/hunspell-sv/sv_SE.dic`
-- `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
-- `data/stegvis/puzzles.ts`
-- `data/dagens-ord/solution-words.ts`
+- `data/sources/raw/hunspell/sv_SE.dic`
+- `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
+- `data/sources/curated/stegvis/puzzles.ts`
+- `data/sources/curated/dagens-ord/solution-words.ts`
 
 ### Filer som bör stanna som seed/test eller byggstöd
 
-- `data/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
-- `data/words/never-allow-sv.ts`
-- `data/words/never-seed-sv.ts`
-- `data/words/preferred-seed-sv.ts`
-- `data/words/allowed-abbrev-sv.ts`
+- `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
+- `data/seed/word-filters/never-allow-sv.ts`
+- `data/seed/word-filters/never-seed-sv.ts`
+- `data/seed/word-filters/preferred-seed-sv.ts`
+- `data/seed/word-filters/allowed-abbrev-sv.ts`
 
 ### Filer som är legacy eller bör fasas ut som runtime-källa
 
-- `data/words/allowed-sv.ts`
-- `data/words/common-sv.ts`
-- `data/words/seed-words-sv.ts`
-- `data/words/index.ts`
-- `data/words/ordstorm-wordlists.ts`
-- `data/generated/allowed-sv.generated.ts`
-- `data/generated/common-sv.generated.ts`
-- `data/generated/seed-words-sv.generated.ts`
+- `data/legacy/words/allowed-sv.ts`
+- `data/legacy/words/common-sv.ts`
+- `data/legacy/words/seed-words-sv.ts`
+- `data/legacy/generated/allowed-sv.generated.ts`
+- `data/legacy/generated/common-sv.generated.ts`
+- `data/legacy/generated/seed-words-sv.generated.ts`
 
-### Filer som används direkt av spel och därför måste ersättas av DB-provider
+### Filer som tidigare användes direkt av spel och därför har ersatts av DB-provider
 
-- `data/dagens-ord/solution-words.ts`
-- `data/stegvis/puzzles.ts`
-- `data/words/index.ts`
-- `data/words/ordstorm-wordlists.ts`
-- indirekt även:
-  - `data/words/allowed-sv.ts`
-  - `data/words/common-sv.ts`
-  - `data/words/seed-words-sv.ts`
-  - `data/generated/*.generated.ts`
+- `data/sources/curated/dagens-ord/solution-words.ts`
+- `data/sources/curated/stegvis/puzzles.ts`
+- tidigare `data/words/index.ts`
+- tidigare `data/words/ordstorm-wordlists.ts`
+- tidigare indirekt även:
+  - `data/legacy/words/allowed-sv.ts`
+  - `data/legacy/words/common-sv.ts`
+  - `data/legacy/words/seed-words-sv.ts`
+  - `data/legacy/generated/*.generated.ts`
 
 ## Nuvarande användning i kod
 
 Direkta runtime-importer från spel/logik idag:
 
-- `lib/game/dagens-ord.ts`
-  - läser `data/dagens-ord/solution-words.ts`
-  - läser `data/words/index.ts`
-- `lib/game/ordstorm.ts`
-  - läser `data/words/index.ts`
-  - läser `data/words/ordstorm-wordlists.ts`
-- `lib/game/stegvis.ts`
-  - läser `data/words/index.ts`
-  - använder typen från `data/stegvis/puzzles.ts`
-- `lib/content/stegvis/load-puzzles.ts`
-  - läser `data/stegvis/puzzles.ts`
+- inga aktiva spelrutter importerar längre från `data/`
+- runtime använder i stället:
+  - `lib/server/words/`
+  - `lib/games/dagens-ord/word-provider.ts`
+  - `lib/games/ordstorm/word-provider.ts`
+  - `lib/games/stegvis/content-provider.ts`
+  - `lib/games/kastet/content-provider.ts`
+  - `lib/games/skrapet/content-provider.ts`
+  - `lib/games/bildjakten/content-provider.ts`
+
+Kuraterade källfiler i `data/sources/` finns kvar som migrations- och importunderlag, inte som aktiv runtime-källa.
 
 Bygg/pipeline-beroenden idag:
 
 - `scripts/build-wordlists.ts`
-  - läser `data/raw/*`
-  - läser `data/words/never-allow-sv.ts`
-  - läser `data/words/never-seed-sv.ts`
-  - läser `data/words/preferred-seed-sv.ts`
-  - läser `data/words/allowed-abbrev-sv.ts`
-  - skriver `data/generated/*.generated.ts`
+  - läser `data/sources/raw/*`
+  - läser `data/seed/word-filters/never-allow-sv.ts`
+  - läser `data/seed/word-filters/never-seed-sv.ts`
+  - läser `data/seed/word-filters/preferred-seed-sv.ts`
+  - läser `data/seed/word-filters/allowed-abbrev-sv.ts`
+  - skriver `data/legacy/generated/*.generated.ts`
 
 ## Rekommenderad målstruktur
 

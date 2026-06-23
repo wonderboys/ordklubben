@@ -121,10 +121,12 @@ Architecture shape:
 
 - `app/` contains routes and page composition
 - `components/games/` contains reusable game UI and HUD pieces
-- `lib/game/` contains game logic
+- `lib/games/` contains game-local rules and content providers
+- `lib/game/` contains compatibility exports and shared legacy helpers during migration
 - `lib/dictionary/` contains Swedish word rules, normalization, and wordlist tooling
+- `lib/server/words/` contains DB-backed word access
 - `lib/storage/` contains browser persistence only
-- `data/` contains manual wordlists, raw imports, and generated word data
+- `data/` contains raw import sources, seed filters, and legacy migration artifacts
 
 Important boundaries:
 
@@ -139,9 +141,11 @@ Ord quality matters. Treat the word pipeline as product infrastructure.
 
 Current model:
 
-- manual fallback lists live in `data/words/`
-- generated lists live in `data/generated/`
-- raw local source files live in `data/raw/`
+- active runtime words come from the database via `lib/server/words/`
+- raw local source files live in `data/sources/raw/`
+- curated import inputs live in `data/sources/curated/`
+- seed and filter inputs live in `data/seed/`
+- generated legacy artifacts live in `data/legacy/generated/`
 - the build script is `scripts/build-wordlists.ts`
 
 Source intent:
@@ -151,8 +155,9 @@ Source intent:
 
 Runtime rule:
 
-- use generated lists when present
-- fall back to manual lists when generated lists are empty or missing
+- no active game route should read directly from `data/`
+- all game word access should go through DB-backed providers
+- legacy generated lists are migration support, not runtime fallback
 
 Do not:
 
