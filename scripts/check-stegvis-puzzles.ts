@@ -1,6 +1,6 @@
-import { allowedSvGeneratedWords } from '../data/generated/allowed-sv.generated.ts';
-import { stegvisPuzzles } from '../data/stegvis/puzzles.ts';
-import { allowedSvWords as allowedSvWordsManual } from '../data/words/allowed-sv.ts';
+import { allowedSvGeneratedWords } from '../data/legacy/generated/allowed-sv.generated.ts';
+import { stegvisPuzzles } from '../data/sources/curated/stegvis/puzzles.ts';
+import { allowedSvWords as allowedSvWordsManual } from '../data/legacy/words/allowed-sv.ts';
 
 const allowedSvWords =
   allowedSvGeneratedWords.length > 0 ? allowedSvGeneratedWords : allowedSvWordsManual;
