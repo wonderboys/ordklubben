@@ -2,112 +2,101 @@
 
 Senast uppdaterad: 2026-06-23
 
-Det här dokumentet är en konkret audit av alla filer under `data/` som innehåller:
+Det här dokumentet beskriver en DB-first riktning för orddata och råkällor i Ordklubben.
 
-- ordlistor
-- allowed words
-- seed words
-- speldata
+Målet är:
 
-Målet är att avgöra vilka filer som:
+- `data/raw/` ska leva kvar och vara hem för rådata
+- spel ska inte läsa från `data/*` i runtime
+- importscript ska skriva till Postgres, inte till `data/generated/*.ts`
+- samma ord ska kunna komma från flera källor utan att manuellt kuraterat innehåll skrivs över
+- spel som Dagens Ord och Stegvis ska byggas från den gemensamma ordbanken i DB, inte från egna curated råfiler
 
-1. ska importeras till databasen
-2. bara ska användas som seed/test
-3. är legacy och kan fasas ut
-4. används direkt av spel och därför måste ersättas av DB-provider
+## Beslut i korthet
 
-Dokumentet föreslår också en målstruktur:
+### Behåll
 
-- `data/sources`
-- `data/seed`
-- `data/legacy`
-- `lib/words`
-- `lib/games/<game>/rules.ts`
-- `lib/games/<game>/word-provider.ts`
+- `data/raw/`
+- små manuella seed/filter-filer som importstöd
 
-## Sammanfattning
+### Fasa ut som runtime
 
-### Filer som bör importeras till databasen
+- `data/generated/*.generated.ts`
+- `data/words/*.ts` som spelkälla
+- spelspecifika ord- och pusselfiler i `data/` som används direkt av spel
+
+### Flytta ansvar till DB
+
+- canonical ord ska ligga i `Word`
+- rå provenance ska ligga separat per källa/import
+- spel ska läsa via DB-drivna providers
+- spelspecifikt urval ska vara DB-frågor och spelmodeller, inte egna ordlistfiler
+
+## Nuvarande råfiler
+
+Filer i `data/raw/` idag:
 
 - `data/raw/hunspell-sv/sv_SE.dic`
 - `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
-- `data/stegvis/puzzles.ts`
-- `data/dagens-ord/solution-words.ts`
-
-### Filer som bör stanna som seed/test eller byggstöd
-
 - `data/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
-- `data/words/never-allow-sv.ts`
-- `data/words/never-seed-sv.ts`
-- `data/words/preferred-seed-sv.ts`
-- `data/words/allowed-abbrev-sv.ts`
 
-### Filer som är legacy eller bör fasas ut som runtime-källa
+Bedömning:
 
-- `data/words/allowed-sv.ts`
-- `data/words/common-sv.ts`
-- `data/words/seed-words-sv.ts`
-- `data/words/index.ts`
-- `data/words/ordstorm-wordlists.ts`
-- `data/generated/allowed-sv.generated.ts`
-- `data/generated/common-sv.generated.ts`
-- `data/generated/seed-words-sv.generated.ts`
+- Hunspell-filen bör leva kvar som rå täckningskälla
+- Kelly bör ha exakt ett canonical importformat i repo:t
+- om CSV-filen innehåller allt ni behöver, behövs inte `.xls`
 
-### Filer som används direkt av spel och därför måste ersättas av DB-provider
+Rekommendation:
 
-- `data/dagens-ord/solution-words.ts`
-- `data/stegvis/puzzles.ts`
-- `data/words/index.ts`
-- `data/words/ordstorm-wordlists.ts`
-- indirekt även:
-  - `data/words/allowed-sv.ts`
-  - `data/words/common-sv.ts`
-  - `data/words/seed-words-sv.ts`
-  - `data/generated/*.generated.ts`
+- behåll `CSV`
+- ta bort `XLS` när CSV-formatet är verifierat
 
-## Nuvarande användning i kod
+## Naming convention
 
-Direkta runtime-importer från spel/logik idag:
+### Kataloger
 
-- `lib/game/dagens-ord.ts`
-  - läser `data/dagens-ord/solution-words.ts`
-  - läser `data/words/index.ts`
-- `lib/game/ordstorm.ts`
-  - läser `data/words/index.ts`
-  - läser `data/words/ordstorm-wordlists.ts`
-- `lib/game/stegvis.ts`
-  - läser `data/words/index.ts`
-  - använder typen från `data/stegvis/puzzles.ts`
-- `lib/content/stegvis/load-puzzles.ts`
-  - läser `data/stegvis/puzzles.ts`
+Använd:
 
-Bygg/pipeline-beroenden idag:
+- `data/raw/<source-family>/`
+- `data/raw/curated/`
+- `data/seed/<purpose>/`
+- `data/import-manifests/`
+- `data/legacy/`
 
-- `scripts/build-wordlists.ts`
-  - läser `data/raw/*`
-  - läser `data/words/never-allow-sv.ts`
-  - läser `data/words/never-seed-sv.ts`
-  - läser `data/words/preferred-seed-sv.ts`
-  - läser `data/words/allowed-abbrev-sv.ts`
-  - skriver `data/generated/*.generated.ts`
+### Filnamn
+
+Använd:
+
+- lowercase
+- kebab-case
+- källa först
+- version i namnet bara när flera revisioner realistiskt behöver samexistera
+
+Bra exempel:
+
+- `data/raw/hunspell/sv-se.dic`
+- `data/raw/kelly/kelly-cefr-v1.csv`
+- `data/seed/word-filters/never-allow-sv.ts`
+
+Undvik:
+
+- `Swedish-Kelly_M3_CEFR.csv`
+- blandning av versaler, understreck och produktnamn i filnamn
 
 ## Rekommenderad målstruktur
 
-### `data/sources`
+### `data/raw`
 
-Används för råkällor och kuraterade importkällor som ska in i DB eller i ordpipeline.
+Här ska råfiler ligga som importeras till DB.
 
 Exempel:
 
-- `data/sources/raw/hunspell/sv_SE.dic`
-- `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
-- `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
-- `data/sources/curated/dagens-ord-solution-words.ts` eller hellre `.csv`
-- `data/sources/curated/stegvis-puzzles.ts` eller hellre `.csv/.json`
+- `data/raw/hunspell/sv-se.dic`
+- `data/raw/kelly/kelly-cefr-v1.csv`
 
 ### `data/seed`
 
-Används för manuella overrides, bootstrap och test-/seeddata till importer eller generators.
+Här ska manuella filter och bootstrapfiler ligga.
 
 Exempel:
 
@@ -116,466 +105,330 @@ Exempel:
 - `data/seed/word-filters/preferred-seed-sv.ts`
 - `data/seed/word-filters/allowed-abbrev-sv.ts`
 
+### `data/import-manifests`
+
+Här kan ni lägga metadata om källor och importpolicy.
+
+Exempel:
+
+- `data/import-manifests/hunspell-sv.json`
+- `data/import-manifests/kelly-cefr-v1.json`
+- `data/import-manifests/dagens-ord-curated.json`
+
 ### `data/legacy`
 
-Används för gamla runtime-filer som tillfälligt behöver finnas kvar under migrationen men inte ska vara den långsiktiga modellen.
+Här kan tillfälliga migrationsfiler bo om ni måste ha kvar gamla runtime-filer en stund.
 
 Exempel:
 
 - `data/legacy/words/allowed-sv.ts`
 - `data/legacy/words/common-sv.ts`
 - `data/legacy/words/seed-words-sv.ts`
-- `data/legacy/generated/*.generated.ts`
-- `data/legacy/stegvis/puzzles.ts` om DB-migrering redan har gjorts
 
-### `lib/words`
+## Filklassning
 
-Här bör runtime-lagret för ord flytta in.
+### Ska leva kvar som råimport
 
-Exempel:
+- `data/raw/hunspell-sv/sv_SE.dic`
+- `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
 
-- `lib/words/normalize.ts`
-- `lib/words/allowed-word-provider.ts`
-- `lib/words/common-word-provider.ts`
-- `lib/words/seed-word-provider.ts`
-- `lib/words/types.ts`
+### Kan bort när CSV räcker
 
-### `lib/games/<game>/rules.ts`
+- `data/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
 
-Spelspecifika regler ska ligga här, inte i `data/`.
+### Ska bort som datakälla
 
-Exempel:
+- `data/dagens-ord/solution-words.ts`
+- `data/stegvis/puzzles.ts`
 
-- `lib/games/dagens-ord/rules.ts`
-- `lib/games/ordstorm/rules.ts`
-- `lib/games/stegvis/rules.ts`
+Bedömning:
 
-### `lib/games/<game>/word-provider.ts`
+- de är temp/mock/prototypdata
+- de bör inte flyttas till nya canonical råfiler
+- innehållet bör ersättas av DB-drivet urval från `Word` och framtida spelmodeller
 
-Spelspecifika dataleverantörer ska ligga här och välja DB, seed eller fallback beroende på spel.
+### Ska inte vara runtime-källa framåt
 
-Exempel:
-
-- `lib/games/dagens-ord/word-provider.ts`
-- `lib/games/ordstorm/word-provider.ts`
-- `lib/games/stegvis/word-provider.ts`
-
-## Fil-för-fil-audit
-
-### `data/dagens-ord/solution-words.ts`
-
-- Innehåll:
-  - handkuraterad lista med fem bokstäver för Dagens Ord
-- Används idag av:
-  - `lib/game/dagens-ord.ts`
-  - testscript `scripts/check-dagens-ord-eval.ts`
-- Klassificering:
-  - används direkt av spel
-  - bör importeras till databasen
-- Bedömning:
-  - detta är inte bara seeddata utan faktisk produktionskälla för spelet
-  - den bör inte fortsätta styra dagligt innehåll direkt från `data/`
-- Rekommenderad framtida plats:
-  - kort sikt: `data/sources/curated/dagens-ord-solution-words.ts`
-  - lång sikt: importerad till DB som dagligt pusselunderlag
-- Rekommenderad DB-roll:
-  - källa för `DailyWordPuzzle` eller motsvarande publicerad dagsmodell
-- Rekommenderad status:
-  - `ska importeras till databasen`
-
-### `data/generated/allowed-sv.generated.ts`
-
-- Innehåll:
-  - genererad allowed-lista från `scripts/build-wordlists.ts`
-- Används idag av:
-  - `data/words/index.ts`
-  - testscript för Dagens Ord och Stegvis
-- Klassificering:
-  - runtime-källa idag via aggregatfil
-  - byggartefakt snarare än källa
-- Bedömning:
-  - bör inte importeras 1:1 till DB som “sanning”
-  - bör ses som pipeline-output eller cache/snapshot
-- Rekommenderad framtida plats:
-  - `data/legacy/generated/allowed-sv.generated.ts` under migration
-  - på sikt helst ingen repo-runtime-roll
-- Rekommenderad status:
-  - `legacy och kan fasas ut som runtime-källa`
-
-### `data/generated/common-sv.generated.ts`
-
-- Innehåll:
-  - genererad lista med vanligare ord
-- Används idag av:
-  - `data/words/index.ts`
-- Klassificering:
-  - runtime-källa idag via aggregatfil
-  - byggartefakt
-- Bedömning:
-  - bör ersättas av DB-driven common/provider-logik
-- Rekommenderad framtida plats:
-  - `data/legacy/generated/common-sv.generated.ts`
-- Rekommenderad status:
-  - `legacy och kan fasas ut som runtime-källa`
-
-### `data/generated/seed-words-sv.generated.ts`
-
-- Innehåll:
-  - genererad seedlista för Ordstorm
-- Används idag av:
-  - `data/words/ordstorm-wordlists.ts`
-- Klassificering:
-  - runtime-källa idag via Ordstorm-wrapper
-  - byggartefakt
-- Bedömning:
-  - bör ersättas av DB-provider eller åtminstone av ett tydligt seedlager utanför spelruntime
-- Rekommenderad framtida plats:
-  - `data/legacy/generated/seed-words-sv.generated.ts`
-- Rekommenderad status:
-  - `legacy och kan fasas ut som runtime-källa`
-
-### `data/raw/hunspell-sv/.gitkeep`
-
-- Innehåll:
-  - placeholder för tom katalog
-- Används idag av:
-  - repo-struktur
-- Klassificering:
-  - strukturfil
-- Bedömning:
-  - behåll så länge katalogen finns
-- Rekommenderad framtida plats:
-  - `data/sources/raw/hunspell/.gitkeep`
-- Rekommenderad status:
-  - `seed/strukturstöd`
-
-### `data/raw/hunspell-sv/sv_SE.dic`
-
-- Innehåll:
-  - rå extern ordkälla
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - råimportkälla
-- Bedömning:
-  - ska inte läsas av spel direkt
-  - bör fortsätta vara importkälla till pipeline eller DB-import
-- Rekommenderad framtida plats:
-  - `data/sources/raw/hunspell/sv_SE.dic`
-- Rekommenderad status:
-  - `ska importeras till databasen` eller användas som primär källa i ordpipeline som matar DB
-
-### `data/raw/kelly/.gitkeep`
-
-- Innehåll:
-  - placeholder för tom katalog
-- Används idag av:
-  - repo-struktur
-- Rekommenderad framtida plats:
-  - `data/sources/raw/kelly/.gitkeep`
-- Rekommenderad status:
-  - `seed/strukturstöd`
-
-### `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
-
-- Innehåll:
-  - rå Kelly/Språkbanken-liknande frekvenskälla
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - råimportkälla
-- Bedömning:
-  - viktig som underlag för common/frequency/seed-prioritering
-  - bör fortsätta vara source, inte runtime-fil
-- Rekommenderad framtida plats:
-  - `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.csv`
-- Rekommenderad status:
-  - `ska importeras till databasen` eller användas som källa för DB-berikning
-
-### `data/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
-
-- Innehåll:
-  - alternativ råexport av samma källa
-- Används idag av:
-  - ingen kod hittad
-- Klassificering:
-  - rå backup/alternativkälla
-- Bedömning:
-  - behövs sannolikt bara som referens eller manuell fallback
-- Rekommenderad framtida plats:
-  - `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.xls`
-- Rekommenderad status:
-  - `bara seed/test eller backup`
-
-### `data/stegvis/puzzles.ts`
-
-- Innehåll:
-  - statiska Stegvis-pussel med start, mål, titel, minsta steg och provlösning
-- Används idag av:
-  - `lib/content/stegvis/load-puzzles.ts`
-  - `lib/content/stegvis/load-puzzle-bundle.ts`
-  - `lib/game/stegvis.ts`
-  - valideringsscript
-- Klassificering:
-  - används direkt av spel
-  - bör importeras till databasen
-- Bedömning:
-  - det här är riktig speldata, inte bara testdata
-  - måste ersättas av DB-provider när Stegvis får modell
-- Rekommenderad framtida plats:
-  - kort sikt: `data/sources/curated/stegvis-puzzles.ts`
-  - lång sikt: importerad till DB
-- Rekommenderad status:
-  - `ska importeras till databasen`
-  - `används direkt av spel och måste ersättas av DB-provider`
-
-### `data/words/allowed-abbrev-sv.ts`
-
-- Innehåll:
-  - manuell allowlist för förkortningar som ska överleva filtret
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - seed/override för pipeline
-- Bedömning:
-  - detta är inte runtime-speldata
-  - bra kandidat för seed/override-struktur
-- Rekommenderad framtida plats:
-  - `data/seed/word-filters/allowed-abbrev-sv.ts`
-- Rekommenderad status:
-  - `bara seed/test`
-
-### `data/words/allowed-sv.ts`
-
-- Innehåll:
-  - liten manuell fallbacklista för allowed words
-- Används idag av:
-  - `data/words/index.ts`
-  - testscript
-- Klassificering:
-  - runtime-fallback idag
-  - legacy när generated/DB finns
-- Bedömning:
-  - bör inte vara långsiktig källa
-  - kan fungera som bootstrap/seed under migration
-- Rekommenderad framtida plats:
-  - `data/legacy/words/allowed-sv.ts`
-  - alternativt `data/seed/bootstrap/allowed-sv.ts` om ni vill behålla den som nödbroms
-- Rekommenderad status:
-  - `legacy och kan fasas ut`
-
-### `data/words/common-sv.ts`
-
-- Innehåll:
-  - liten manuell fallbacklista för common words
-- Används idag av:
-  - `data/words/index.ts`
-- Klassificering:
-  - runtime-fallback idag
-  - legacy när DB/common-provider finns
-- Bedömning:
-  - bör ersättas av DB eller provider över importerad ordbank
-- Rekommenderad framtida plats:
-  - `data/legacy/words/common-sv.ts`
-- Rekommenderad status:
-  - `legacy och kan fasas ut`
-
-### `data/words/index.ts`
-
-- Innehåll:
-  - runtime-aggregat som väljer generated eller manual fallback
-- Används idag av:
-  - `lib/game/dagens-ord.ts`
-  - `lib/game/ordstorm.ts`
-  - `lib/game/stegvis.ts`
-- Klassificering:
-  - används direkt av spel
-  - måste ersättas av provider-lager
-- Bedömning:
-  - detta är en central övergångsfil men den håller kvar spel i `data/`-beroenden
-- Rekommenderad framtida plats:
-  - flytta logiken till `lib/words/allowed-word-provider.ts` och `lib/words/common-word-provider.ts`
-- Rekommenderad status:
-  - `används direkt av spel och därför måste ersättas av DB-provider`
-
-### `data/words/never-allow-sv.ts`
-
-- Innehåll:
-  - manuell blocklista för allowed-listan
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - seed/override för pipeline
-- Bedömning:
-  - inte runtime-data
-  - bör stanna som seed/override tills motsvarande adminflöde finns
-- Rekommenderad framtida plats:
-  - `data/seed/word-filters/never-allow-sv.ts`
-- Rekommenderad status:
-  - `bara seed/test`
-
-### `data/words/never-seed-sv.ts`
-
-- Innehåll:
-  - manuell blocklista för seedord
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - seed/override
-- Bedömning:
-  - bra kandidat för seed/override-lager
-- Rekommenderad framtida plats:
-  - `data/seed/word-filters/never-seed-sv.ts`
-- Rekommenderad status:
-  - `bara seed/test`
-
-### `data/words/ordstorm-wordlists.ts`
-
-- Innehåll:
-  - runtime-wrapper som exporterar allowed/common samt väljer generated/manual seedlista
-- Används idag av:
-  - `lib/game/ordstorm.ts`
-- Klassificering:
-  - används direkt av spel
-  - måste ersättas av Ordstorm-provider
-- Bedömning:
-  - detta är idag en speladapter, men den ligger fel i `data/`
-- Rekommenderad framtida plats:
-  - `lib/games/ordstorm/word-provider.ts`
-- Rekommenderad status:
-  - `används direkt av spel och därför måste ersättas av DB-provider`
-
-### `data/words/preferred-seed-sv.ts`
-
-- Innehåll:
-  - manuell prioriteringslista för seedord
-- Används idag av:
-  - `scripts/build-wordlists.ts`
-- Klassificering:
-  - seed/override
-- Bedömning:
-  - inte runtime-speldata
-  - behåll som kurateringsinput tills DB-stöd finns
-- Rekommenderad framtida plats:
-  - `data/seed/word-filters/preferred-seed-sv.ts`
-- Rekommenderad status:
-  - `bara seed/test`
-
-### `data/words/seed-words-sv.ts`
-
-- Innehåll:
-  - manuell fallbacklista för Ordstorm-seedord
-- Används idag av:
-  - `data/words/ordstorm-wordlists.ts`
-- Klassificering:
-  - runtime-fallback idag
-  - legacy/bootstrap
-- Bedömning:
-  - bör inte fortsätta vara spelkälla på sikt
-  - kan användas som bootstrap-seed till DB eller provider
-- Rekommenderad framtida plats:
-  - `data/legacy/words/seed-words-sv.ts`
-  - alternativt `data/seed/bootstrap/seed-words-sv.ts`
-- Rekommenderad status:
-  - `legacy och kan fasas ut`
-
-## Mapprekommendation per fil
-
-| Nuvarande fil                               | Rekommenderad plats                                                               | Roll framåt           |
-| ------------------------------------------- | --------------------------------------------------------------------------------- | --------------------- |
-| `data/dagens-ord/solution-words.ts`         | `data/sources/curated/dagens-ord-solution-words.ts`                               | importkälla till DB   |
-| `data/generated/allowed-sv.generated.ts`    | `data/legacy/generated/allowed-sv.generated.ts`                                   | legacy/build artifact |
-| `data/generated/common-sv.generated.ts`     | `data/legacy/generated/common-sv.generated.ts`                                    | legacy/build artifact |
-| `data/generated/seed-words-sv.generated.ts` | `data/legacy/generated/seed-words-sv.generated.ts`                                | legacy/build artifact |
-| `data/raw/hunspell-sv/sv_SE.dic`            | `data/sources/raw/hunspell/sv_SE.dic`                                             | importkälla           |
-| `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv`  | `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.csv`                                | importkälla           |
-| `data/raw/kelly/Swedish-Kelly_M3_CEFR.xls`  | `data/sources/raw/kelly/Swedish-Kelly_M3_CEFR.xls`                                | backup/reference      |
-| `data/stegvis/puzzles.ts`                   | `data/sources/curated/stegvis-puzzles.ts`                                         | importkälla till DB   |
-| `data/words/allowed-abbrev-sv.ts`           | `data/seed/word-filters/allowed-abbrev-sv.ts`                                     | seed/override         |
-| `data/words/allowed-sv.ts`                  | `data/legacy/words/allowed-sv.ts`                                                 | legacy fallback       |
-| `data/words/common-sv.ts`                   | `data/legacy/words/common-sv.ts`                                                  | legacy fallback       |
-| `data/words/index.ts`                       | `lib/words/*-provider.ts`                                                         | flyttas ut ur `data`  |
-| `data/words/never-allow-sv.ts`              | `data/seed/word-filters/never-allow-sv.ts`                                        | seed/override         |
-| `data/words/never-seed-sv.ts`               | `data/seed/word-filters/never-seed-sv.ts`                                         | seed/override         |
-| `data/words/ordstorm-wordlists.ts`          | `lib/games/ordstorm/word-provider.ts`                                             | spelprovider          |
-| `data/words/preferred-seed-sv.ts`           | `data/seed/word-filters/preferred-seed-sv.ts`                                     | seed/override         |
-| `data/words/seed-words-sv.ts`               | `data/legacy/words/seed-words-sv.ts` eller `data/seed/bootstrap/seed-words-sv.ts` | bootstrap/legacy      |
-
-## Rekommenderade nya runtime-gränser
-
-### `lib/words`
-
-Skapa ett neutralt ordlager som ersätter `data/words/index.ts`.
-
-Föreslagna filer:
-
-- `lib/words/allowed-word-provider.ts`
-- `lib/words/common-word-provider.ts`
-- `lib/words/seed-word-provider.ts`
-- `lib/words/types.ts`
-
-Ansvar:
-
-- välja DB eller fallback-källa
-- exponera ordlistor till spel utan att spel känner till `data/`
-- kapsla fallback under migration
-
-### `lib/games/dagens-ord/rules.ts`
-
-Hit bör ren spelregel-logik flytta från dagens blandning mellan spel och data.
-
-Separat provider:
-
-- `lib/games/dagens-ord/word-provider.ts`
-
-Ansvar:
-
-- hämta dagens publicerade ord
-- hämta allowed lexikon
-
-### `lib/games/ordstorm/rules.ts`
-
-Separat provider:
-
-- `lib/games/ordstorm/word-provider.ts`
-
-Ansvar:
-
-- hämta seed-pool
-- hämta allowed/common pool
-- senare hämta Ordstorm-specifika profiler från DB
-
-### `lib/games/stegvis/rules.ts`
-
-Separat provider:
-
-- `lib/games/stegvis/word-provider.ts`
-
-Ansvar:
-
-- hämta publicerade Stegvis-pussel
-- hämta allowed ord och clue-data
-
-## Prioriterad migreringsordning
-
-1. Flytta ansvar från `data/words/index.ts` till `lib/words/*-provider.ts`
-2. Flytta `data/words/ordstorm-wordlists.ts` till `lib/games/ordstorm/word-provider.ts`
-3. Migrera `data/stegvis/puzzles.ts` till DB och låt Stegvis läsa via provider
-4. Migrera `data/dagens-ord/solution-words.ts` till DB-driven daglig publicering
-5. Flytta manuella filterfiler till `data/seed/word-filters`
-6. Märk `data/generated/*` och manuella fallbacklistor som legacy under övergången
-
-## Slutsats
-
-Den viktigaste gränsdragningen framåt är:
-
-- `data/` ska vara källor, seed och legacy
-- `lib/` ska vara runtime
-- spel ska inte läsa ordlistor direkt från `data/`
-
-Idag är de största direkta runtime-beroendena som bör brytas först:
-
+- `data/generated/allowed-sv.generated.ts`
+- `data/generated/common-sv.generated.ts`
+- `data/generated/seed-words-sv.generated.ts`
 - `data/words/index.ts`
 - `data/words/ordstorm-wordlists.ts`
-- `data/stegvis/puzzles.ts`
+- `data/words/allowed-sv.ts`
+- `data/words/common-sv.ts`
+- `data/words/seed-words-sv.ts`
+
+## DB-first importscript
+
+Nuvarande script [scripts/build-wordlists.ts](/Users/stefan/Projects/wonderboys/ordklubben/scripts/build-wordlists.ts) läser rådata och skriver genererade TypeScript-filer.
+
+Det är bra som prototyp, men fel slutarkitektur.
+
+Det nya importscriptet bör i stället:
+
+- läsa `data/raw/*`
+- normalisera ord
+- tillämpa filter och manuella block/allowlist-regler
+- skriva till Postgres
+- skapa `ImportBatch`
+- skriva importsammanfattning och felrader i DB
+
+Det bör inte:
+
+- skriva `data/generated/*.generated.ts`
+- vara del av spelruntime
+
+## Importmodell i databasen
+
+Det som finns idag räcker som start:
+
+- `Word`
+- `ImportBatch`
+- `source`
+- `sourceReference`
+
+Men för flera samtidiga källor räcker inte ett enda `source`-fält på `Word`.
+
+### Rekommenderad utbyggnad
+
+Lägg till en separat provenance-modell, till exempel:
+
+- `WordSourceRecord`
+
+Förslag på fält:
+
+- `id`
+- `wordId`
+- `importBatchId`
+- `sourceKey`
+- `sourceReference`
+- `rawValue`
+- `normalizedValue`
+- `rank`
+- `frequency`
+- `cefr`
+- `metadata`
+- `createdAt`
+- `updatedAt`
+
+Det gör att:
+
+- samma `Word` kan ha många källor
+- ni kan spåra exakt vilken import som gav vilken metadata
+- framtida källor kan läggas till utan att ni förstör tidigare provenance
+
+### Är `WordSourceRecord` rätt modell?
+
+Ja, i princip. Det robusta i modellen är inte just namnet, utan separationen mellan tre nivåer:
+
+1. canonical ord
+2. importerade källobservationer
+3. manuella/editoriella beslut
+
+Den separationen är viktig eftersom den undviker att ett och samma fält försöker vara:
+
+- rå källa
+- sammanställd sanning
+- redaktionellt beslut
+
+Det är just den sammanblandningen som brukar skapa problem senare.
+
+## Behövs en flagga så importer inte skriver över manuellt redigerade ord?
+
+Ja, men helst inte som en enda grov “overwrite/no-overwrite”-flagga.
+
+Bättre modell:
+
+- importer ska vara additive
+- manuella redigeringar ska ha företräde
+- derivatfält ska kunna räknas om utan att manuella beslut försvinner
+
+### Rekommenderat upplägg
+
+Antingen:
+
+- låsfält på `Word`
+
+Exempel:
+
+- `statusLocked`
+- `difficultyLocked`
+- `frequencyLocked`
+- `notesLocked`
+
+Eller bättre:
+
+- separat modell för manuella overrides, till exempel `WordEditorialOverride`
+
+Fältidé:
+
+- `wordId`
+- `status`
+- `difficulty`
+- `frequency`
+- `notes`
+- `reviewedBy`
+- `reviewedAt`
+
+Rekommendation:
+
+- använd `Word` som aktuell sammanställd vy
+- använd `WordSourceRecord` för rå importprovenance
+- använd `WordEditorialOverride` för manuella avvikelser som alltid vinner
+
+### Är `WordEditorialOverride` rätt modell?
+
+Ja, oftast bättre än många separata låsfält om ni vill vara robusta över tid.
+
+Varför:
+
+- den gör manuella beslut explicita
+- den gör det lättare att se vad som faktiskt avviker från importerad data
+- den går att utöka utan att blåsa upp `Word` med många specialfält
+
+När låsfält räcker:
+
+- om ni bara behöver skydda 1-2 enkla fält under en kortare migrationsfas
+
+När override-modell är bättre:
+
+- om flera personer ska kurera data
+- om ni vill kunna förklara varför ett ord ser ut som det gör
+- om ni vill kunna lägga till fler importer senare
+- om ni vill kunna bygga adminhistorik och review-flöden
+
+Min mer genomtänkta rekommendation är därför:
+
+- undvik att låta `Word` bära all sanning själv
+- undvik många permanenta `...Locked`-fält om ni redan vet att systemet ska växa
+- använd hellre en separat editorial-modell för manuella beslut
+
+## Hur hanterar vi flera importer där samma ord finns i flera källor?
+
+Rekommenderad regel:
+
+- ett canonical `Word` per `normalizedAnswer`
+- många `WordSourceRecord` per ord
+
+Importer ska därför:
+
+- upserta `Word` på `normalizedAnswer`
+- skapa eller uppdatera källpost per källa och import
+- inte behandla senaste import som ensam sanning
+
+### Prioritetsordning mellan källor
+
+En rimlig standardordning:
+
+1. manuella/editoriella overrides
+2. curated interna källor
+3. Kelly eller annan frekvenskälla
+4. Hunspell/SFOL för täckning
+
+Det betyder:
+
+- Hunspell är bra för “ordet finns”
+- Kelly är bra för frekvens och spelbarhet
+- curated filer är bra för spelspecifika beslut
+
+### Merge-strategi per fält
+
+- `Word.answer`
+  - canonical visningsform från editorial override eller första betrodda källa
+- `Word.frequency`
+  - från bästa tillgängliga frekvenskälla
+- `Word.difficulty`
+  - härledd eller manuellt satt
+- `Word.status`
+  - ska inte nedgraderas automatiskt av ny råimport
+- `Word.source`
+  - bör inte längre vara enda sanningen, utan snarare “primary provenance label” om fältet behålls
+
+### Viktig designregel
+
+Importer ska inte “äga” `Word` direkt.
+
+De ska i stället:
+
+- lägga till eller uppdatera källfakta
+- trigga en sammanställning
+- låta canonical `Word` räknas fram med tydlig prioritet
+
+Det är säkrare än att varje import direkt muterar samma fält med olika logik.
+
+## Rekommenderad robust modell
+
+Den mest robusta formen här är:
+
+- `Word`
+  - canonical, spelbar och query-vänlig vy
+- `WordSourceRecord`
+  - en post per ord och källa eller per ord och importkörning
+- `WordEditorialOverride`
+  - redaktionella beslut som vinner över importer
+
+Om ni vill gå ännu mer robust:
+
+- lägg till ett sammanställningssteg där `Word` uppdateras från `WordSourceRecord` + `WordEditorialOverride`
+- behandla `Word` som materialiserad produktvy, inte som rå lagerplats
+
+Det ger en tydlig kedja:
+
+1. rå källa importeras
+2. provenance sparas
+3. editorial overrides appliceras
+4. canonical `Word` uppdateras
+
+Det här skalar bättre än:
+
+- bara `Word.source`
+- bara låsflaggor
+- eller att importscript skriver direkt över allt
+
+## Rekommenderade import modes
+
+I stället för en enda overwrite-flagga, använd tydliga importlägen:
+
+- `insert-missing`
+- `merge-safe`
+- `refresh-source-metadata`
+- `rebuild-derived-fields`
+- `force-overwrite-derived`
+
+Rekommenderat default:
+
+- `merge-safe`
+
+Det ska betyda:
+
+- skapa ord som saknas
+- uppdatera provenance
+- uppdatera härledda, ej låsta fält
+- skriv inte över manuella overrides
+
+## Konsekvens för nuvarande spelfiler
+
+Filer som idag används direkt av spel men bör bli importer eller DB-data:
+
 - `data/dagens-ord/solution-words.ts`
+- `data/stegvis/puzzles.ts`
+- `data/words/index.ts`
+- `data/words/ordstorm-wordlists.ts`
+
+Spel ska i stället läsa via providers i `lib/` som använder DB som förstahandskälla.
+
+För Dagens Ord och Stegvis betyder det:
+
+- ingen ny curated råfil behövs
+- spelet ska välja från `Word` och relaterade spelmodeller i DB
+- temp/mock-filerna ska bara ses som övergångsmaterial som kan tas bort
+
+## Konkreta nästa steg
+
+1. Bestäm canonical Kelly-fil och ta bort `.xls` om CSV räcker.
+2. Byt namn på råkataloger och filer till lowercase kebab-case.
+3. Ersätt `build-wordlists`-output till `data/generated/*` med DB-import.
+4. Inför `WordSourceRecord` för flera källor per ord.
+5. Inför låsfält eller `WordEditorialOverride` för manuellt kuraterade värden.
+6. Ta bort beroendet på temp/mock-filer för Dagens Ord och Stegvis i stället för att flytta dem till nya råfiler.
+7. Flytta spel från `data/*` till DB-drivna providers och spelmodeller.

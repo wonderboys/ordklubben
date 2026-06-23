@@ -60,10 +60,6 @@ components/
   layout/
   ui/
 data/
-  generated/
-    allowed-sv.generated.ts
-    common-sv.generated.ts
-    seed-words-sv.generated.ts
   raw/
     hunspell-sv/
     kelly/
@@ -92,7 +88,7 @@ Arkitektur i korthet:
 - `lib/dictionary/` innehåller svensk normalisering, ordregler och ordlisteverktyg
 - `lib/content/` innehåller contentmodell, import, pusselgeneratorer och adminlogik
 - `lib/storage/` innehåller defensiv browser storage utan backendkrav
-- `data/` innehåller manuella ordlistor, rådata och genererade listor
+- `data/` innehåller rådata och vissa kvarvarande manuella stödlistor under migrationen till DB-driven ordkälla
 
 ## Ordstorm
 
@@ -113,22 +109,17 @@ Nuvarande gameplay:
 
 ## Ordlistor
 
-Ordstorm använder tre separata ordfiler:
+Repo:t innehåller fortfarande några lokala ordfiler:
 
 - `data/words/seed-words-sv.ts`: sexbokstavsord som används för att skapa rundans bokstäver
 - `data/words/common-sv.ts`: vanliga svenska ord som flera framtida spel kan återanvända
 - `data/words/allowed-sv.ts`: extra godkända ord som breddar spelbarheten
 
-Den långsiktiga pipelinen använder i stället genererade listor i `data/generated/`:
+De här filerna är nu att betrakta som övergångsmaterial. Målet är:
 
-- `allowed-sv.generated.ts`: maskinbyggd allowed-lista för Ordstorm
-- `common-sv.generated.ts`: maskinbyggd lista med vanligare svenska ord
-- `seed-words-sv.generated.ts`: sexbokstavsord prioriterade för spelbarhet
-
-Runtime-fallback:
-
-- Om en generated-lista är tom används nuvarande manuella listor i `data/words/`
-- Det gör att appen fortsätter fungera innan rådata lagts in eller scriptet körts
+- rådata i `data/raw/`
+- import till Postgres
+- DB-driven ordkälla för spel
 
 All normalisering och validering går via `lib/dictionary/`:
 
@@ -160,7 +151,7 @@ Stödda filformat:
 Script:
 
 ```bash
-npm run build:wordlists
+npm run import:raw-words
 ```
 
 Scriptet:
@@ -171,9 +162,9 @@ Scriptet:
 - filtrerar bort siffror, bindestreck, specialtecken och för korta ord
 - försöker filtrera bort namn/proper nouns
 - filtrerar bort störande tekniska/organisatoriska förkortningar från `allowed` (t.ex. `dns`, `nsa`, `ssl`) med ett konservativt mönsterfilter ankrat i Kelly och en manuell allowlist i `data/words/allowed-abbrev-sv.ts`
-- bygger `allowed`, `common` och spelbara `seed`-ord
-- skriver resultat till `data/generated/`
-- skriver en rapport i terminalen med volymer, topp-seeds och filtrerade exempel
+- importerar ord och källmetadata till Postgres
+- skapar `ImportBatch`
+- sparar provenance per ordkälla i databasen
 
 Seed-regler i pipelinen:
 
@@ -203,7 +194,7 @@ Seed quality notes:
 
 - Rådata laddas inte ner automatiskt av projektet
 - Du ansvarar själv för att lägga rätt filer i `data/raw/`
-- Kontrollera licensvillkor för Hunspell/SFOL, Kelly-listan och eventuella Språkbanken-exporter innan du distribuerar rådata eller genererade listor
+- Kontrollera licensvillkor för Hunspell/SFOL, Kelly-listan och eventuella Språkbanken-exporter innan du distribuerar rådata eller importerad härledd data
 - README:n och scriptet dokumenterar källorna, men bundlar ingen extern orddatabas
 
 ## Lokalt utvecklingsflöde
@@ -235,7 +226,7 @@ Git hooks:
 När du arbetar med orddata:
 
 ```bash
-npm run build:wordlists
+npm run import:raw-words
 ```
 
 ## Contentdatabas
@@ -243,6 +234,8 @@ npm run build:wordlists
 Första versionen av contentdatabasen använder Prisma + Postgres och innehåller:
 
 - `Word` för ord
+- `WordSourceRecord` för provenance per råkälla/import
+- `WordEditorialOverride` för manuella redaktionella avvikelser
 - `Hint` för teknisk hintmodell, som i UI visas som `Nyckel`
 - `HintCandidate` för föreslagna nycklar som granskas innan de blir riktiga nycklar
 - `Theme` och `WordTheme` för teman

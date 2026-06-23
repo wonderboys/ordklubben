@@ -127,10 +127,53 @@ model Word {
   languageData           WordLanguageData?
   outgoingRelations      WordRelation[]     @relation("WordRelationSource")
   incomingRelations      WordRelation[]     @relation("WordRelationTarget")
+  sourceRecords          WordSourceRecord[]
+  editorialOverride      WordEditorialOverride?
 
   @@index([answer])
   @@index([status])
   @@index([source])
+}
+
+model WordSourceRecord {
+  id               String       @id @default(cuid())
+  wordId           String
+  word             Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  importBatchId    String?
+  importBatch      ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  sourceKey        String
+  sourceReference  String?
+  rawValue         String?
+  normalizedValue  String
+  observedAnswer   String?
+  rank             Int?
+  frequency        Int?
+  cefr             String?
+  metadata         Json?
+  isExcluded       Boolean      @default(false)
+  firstImportedAt  DateTime     @default(now())
+  lastImportedAt   DateTime     @default(now())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([wordId, sourceKey, sourceReference])
+  @@index([wordId])
+  @@index([importBatchId])
+  @@index([sourceKey])
+}
+
+model WordEditorialOverride {
+  id             String        @id @default(cuid())
+  wordId         String        @unique
+  word           Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  answer         String?
+  status         ContentStatus?
+  difficulty     Int?
+  frequency      Int?
+  crosswordScore Int?
+  notes          String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 /// Lexical data describes meaning and relations — not playable hints.
@@ -363,4 +406,5 @@ model ImportBatch {
   summary      Json?
   createdAt    DateTime          @default(now())
   completedAt  DateTime?
+  sourceRecords WordSourceRecord[]
 }
