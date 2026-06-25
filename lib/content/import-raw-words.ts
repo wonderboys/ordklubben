@@ -1,14 +1,14 @@
 import type { ContentStatus, Prisma, PrismaClient } from '@prisma/client';
-import type { BatchSummary } from './import-batch.ts';
-import type { ImportErrorRow } from './import-content.ts';
-import type { ImportSourceMetadata, LoggedImportRow } from './import-job.ts';
+import type { BatchSummary } from './import-batch';
+import type { ImportErrorRow } from './import-content';
+import type { ImportSourceMetadata, LoggedImportRow } from './import-job';
 import {
   createEmptyBatchSummary,
   createImportBatchContext,
   finalizeImportBatch,
   upsertWordSourceRecord,
-} from './import-store.ts';
-import { resolveCanonicalWord } from './word-source-records.ts';
+} from './import-store';
+import { resolveCanonicalWord } from './word-source-records';
 
 export type ImportMode = 'insert-missing' | 'merge-safe' | 'refresh-source-metadata';
 
