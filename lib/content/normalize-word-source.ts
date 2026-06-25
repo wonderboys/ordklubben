@@ -1,4 +1,4 @@
-import { WORD_SOURCES, type WordSource } from '@/lib/content/constants';
+import { WORD_SOURCES, type WordSource } from './constants';
 
 const LEGACY_IMPORT_SOURCES = new Set(['stegvis_seed', 'fotboll_seed']);
 

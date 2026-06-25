@@ -97,6 +97,8 @@ Bygger rätt spelunderlag för ett specifikt spel:
 
 Game Provider:
 
+## Speldata
+
 - läser via Content Layer och DB
 - tillämpar publiceringsregler (t.ex. Stockholm dayKey för dagens edition)
 - väljer spelspecifikt urval (`canBeGuess`, roller, puzzle-koppling)
@@ -130,6 +132,70 @@ En tillfällig importyta för externa ordkällor (t.ex. Hunspell, Kelly).
 - **inte** en del av spelens dataflöde
 
 Den långsiktiga arkitekturen börjar i databasen.
+
+## Import
+
+1. `Word` — canonical, spelbar vy
+2. `WordSourceRecord` — provenance per källa/import
+3. `WordEditorialOverride` — manuella redaktionella beslut
+4. `ImportBatch` — importjobb med metadata för källa, fil och status
+5. `ImportBatchRow` — radlogg för importerat, återanvänt, ignorerat och fel
+
+Det finns just nu två aktiva importspår:
+
+- adminimporten i `app/admin/import`, `lib/content/import-content.ts` och `lib/content/import-lexicon.ts`
+- råimports-scriptet `scripts/import-words.ts` (`npm run import:words`)
+
+Båda använder nu samma underliggande importlager för:
+
+- `ImportBatch`
+- `ImportBatchRow`
+- `WordSourceRecord`
+- källmetadata och batchslutförande
+
+Det betyder att framtida ändringar i importmodell och importloggning ska göras i det delade lagret, inte dupliceras separat för admin och CLI.
+
+Adminimporten:
+
+- skapar `ImportBatch` med källmetadata (`sourceName`, `sourceVersion`, `sourceLicense`, `sourceUrl`, `sourceReference`, `sourceComment`)
+- sätter `importedBy` automatiskt till `Admin` tills riktig adminidentitet finns
+- loggar radutfall i `ImportBatchRow`
+- kopplar importerade hints och lexikonposter tillbaka till sitt `ImportBatch`
+- uppdaterar `WordSourceRecord` utan att skriva över redaktionella beslut
+
+Råimports-scriptet:
+
+- läser `data/raw/hunspell/*.dic` och `data/raw/kelly/*.csv`
+- tillämpar `data/seed/word-filters/never-allow-sv.ts`
+- tillämpar abbreviation-filter för Hunspell med undantag från `lib/dictionary/word-filters.ts`
+- skriver till Postgres (`Word`, `WordSourceRecord`, `ImportBatch`)
+- stödjer `--source=all|hunspell|kelly` och `--mode=insert-missing|merge-safe|refresh-source-metadata`
+
+Råimports-scriptet och adminimporten använder alltså samma kärnmodell för importjobb. Skillnaden ligger främst i vilken typ av källa de läser från och vilka importregler de applicerar före den gemensamma motorn.
+
+## Viktiga noteringar
+
+### `ImportBatch` är just nu det faktiska importjobbet
+
+I adminflödet används `ImportBatch` nu funktionellt som ett långlivat importjobb, även om modellnamnet fortfarande heter `ImportBatch` internt.
+
+Det är avsiktligt.
+
+Vi behöll det interna namnet för att undvika en onödigt riskfylld total rename i Prisma, serverkod och adminvyer samtidigt som importflödet byggdes om. Om vi senare vill byta namn till exempelvis `ImportJob` bör det göras som en separat, medveten refaktor.
+
+### `importedBy` är tills vidare systemvärdet `Admin`
+
+Fältet `importedBy` sätts automatiskt vid import och ska inte anges manuellt i adminformuläret.
+
+Just nu används värdet `Admin` i adminimporten, eftersom adminflödet ännu inte har riktig användaridentitet eller sessionskoppling. När admin senare får autentisering bör `importedBy` börja spegla faktisk användare utan att ändra importens övriga proveniensmodell.
+
+### Redaktionella ändringar ska fortsätta vara separata
+
+Importmetadata och källspårning lever i `ImportBatch`, `ImportBatchRow` och `WordSourceRecord`.
+
+Redaktionella beslut lever i `Word`, `WordEditorialOverride` och övriga innehållstabeller.
+
+Den separationen är viktig: en ny import får uppdatera provenance och rå källinformation, men ska inte skriva över Ordklubbens redaktionella bedömningar.
 
 ## Aktiva spel
 

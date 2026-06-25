@@ -1,21 +1,22 @@
+import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PrismaClient, type ContentStatus } from '@prisma/client';
-import { resolveCanonicalWord } from '../lib/content/word-source-records';
-import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer';
+import type { ContentStatus } from '@prisma/client';
+import { getPrisma } from '../lib/db/prisma.ts';
+import { importRawWords, type ImportMode } from '../lib/content/import-raw-words.ts';
+import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer.ts';
 import {
   detectAllowedAbbreviationFilterReason,
   ESTABLISHED_ABBREVIATIONS,
-} from '../lib/dictionary/word-filters';
+} from '../lib/dictionary/word-filters.ts';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 const ROOT_DIR = process.cwd();
 const RAW_DIR = path.join(ROOT_DIR, 'data', 'raw');
 const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell');
 const KELLY_DIR = path.join(RAW_DIR, 'kelly');
 const NEVER_ALLOW_INPUT = path.join(ROOT_DIR, 'data', 'seed', 'word-filters', 'never-allow-sv.ts');
 
-type ImportMode = 'insert-missing' | 'merge-safe' | 'refresh-source-metadata';
 type RawSourceSelection = 'all' | 'hunspell' | 'kelly';
 type RawWordSource = 'hunspell' | 'kelly';
 type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -371,214 +372,8 @@ function dedupeImports(records: SourceRecordImport[]) {
   return [...byKey.values()];
 }
 
-function chunk<T>(values: T[], size: number) {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size));
-  }
-
-  return chunks;
-}
-
-async function upsertWords(records: SourceRecordImport[], defaultStatus: ContentStatus) {
-  const uniqueWords = new Map<
-    string,
-    {
-      answer: string;
-      normalizedAnswer: string;
-      length: number;
-    }
-  >();
-
-  for (const record of records) {
-    if (!uniqueWords.has(record.normalizedAnswer)) {
-      uniqueWords.set(record.normalizedAnswer, {
-        answer: record.answer,
-        normalizedAnswer: record.normalizedAnswer,
-        length: record.length,
-      });
-    }
-  }
-
-  const values = [...uniqueWords.values()];
-
-  if (values.length > 0) {
-    await prisma.word.createMany({
-      data: values.map((word) => ({
-        answer: word.answer,
-        normalizedAnswer: word.normalizedAnswer,
-        length: word.length,
-        language: 'sv',
-        status: defaultStatus,
-        source: 'import',
-      })),
-      skipDuplicates: true,
-    });
-  }
-
-  const words = await prisma.word.findMany({
-    where: {
-      normalizedAnswer: {
-        in: values.map((word) => word.normalizedAnswer),
-      },
-    },
-    select: {
-      id: true,
-      normalizedAnswer: true,
-    },
-  });
-
-  return new Map(words.map((word) => [word.normalizedAnswer, word.id]));
-}
-
-async function upsertSourceRecords(
-  batchId: string,
-  records: SourceRecordImport[],
-  wordIdByNormalizedAnswer: Map<string, string>,
-  mode: ImportMode,
-) {
-  let upserted = 0;
-
-  for (const record of records) {
-    const wordId = wordIdByNormalizedAnswer.get(record.normalizedAnswer);
-
-    if (!wordId) {
-      continue;
-    }
-
-    const existing = await prisma.wordSourceRecord.findUnique({
-      where: {
-        wordId_sourceKey_sourceReference: {
-          wordId,
-          sourceKey: record.sourceKey,
-          sourceReference: record.sourceReference,
-        },
-      },
-      select: {
-        id: true,
-        metadata: true,
-        firstImportedAt: true,
-      },
-    });
-
-    if (existing && mode === 'insert-missing') {
-      continue;
-    }
-
-    const nextMetadata =
-      mode === 'refresh-source-metadata' || !existing ? record.metadata : existing.metadata;
-
-    await prisma.wordSourceRecord.upsert({
-      where: {
-        wordId_sourceKey_sourceReference: {
-          wordId,
-          sourceKey: record.sourceKey,
-          sourceReference: record.sourceReference,
-        },
-      },
-      create: {
-        wordId,
-        importBatchId: batchId,
-        sourceKey: record.sourceKey,
-        sourceReference: record.sourceReference,
-        rawValue: record.rawValue,
-        normalizedValue: record.normalizedAnswer,
-        observedAnswer: record.observedAnswer,
-        frequency: record.frequency,
-        rank: record.rank,
-        cefr: record.cefr,
-        metadata: record.metadata,
-      },
-      update: {
-        importBatchId: batchId,
-        rawValue: record.rawValue,
-        normalizedValue: record.normalizedAnswer,
-        observedAnswer: record.observedAnswer,
-        frequency: record.frequency,
-        rank: record.rank,
-        cefr: record.cefr,
-        metadata: nextMetadata,
-        lastImportedAt: new Date(),
-      },
-    });
-
-    upserted += 1;
-  }
-
-  return upserted;
-}
-
-async function reconcileWords(wordIds: string[]) {
-  for (const wordIdGroup of chunk(wordIds, 200)) {
-    const words = await prisma.word.findMany({
-      where: {
-        id: {
-          in: wordIdGroup,
-        },
-      },
-      include: {
-        sourceRecords: {
-          select: {
-            sourceKey: true,
-            sourceReference: true,
-            observedAnswer: true,
-            frequency: true,
-            rank: true,
-            cefr: true,
-            isExcluded: true,
-          },
-        },
-        editorialOverride: {
-          select: {
-            answer: true,
-            status: true,
-            difficulty: true,
-            frequency: true,
-            crosswordScore: true,
-            notes: true,
-          },
-        },
-      },
-    });
-
-    for (const word of words) {
-      const canonical = resolveCanonicalWord({
-        normalizedAnswer: word.normalizedAnswer,
-        currentWord: {
-          answer: word.answer,
-          status: word.status,
-          source: word.source,
-          sourceReference: word.sourceReference,
-          difficulty: word.difficulty,
-          frequency: word.frequency,
-          crosswordScore: word.crosswordScore,
-          notes: word.notes,
-        },
-        sourceRecords: word.sourceRecords,
-        editorialOverride: word.editorialOverride,
-      });
-
-      await prisma.word.update({
-        where: { id: word.id },
-        data: {
-          answer: canonical.answer,
-          status: canonical.status,
-          source: canonical.source,
-          sourceReference: canonical.sourceReference,
-          difficulty: canonical.difficulty,
-          frequency: canonical.frequency,
-          crosswordScore: canonical.crosswordScore,
-          notes: canonical.notes,
-        },
-      });
-    }
-  }
-}
-
 async function main() {
   const options = parseArgs();
-  const importedAt = new Date();
   const kellyLemmas = loadKellyLemmaSet();
   const records = dedupeImports(
     [
@@ -589,80 +384,29 @@ async function main() {
     ].sort((left, right) => left.normalizedAnswer.localeCompare(right.normalizedAnswer, 'sv-SE')),
   );
 
-  const batch = await prisma.importBatch.create({
-    data: {
-      type: 'WORDS',
-      filename: null,
-      source: `raw:${options.source}`,
-      status: 'PENDING',
-      totalRows: records.length,
-    },
-  });
-
   try {
-    const wordIdByNormalizedAnswer = await upsertWords(records, options.defaultStatus);
-    const sourceRecordsUpserted = await upsertSourceRecords(
-      batch.id,
+    const result = await importRawWords({
+      prisma,
       records,
-      wordIdByNormalizedAnswer,
-      options.mode,
-    );
-    const touchedWordIds = [
-      ...new Set(
-        records
-          .map((record) => wordIdByNormalizedAnswer.get(record.normalizedAnswer))
-          .filter(Boolean),
-      ),
-    ] as string[];
-
-    await reconcileWords(touchedWordIds);
-
-    const createdWords = await prisma.word.count({
-      where: {
-        createdAt: {
-          gte: new Date(importedAt.getTime() - 1000),
-        },
-        source: 'import',
-      },
-    });
-
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'COMPLETED',
-        importedRows: sourceRecordsUpserted,
-        skippedRows: Math.max(0, records.length - sourceRecordsUpserted),
-        summary: {
-          mode: options.mode,
-          source: options.source,
-          defaultStatus: options.defaultStatus,
-          sourceRecordsUpserted,
-          touchedWords: touchedWordIds.length,
-          createdWords,
-          importedAt: importedAt.toISOString(),
-        },
-        completedAt: new Date(),
+      defaultStatus: options.defaultStatus,
+      mode: options.mode,
+      sourceMetadata: {
+        sourceName:
+          options.source === 'all'
+            ? 'Hunspell + Kelly'
+            : options.source === 'hunspell'
+              ? 'Hunspell'
+              : 'Kelly',
+        sourceReference: options.source,
+        sourceComment: `CLI raw import (${options.mode})`,
+        importedBy: 'CLI',
       },
     });
 
     console.log(
-      `Raw import klar: ${sourceRecordsUpserted} källposter uppdaterade, ${touchedWordIds.length} ord reconciliade.`,
+      `Raw import klar: ${result.summary.createdWords + result.summary.reusedWords} källposter importerade/återanvända, ${result.summary.skippedWords} hoppade över.`,
     );
   } catch (error) {
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'FAILED',
-        errorRows: [
-          {
-            rowNumber: 0,
-            reason: error instanceof Error ? error.message : 'Okänt importfel.',
-          },
-        ],
-        completedAt: new Date(),
-      },
-    });
-
     throw error;
   } finally {
     await prisma.$disconnect();

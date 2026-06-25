@@ -7,13 +7,10 @@ import {
   Table,
 } from '@/components/admin/admin-ui';
 import { AdminImportForm } from '@/components/admin/import-form';
-import {
-  ImportResultStatGrid,
-  importBatchHistoryLabel,
-  importErrorTableHeaders,
-} from '@/components/admin/import-result-summary';
+import { ImportResultStatGrid } from '@/components/admin/import-result-summary';
 import { IMPORT_BATCH_TYPE_LABELS } from '@/lib/content/constants';
-import { parseBatchErrorRows, parseBatchSummary } from '@/lib/content/import-batch';
+import { formatImportBatchSource } from '@/lib/content/import-job';
+import { parseBatchSummary, type BatchSummary } from '@/lib/content/import-batch';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
@@ -21,6 +18,34 @@ type SearchParams = Promise<{
   error?: string;
   success?: string;
 }>;
+
+function getHistoryStats(
+  rows: Array<{ outcome: string; entityType: string }>,
+  summary: BatchSummary | null,
+) {
+  return {
+    words:
+      summary?.createdWords != null && summary?.reusedWords != null
+        ? summary.createdWords + summary.reusedWords
+        : rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
+    hints:
+      summary?.createdHints ??
+      rows.filter((row) => row.entityType === 'HINT' && row.outcome === 'IMPORTED').length,
+    newWords:
+      summary?.createdWords ??
+      rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
+    reusedWords:
+      summary?.reusedWords ??
+      rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'REUSED').length,
+    duplicates:
+      summary != null
+        ? (summary.skippedWords ?? 0) +
+          (summary.skippedHints ?? 0) +
+          (summary.skippedDuplicateLexicalEntries ?? 0)
+        : rows.filter((row) => row.outcome === 'IGNORED' || row.outcome === 'REUSED').length,
+    errors: summary?.failedRows ?? rows.filter((row) => row.outcome === 'ERROR').length,
+  };
+}
 
 export default async function AdminImportPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -38,157 +63,158 @@ export default async function AdminImportPage({ searchParams }: { searchParams: 
     params.batchId
       ? prisma.importBatch.findUnique({
           where: { id: params.batchId },
+          include: {
+            rows: {
+              select: {
+                outcome: true,
+                entityType: true,
+              },
+            },
+          },
         })
       : null,
     prisma.importBatch.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 10,
+      orderBy: { importedAt: 'desc' },
+      take: 20,
+      include: {
+        rows: {
+          select: {
+            outcome: true,
+            entityType: true,
+          },
+        },
+      },
     }),
   ]);
 
   const selectedSummary = parseBatchSummary(selectedBatch?.summary ?? null);
-  const selectedErrors = parseBatchErrorRows(selectedBatch?.errorRows ?? null);
+  const selectedErrors = selectedBatch?.rows.filter((row) => row.outcome === 'ERROR').length ?? 0;
 
   return (
-    <AdminPage title="Import" description="Importera ord, nycklar eller lexikondata från CSV.">
+    <AdminPage
+      title="Import"
+      description="Importera orddata till den permanenta ordbanken med tydlig kallmetadata och full sparbar historik."
+    >
       <FeedbackMessage error={params.error} success={params.success} />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <AdminPanel title="Ny import">
           <AdminImportForm />
         </AdminPanel>
 
-        <AdminPanel title="CSV-format">
-          <div className="space-y-5 text-sm text-print-ink">
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Ord</p>
-              <p>
-                `answer`, `source`, `sourceReference`, `difficulty`, `crosswordScore`, `notes`,
-                `theme`, `wordStatus` (valfria utom answer). `source` är generisk (t.ex. import).
-                `sourceReference` kan ange filnamn eller dataset.
-              </p>
+        <AdminPanel title="Importguide">
+          <details className="group">
+            <summary className="cursor-pointer list-none text-sm font-medium text-print-ink">
+              Visa CSV-format och regler
+            </summary>
+            <div className="mt-4 space-y-5 text-sm text-print-ink">
+              <div>
+                <p className="font-bold uppercase tracking-[0.04em]">Ord</p>
+                <p>
+                  `answer`, `difficulty`, `crosswordScore`, `notes`, `theme`, `wordStatus`,
+                  `frequency`, `rank`, `cefr`.
+                </p>
+              </div>
+              <div>
+                <p className="font-bold uppercase tracking-[0.04em]">Nycklar</p>
+                <p>
+                  `answer`, `hint`, `type`, `difficulty`, `tone`, `notes`, `theme`, `wordStatus`,
+                  `hintStatus`.
+                </p>
+              </div>
+              <div>
+                <p className="font-bold uppercase tracking-[0.04em]">Lexikon</p>
+                <p>`word`, `type`, `value`, `notes`. Ordet maste redan finnas i ordbanken.</p>
+              </div>
+              <div>
+                <p className="font-bold uppercase tracking-[0.04em]">Princip</p>
+                <p>
+                  Kallmetadata anges per importjobb. Redaktionella andringar skrivs aldrig over av
+                  en senare import.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Nycklar</p>
-              <p>
-                `answer`, `hint`, `type`, `difficulty`, `tone`, `source`, `notes`, `theme`,
-                `wordStatus`, `hintStatus` (valfria utom answer och hint)
-              </p>
-            </div>
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Ord + nycklar</p>
-              <p>
-                Samma kolumner som för nycklar. En rad skapar eller återanvänder ordet och lägger
-                till en nyckel.
-              </p>
-            </div>
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Lexikon</p>
-              <p>
-                `word`, `type`, `value`, `source`, `sourceReference`, `notes` (valfria utom word,
-                type och value). Ordet måste redan finnas i ordbanken.
-              </p>
-            </div>
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Regler</p>
-              <p>
-                `answer` krävs alltid. `hint` krävs för nyckelimport. Tom `type` blir `DEFINITION`.
-                Okända värden mappas till säkra standarder. `theme` kopplar ordet till tema.
-                `wordStatus` och `hintStatus` kan vara `DRAFT` eller `APPROVED` och override:ar
-                default per rad. Befintliga ord och nycklar ändras inte.
-              </p>
-            </div>
-            <div>
-              <p className="font-bold uppercase tracking-[0.04em]">Exempel</p>
-              <p className="font-mono text-xs leading-relaxed text-print-muted">
-                answer,hint,theme,source,sourceReference,wordStatus,hintStatus
-                <br />
-                MÅL,Det man vill göra i
-                fotboll,Fotboll,import,fotboll_ordlista_v2.csv,APPROVED,APPROVED
-                <br />
-                <br />
-                word,type,value,source,sourceReference,notes
-                <br />
-                TRAV,DEFINITION,Hästars gångart,saldo,saldo_v1,
-                <br />
-                TRAV,SYNONYM,gångart,synlex,synlex_v1,
-              </p>
-            </div>
-          </div>
+          </details>
         </AdminPanel>
       </div>
 
       {selectedBatch ? (
-        <AdminPanel title="Senaste importresultat">
-          <div className="grid gap-4">
+        <AdminPanel title="Senaste importjobb">
+          <div className="space-y-4">
             <ImportResultStatGrid
               batchType={selectedBatch.type}
               summary={selectedSummary}
               totalRows={selectedBatch.totalRows}
-              errorCount={selectedErrors.length}
+              errorCount={selectedErrors}
             />
-
-            <div className="text-sm text-print-muted">
-              Fil: {selectedBatch.filename ?? 'okänd'} · Typ:{' '}
-              {IMPORT_BATCH_TYPE_LABELS[selectedBatch.type]} · Status: {selectedBatch.status}
-            </div>
-
-            <div>
+            <p className="text-sm text-print-muted">
+              {formatImportBatchSource({
+                sourceName: selectedBatch.sourceName,
+                sourceVersion: selectedBatch.sourceVersion,
+              })}{' '}
+              · {selectedBatch.filename ?? 'okand fil'} ·{' '}
+              {selectedBatch.importedAt.toLocaleString('sv-SE')}
+            </p>
+            <p>
               <Link
                 href={`/admin/import/${selectedBatch.id}`}
                 className="text-sm font-bold text-print-ink underline underline-offset-2"
               >
-                Öppna importbatch
+                Oppna importdetaljer
               </Link>
-            </div>
-
-            <Table headers={[...importErrorTableHeaders(selectedBatch.type)]}>
-              {selectedErrors.map((errorRow, index) => (
-                <tr
-                  key={`${errorRow.rowNumber}-${index}`}
-                  className="border-b border-print-ink/10 align-top"
-                >
-                  <td className="px-3 py-3 text-print-ink">
-                    {errorRow.rowNumber === 0 ? 'Allmänt' : errorRow.rowNumber}
-                  </td>
-                  <td className="px-3 py-3 text-print-ink">{errorRow.reason}</td>
-                  <td className="px-3 py-3 text-print-muted">{errorRow.answer || '—'}</td>
-                  <td className="px-3 py-3 text-print-muted">{errorRow.hint || '—'}</td>
-                </tr>
-              ))}
-            </Table>
-            {selectedErrors.length === 0 ? (
-              <p className="text-sm text-print-muted">Inga felrader i den här importen.</p>
-            ) : null}
+            </p>
           </div>
         </AdminPanel>
       ) : null}
 
       <AdminPanel title="Importhistorik">
-        <Table headers={['Tid', 'Typ', 'Fil', 'Status', 'Rader', 'Detaljer']}>
+        <Table
+          headers={[
+            'Fil',
+            'Kalla',
+            'Version',
+            'Importerad',
+            'Antal ord',
+            'Antal nycklar',
+            'Nya ord',
+            'Ateranvanda ord',
+            'Dubbletter',
+            'Fel',
+            'Status',
+          ]}
+        >
           {recentBatches.map((batch) => {
-            const summary = parseBatchSummary(batch.summary);
+            const stats = getHistoryStats(batch.rows, parseBatchSummary(batch.summary));
 
             return (
               <tr key={batch.id} className="border-b border-print-ink/10 align-top">
                 <td className="px-3 py-3 text-print-ink">
-                  {batch.createdAt.toLocaleString('sv-SE')}
-                </td>
-                <td className="px-3 py-3 text-print-ink">{IMPORT_BATCH_TYPE_LABELS[batch.type]}</td>
-                <td className="px-3 py-3 text-print-muted">{batch.filename ?? '—'}</td>
-                <td className="px-3 py-3 text-print-ink">{batch.status}</td>
-                <td className="px-3 py-3 text-print-ink">{batch.totalRows}</td>
-                <td className="px-3 py-3 text-print-muted">
                   <Link href={`/admin/import/${batch.id}`} className="underline underline-offset-2">
-                    {importBatchHistoryLabel(batch.type, summary)}
+                    {batch.filename ?? 'Import utan filnamn'}
                   </Link>
+                </td>
+                <td className="px-3 py-3 text-print-ink">
+                  {batch.sourceName ?? batch.source ?? '—'}
+                </td>
+                <td className="px-3 py-3 text-print-muted">{batch.sourceVersion ?? '—'}</td>
+                <td className="px-3 py-3 text-print-muted">
+                  {batch.importedAt.toLocaleString('sv-SE')}
+                </td>
+                <td className="px-3 py-3 text-print-ink">{stats.words}</td>
+                <td className="px-3 py-3 text-print-ink">{stats.hints}</td>
+                <td className="px-3 py-3 text-print-ink">{stats.newWords}</td>
+                <td className="px-3 py-3 text-print-ink">{stats.reusedWords}</td>
+                <td className="px-3 py-3 text-print-ink">{stats.duplicates}</td>
+                <td className="px-3 py-3 text-print-ink">{stats.errors}</td>
+                <td className="px-3 py-3 text-print-ink">
+                  {batch.status} · {IMPORT_BATCH_TYPE_LABELS[batch.type]}
                 </td>
               </tr>
             );
           })}
         </Table>
         {recentBatches.length === 0 ? (
-          <p className="mt-4 text-sm text-print-muted">Ingen importhistorik ännu.</p>
+          <p className="mt-4 text-sm text-print-muted">Ingen importhistorik annu.</p>
         ) : null}
       </AdminPanel>
     </AdminPage>

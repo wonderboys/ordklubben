@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Field, FileInput, SelectInput, SubmitButton } from '@/components/admin/admin-ui';
+import {
+  Field,
+  FileInput,
+  SelectInput,
+  SubmitButton,
+  TextArea,
+  TextInput,
+} from '@/components/admin/admin-ui';
 import { importContentAction } from '@/lib/content/actions';
 import {
   CONTENT_STATUSES,
@@ -16,69 +23,107 @@ export function AdminImportForm() {
   const isLexiconImport = importType === 'LEXICON';
 
   return (
-    <form action={importContentAction} className="grid gap-3">
-      <Field label="Importtyp" htmlFor="importType">
-        <SelectInput
-          id="importType"
-          name="importType"
-          value={importType}
-          onChange={(event) => setImportType(event.target.value as ImportBatchType)}
-        >
-          {IMPORT_BATCH_TYPES.map((value) => (
-            <option key={value} value={value}>
-              {IMPORT_BATCH_TYPE_LABELS[value]}
-            </option>
-          ))}
-        </SelectInput>
-      </Field>
+    <form action={importContentAction} className="grid gap-5">
+      <section className="grid gap-3">
+        <h3 className="text-sm font-semibold text-print-ink">Import</h3>
 
-      {isLexiconImport ? (
-        <p className="text-sm text-print-muted">
-          Lexikonimport lägger till poster på befintliga ord. Inga nya ord eller nycklar skapas.
-        </p>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field
-            label="Defaultstatus för nya ord"
-            htmlFor="wordStatus"
-            hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya ord."
+        <Field label="Importtyp" htmlFor="importType">
+          <SelectInput
+            id="importType"
+            name="importType"
+            value={importType}
+            onChange={(event) => setImportType(event.target.value as ImportBatchType)}
           >
-            <SelectInput id="wordStatus" name="wordStatus" defaultValue="DRAFT">
-              {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
-                <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </option>
-              ))}
-            </SelectInput>
+            {IMPORT_BATCH_TYPES.map((value) => (
+              <option key={value} value={value}>
+                {IMPORT_BATCH_TYPE_LABELS[value]}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+
+        {!isLexiconImport ? (
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field
+              label="Standardstatus for nya ord"
+              htmlFor="wordStatus"
+              hint="Galler bara nya ord som skapas av importen."
+            >
+              <SelectInput id="wordStatus" name="wordStatus" defaultValue="DRAFT">
+                {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
+                  <option key={value} value={value}>
+                    {STATUS_LABELS[value]}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+
+            <Field
+              label="Standardstatus for nya nycklar"
+              htmlFor="hintStatus"
+              hint="Galler bara nya nycklar som skapas av importen."
+            >
+              <SelectInput id="hintStatus" name="hintStatus" defaultValue="DRAFT">
+                {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
+                  <option key={value} value={value}>
+                    {STATUS_LABELS[value]}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+          </div>
+        ) : (
+          <p className="text-sm text-print-muted">
+            Lexikonimport lagger till poster pa befintliga ord. Inga nya ord eller nycklar skapas.
+          </p>
+        )}
+
+        <Field
+          label="CSV-fil"
+          htmlFor="file"
+          hint={
+            isLexiconImport
+              ? 'Kolumner: word, type, value, notes.'
+              : 'Kolumner varierar med importtyp. Se importguiden till hoger.'
+          }
+        >
+          <FileInput id="file" name="file" type="file" accept=".csv,text/csv" required />
+        </Field>
+      </section>
+
+      <section className="grid gap-3 border-t border-print-ink/10 pt-4">
+        <h3 className="text-sm font-semibold text-print-ink">Datakalla</h3>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Namn" htmlFor="sourceName" hint="Till exempel Hunspell, Kelly eller SALDO.">
+            <TextInput id="sourceName" name="sourceName" required />
           </Field>
 
-          <Field
-            label="Defaultstatus för nya nycklar"
-            htmlFor="hintStatus"
-            hint="Välj Godkänd för kurerade seed-filer. Gäller bara nya nycklar."
-          >
-            <SelectInput id="hintStatus" name="hintStatus" defaultValue="DRAFT">
-              {CONTENT_STATUSES.filter((status) => status !== 'REJECTED').map((value) => (
-                <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </option>
-              ))}
-            </SelectInput>
+          <Field label="Version" htmlFor="sourceVersion">
+            <TextInput id="sourceVersion" name="sourceVersion" placeholder="2025-01" />
+          </Field>
+
+          <Field label="Licens" htmlFor="sourceLicense">
+            <TextInput id="sourceLicense" name="sourceLicense" placeholder="LGPL" />
+          </Field>
+
+          <Field label="URL" htmlFor="sourceUrl">
+            <TextInput id="sourceUrl" name="sourceUrl" placeholder="https://..." />
           </Field>
         </div>
-      )}
 
-      <Field
-        label="CSV-fil"
-        htmlFor="file"
-        hint={
-          isLexiconImport
-            ? 'Kolumner: word, type, value, source, sourceReference, notes.'
-            : 'Stöd för ord, nycklar eller kombinerad import enligt exemplen.'
-        }
-      >
-        <FileInput id="file" name="file" type="file" accept=".csv,text/csv" required />
-      </Field>
+        <Field
+          label="Referens"
+          htmlFor="sourceReference"
+          hint="Filnamn, datasetnamn eller annan kallreferens."
+        >
+          <TextInput id="sourceReference" name="sourceReference" />
+        </Field>
+
+        <Field label="Kommentar" htmlFor="sourceComment">
+          <TextArea id="sourceComment" name="sourceComment" />
+        </Field>
+      </section>
 
       <div>
         <SubmitButton variant="primary">Importera</SubmitButton>

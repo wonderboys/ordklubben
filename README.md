@@ -204,7 +204,12 @@ Scriptet:
 - kan tillfälligt tillämpa manuella importfilter innan motsvarande editorial override finns i DB
 - tillämpar abbreviation-filter för Hunspell via `lib/dictionary/word-filters.ts`
 - importerar ord och källmetadata till Postgres
-- skapar `ImportBatch` och `WordSourceRecord` per källa
+- skapar `ImportBatch`, `ImportBatchRow` och `WordSourceRecord` per källa
+
+Viktiga noteringar:
+
+- `ImportBatch` fungerar nu praktiskt som projektets importjobb, även om modellnamnet fortfarande heter `ImportBatch` internt
+- `importedBy` sätts automatiskt till `Admin` tills adminflödet har riktig användaridentitet
 
 Importkällor (Hunspell, Kelly) beskriver provenance — inte aktivt spelinnehåll.
 
@@ -268,7 +273,15 @@ Första versionen av contentdatabasen använder Prisma + Postgres och innehålle
 - `Hint` för teknisk hintmodell, som i UI visas som `Nyckel`
 - `HintCandidate` för föreslagna nycklar som granskas innan de blir riktiga nycklar
 - `Theme` och `WordTheme` för teman
-- `ImportBatch` för enkel importspårning
+- `ImportBatch` för importjobb med källmetadata, filspårning och status
+- `ImportBatchRow` för radnivåloggning av importerat, återanvänt, ignorerat och fel
+
+Importflödet ska bevara separationen mellan:
+
+- datakälla och importproveniens
+- Ordklubbens redaktionella beslut
+
+En ny import får alltså inte skriva över redaktionellt arbete.
 
 På sikt utökas databasen med tydligare `Language`/`Lexicon`-lager. Publicering sker via `Game`, `GameEdition` och `GameWord`.
 

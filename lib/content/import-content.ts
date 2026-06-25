@@ -1,10 +1,10 @@
-import type {
-  ContentStatus,
-  HintType,
-  ImportBatchType,
-  PrismaClient,
-  Prisma,
-} from '@prisma/client';
+import type { ContentStatus, HintType, ImportBatchType, PrismaClient } from '@prisma/client';
+import { type ImportSourceMetadata, type LoggedImportRow } from '@/lib/content/import-job';
+import {
+  createImportBatchContext,
+  finalizeImportBatch,
+  upsertWordSourceRecord,
+} from '@/lib/content/import-store';
 import { normalizeHintSource, parseHintTypeInput } from '@/lib/content/normalize-hint-metadata';
 import type { BatchSummary } from '@/lib/content/import-batch';
 import { parseCsv, requireCsvHeaders } from '@/lib/content/import-csv';
@@ -13,10 +13,6 @@ import {
   normalizeAnswer,
   slugifyThemeName,
 } from '@/lib/content/normalize-answer';
-import {
-  normalizeWordSource,
-  resolveWordSourceReference,
-} from '@/lib/content/normalize-word-source';
 
 export type ImportErrorRow = {
   rowNumber: number;
@@ -42,6 +38,7 @@ type ImportContentOptions = {
   defaultWordStatus: ContentStatus;
   defaultHintStatus: ContentStatus;
   source?: string;
+  sourceMetadata: ImportSourceMetadata;
 };
 
 function parseOptionalInteger(value: string, label: string) {
@@ -88,25 +85,6 @@ function parseContentStatus(value: string, defaultStatus: ContentStatus, label: 
 
 export function normalizeHintTextForDuplicateCheck(text: string) {
   return text.trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('sv-SE');
-}
-
-function buildSummary(summary: ImportSummary): Prisma.InputJsonObject {
-  return {
-    totalRows: summary.totalRows,
-    createdWords: summary.createdWords,
-    reusedWords: summary.reusedWords,
-    skippedWords: summary.skippedWords,
-    createdHints: summary.createdHints,
-    skippedHints: summary.skippedHints,
-    failedRows: summary.failedRows,
-    createdThemes: summary.createdThemes,
-    reusedThemes: summary.reusedThemes,
-    createdThemeLinks: summary.createdThemeLinks,
-    reusedThemeLinks: summary.reusedThemeLinks,
-    createdLexicalEntries: summary.createdLexicalEntries,
-    skippedDuplicateLexicalEntries: summary.skippedDuplicateLexicalEntries,
-    skippedMissingWords: summary.skippedMissingWords,
-  };
 }
 
 type ThemeCacheEntry = {
@@ -244,15 +222,6 @@ async function linkWordToTheme({
   return { ok: true };
 }
 
-function buildErrorRowsJson(errorRows: ImportErrorRow[]): Prisma.InputJsonArray {
-  return errorRows.map((errorRow) => ({
-    rowNumber: errorRow.rowNumber,
-    reason: errorRow.reason,
-    answer: errorRow.answer ?? null,
-    hint: errorRow.hint ?? null,
-  }));
-}
-
 export async function importContent({
   prisma,
   csvText,
@@ -261,15 +230,17 @@ export async function importContent({
   defaultWordStatus,
   defaultHintStatus,
   source = 'import',
+  sourceMetadata,
 }: ImportContentOptions): Promise<ImportContentResult> {
-  const batch = await prisma.importBatch.create({
-    data: {
-      type: importType,
+  const { batch, batchSource, batchSourceKey, batchSourceReference } =
+    await createImportBatchContext({
+      prisma,
+      importType,
       filename,
       source,
-      status: 'PENDING',
-    },
-  });
+      sourceMetadata,
+      defaultImportedBy: 'Admin',
+    });
 
   const summary: ImportSummary = {
     totalRows: 0,
@@ -288,6 +259,7 @@ export async function importContent({
     skippedMissingWords: 0,
   };
   const errorRows: ImportErrorRow[] = [];
+  const loggedRows: LoggedImportRow[] = [];
 
   try {
     const parsedCsv = parseCsv(csvText);
@@ -321,6 +293,14 @@ export async function importContent({
           answer: rawAnswer,
           hint: rawHint || undefined,
         });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: rawAnswer,
+          hint: rawHint || undefined,
+          reason: 'answer får inte vara tomt.',
+        });
         continue;
       }
 
@@ -336,6 +316,15 @@ export async function importContent({
             'Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.',
           answer: rawAnswer,
           hint: rawHint || undefined,
+        });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: rawAnswer,
+          hint: rawHint || undefined,
+          reason:
+            'Ord får bara innehålla svenska bokstäver, mellanslag, bindestreck och apostrofer.',
         });
         continue;
       }
@@ -356,10 +345,20 @@ export async function importContent({
           answer: normalized.answer,
           hint: rawHint || undefined,
         });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: rowDifficulty.reason,
+        });
         continue;
       }
 
       const rowCrosswordScore = parseOptionalInteger(row.crosswordscore ?? '', 'crosswordScore');
+      const rowFrequency = parseOptionalInteger(row.frequency ?? '', 'frequency');
+      const rowRank = parseOptionalInteger(row.rank ?? '', 'rank');
 
       if (!rowCrosswordScore.ok) {
         summary.failedRows += 1;
@@ -372,6 +371,60 @@ export async function importContent({
           reason: rowCrosswordScore.reason,
           answer: normalized.answer,
           hint: rawHint || undefined,
+        });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: rowCrosswordScore.reason,
+        });
+        continue;
+      }
+
+      if (!rowFrequency.ok) {
+        summary.failedRows += 1;
+        summary.skippedWords += 1;
+        if (importType !== 'WORDS') {
+          summary.skippedHints += 1;
+        }
+        errorRows.push({
+          rowNumber,
+          reason: rowFrequency.reason,
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+        });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: rowFrequency.reason,
+        });
+        continue;
+      }
+
+      if (!rowRank.ok) {
+        summary.failedRows += 1;
+        summary.skippedWords += 1;
+        if (importType !== 'WORDS') {
+          summary.skippedHints += 1;
+        }
+        errorRows.push({
+          rowNumber,
+          reason: rowRank.reason,
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+        });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: rowRank.reason,
         });
         continue;
       }
@@ -394,6 +447,14 @@ export async function importContent({
           answer: normalized.answer,
           hint: rawHint || undefined,
         });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: rowWordStatus.reason,
+        });
         continue;
       }
 
@@ -411,6 +472,14 @@ export async function importContent({
             reason: rowHintStatus.reason,
             answer: normalized.answer,
             hint: rawHint || undefined,
+          });
+          loggedRows.push({
+            rowNumber,
+            outcome: 'ERROR',
+            entityType: 'HINT',
+            answer: normalized.answer,
+            hint: rawHint || undefined,
+            reason: rowHintStatus.reason,
           });
           continue;
         }
@@ -432,16 +501,14 @@ export async function importContent({
           word = { id: existingWord.id, existsBefore: true };
           wordCache.set(normalized.normalizedAnswer, word);
           summary.reusedWords += 1;
-        } else {
-          const rawWordSource = row.source?.trim() ?? '';
-          const wordSource = normalizeWordSource(rawWordSource || source || 'import');
-          const wordSourceReference = resolveWordSourceReference({
-            source: wordSource,
-            explicitReference: row.sourcereference ?? row.source_reference,
-            rawSourceInput: rawWordSource,
-            importFilename: filename,
+          loggedRows.push({
+            rowNumber,
+            outcome: 'REUSED',
+            entityType: 'WORD',
+            answer: normalized.answer,
+            wordId: existingWord.id,
           });
-
+        } else {
           const createdWord = await prisma.word.create({
             data: {
               answer: normalized.answer,
@@ -449,9 +516,10 @@ export async function importContent({
               length: normalized.length,
               language: 'sv',
               status: rowWordStatus.value,
-              source: wordSource,
-              sourceReference: wordSourceReference,
+              source: batchSource || source,
+              sourceReference: batchSourceReference,
               difficulty: rowDifficulty.value,
+              frequency: rowFrequency.value,
               crosswordScore: rowCrosswordScore.value,
               notes: row.notes?.trim() || undefined,
             },
@@ -463,12 +531,49 @@ export async function importContent({
           word = { id: createdWord.id, existsBefore: false };
           wordCache.set(normalized.normalizedAnswer, word);
           summary.createdWords += 1;
+          loggedRows.push({
+            rowNumber,
+            outcome: 'IMPORTED',
+            entityType: 'WORD',
+            answer: normalized.answer,
+            wordId: createdWord.id,
+          });
         }
       } else if (word.existsBefore) {
         summary.reusedWords += 1;
+        loggedRows.push({
+          rowNumber,
+          outcome: 'REUSED',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          wordId: word.id,
+        });
       } else if (importType === 'WORDS') {
         summary.skippedWords += 1;
+        loggedRows.push({
+          rowNumber,
+          outcome: 'IGNORED',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          wordId: word.id,
+          reason: 'Ordet importerades redan tidigare i samma jobb.',
+        });
       }
+
+      await upsertWordSourceRecord({
+        prisma,
+        wordId: word.id,
+        importBatch: batch,
+        sourceKey: batchSourceKey,
+        sourceReference: batchSourceReference,
+        normalizedValue: normalized.normalizedAnswer,
+        observedAnswer: normalized.answer,
+        rank: rowRank.value,
+        frequency: rowFrequency.value,
+        cefr: row.cefr?.trim() || undefined,
+        rawValue: rawAnswer.trim(),
+        metadata: row.source ? { originalSourceField: row.source.trim() } : undefined,
+      });
 
       const themeLink = await linkWordToTheme({
         prisma,
@@ -490,6 +595,15 @@ export async function importContent({
           answer: normalized.answer,
           hint: rawHint || undefined,
         });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'WORD',
+          answer: normalized.answer,
+          hint: rawHint || undefined,
+          reason: themeLink.reason,
+          wordId: word.id,
+        });
         continue;
       }
 
@@ -510,6 +624,15 @@ export async function importContent({
           reason: 'hint får inte vara tomt för denna importtyp.',
           answer: normalized.answer,
           hint: rawHint,
+        });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'ERROR',
+          entityType: 'HINT',
+          answer: normalized.answer,
+          hint: rawHint,
+          reason: 'hint får inte vara tomt för denna importtyp.',
+          wordId: word.id,
         });
         continue;
       }
@@ -540,37 +663,57 @@ export async function importContent({
           answer: normalized.answer,
           hint: hintText,
         });
+        loggedRows.push({
+          rowNumber,
+          outcome: 'IGNORED',
+          entityType: 'HINT',
+          answer: normalized.answer,
+          hint: hintText,
+          reason: 'Samma nyckeltext finns redan för ordet.',
+          wordId: word.id,
+        });
         continue;
       }
 
-      await prisma.hint.create({
+      const createdHint = await prisma.hint.create({
         data: {
           wordId: word.id,
+          importBatchId: batch.id,
           text: hintText,
           type: parseHintType(row.type ?? ''),
           status: hintStatusForRow,
           difficulty: rowDifficulty.value,
           tone: row.tone?.trim() || undefined,
-          source: normalizeHintSource(row.source?.trim() || source, 'import'),
+          source: normalizeHintSource(batchSource || source, 'import'),
           notes: row.notes?.trim() || undefined,
+        },
+        select: {
+          id: true,
         },
       });
 
       existingHintTexts.add(normalizedHintText);
       summary.createdHints += 1;
+      loggedRows.push({
+        rowNumber,
+        outcome: 'IMPORTED',
+        entityType: 'HINT',
+        answer: normalized.answer,
+        hint: hintText,
+        wordId: word.id,
+        hintId: createdHint.id,
+      });
     }
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'COMPLETED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdWords + summary.createdHints,
-        skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'COMPLETED',
+      importedRows: summary.createdWords + summary.createdHints,
+      skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
+      loggedRows,
     });
 
     return {
@@ -586,20 +729,24 @@ export async function importContent({
       rowNumber: 0,
       reason,
     });
+    loggedRows.push({
+      rowNumber: 0,
+      outcome: 'ERROR',
+      entityType: 'WORD',
+      reason,
+    });
 
     summary.failedRows += 1;
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'FAILED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdWords + summary.createdHints,
-        skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'FAILED',
+      importedRows: summary.createdWords + summary.createdHints,
+      skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
+      loggedRows,
     });
 
     return {
