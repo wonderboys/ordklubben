@@ -1,12 +1,16 @@
 import { pickPrimaryClue } from '@/lib/content/stegvis/clue-display';
 import type { StegvisGeneratorCorpus } from '@/lib/content/stegvis/generator/types';
-import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
 import { findPathWithWordCount } from '@/lib/content/stegvis/word-graph/search';
 import { normalizeGraphWord } from '@/lib/content/stegvis/word-graph/utils';
-import { normalizeStegvisWord } from '@/lib/game/stegvis';
+import {
+  chainMeetsPlayRequirement,
+  normalizeStegvisWord,
+  STEGVIS_CHAIN_WORD_COUNT,
+  STEGVIS_MIDDLE_STEP_COUNT,
+} from '@/lib/games/stegvis/rules';
+import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/games/stegvis/types';
 
-export const STEGVIS_MIDDLE_STEP_COUNT = 5;
-export const STEGVIS_CHAIN_WORD_COUNT = STEGVIS_MIDDLE_STEP_COUNT + 2;
+export { chainMeetsPlayRequirement, STEGVIS_CHAIN_WORD_COUNT, STEGVIS_MIDDLE_STEP_COUNT };
 
 function toDisplayClue(clue: string | null): string {
   if (clue && clue.trim().length > 0) {
@@ -14,14 +18,6 @@ function toDisplayClue(clue: string | null): string {
   }
 
   return 'Nyckel saknas';
-}
-
-export function countMiddleSteps(chain: StegvisChainStep[]): number {
-  return chain.filter((step) => step.role === 'middle').length;
-}
-
-export function chainMeetsPlayRequirement(chain: StegvisChainStep[]): boolean {
-  return countMiddleSteps(chain) === STEGVIS_MIDDLE_STEP_COUNT;
 }
 
 export function buildChainStepsFromPath(

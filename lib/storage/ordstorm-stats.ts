@@ -1,4 +1,4 @@
-import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { type OrdstormStats } from '@/lib/games/ordstorm/types';
 import { createGameStorage } from '@/lib/storage/create-game-storage';
 
 export const defaultOrdstormStats: OrdstormStats = {

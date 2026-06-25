@@ -8,7 +8,7 @@ import { OrdflataKeyboard } from '@/components/games/ordflata/ordflata-keyboard'
 import { GameToast, useGameToast } from '@/components/games/game-toast';
 import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
 import { getPlacementCells } from '@/lib/content/puzzle/grid';
-import type { OrdflataPlayerPuzzle } from '@/lib/content/ordflata-alpha';
+import type { OrdflataPlayerPuzzle } from '@/lib/games/ordflata/types';
 import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
 
 const SWEDISH_LETTER_PATTERN = /^[a-zåäö]$/;

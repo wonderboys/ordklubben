@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type RefObject } from 'react';
 import { PUZZLE_DIRECTION_LABELS } from '@/lib/content/constants';
-import type { OrdflataPlayerEntry } from '@/lib/content/ordflata-alpha';
+import type { OrdflataPlayerEntry } from '@/lib/games/ordflata/types';
 import { cn } from '@/lib/utils';
 
 function sortEntries(entries: OrdflataPlayerEntry[]) {

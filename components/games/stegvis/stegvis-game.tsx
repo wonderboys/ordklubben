@@ -10,14 +10,17 @@ import {
 import { type WordTileRowCell, WordTileRow } from '@/components/games/word-tiles';
 import { Card, CardContent } from '@/components/ui/card';
 import { MonoLabel } from '@/components/ui/typography';
-import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis';
-import type { StegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
+import type {
+  StegvisChainStep,
+  StegvisPlaySession,
+  StegvisPuzzleBundle,
+} from '@/lib/games/stegvis/types';
 import {
-  chainMeetsPlayRequirement,
+  normalizeStegvisWord,
+  pickRandomPuzzle,
   STEGVIS_MIDDLE_STEP_COUNT,
-} from '@/lib/content/stegvis/play-chain';
-import { validateStegvisChainStep } from '@/lib/game/stegvis-chain-validation';
-import { normalizeStegvisWord, pickRandomPuzzle } from '@/lib/game/stegvis';
+  validateStegvisChainStep,
+} from '@/lib/games/stegvis/rules';
 import {
   loadStegvisStats,
   saveStegvisStats,
@@ -251,10 +254,6 @@ function getMiddleStepIndices(chain: StegvisChainStep[]) {
     .filter((index) => index >= 0);
 }
 
-function getPlayReadyBundles(bundles: StegvisPuzzleBundle[]) {
-  return bundles.filter((bundle) => chainMeetsPlayRequirement(bundle.chain));
-}
-
 type StegvisGameProps = {
   session: StegvisPlaySession;
 };
@@ -262,18 +261,10 @@ type StegvisGameProps = {
 export function StegvisGame({ session }: StegvisGameProps) {
   const { initialBundle, fallbackBundles, allowedWords } = session;
 
-  const playReadyInitial = chainMeetsPlayRequirement(initialBundle.chain)
-    ? initialBundle
-    : (getPlayReadyBundles([initialBundle, ...fallbackBundles])[0] ?? initialBundle);
-
-  const [activeBundle, setActiveBundle] = useState(playReadyInitial);
-  const playReadyBundles = useMemo(
-    () => getPlayReadyBundles([initialBundle, ...fallbackBundles]),
-    [initialBundle, fallbackBundles],
-  );
+  const [activeBundle, setActiveBundle] = useState(initialBundle);
   const puzzleBundles = useMemo(
-    () => (playReadyBundles.length > 0 ? playReadyBundles : [activeBundle]),
-    [activeBundle, playReadyBundles],
+    () => [initialBundle, ...fallbackBundles],
+    [initialBundle, fallbackBundles],
   );
 
   const allowedWordSet = useMemo(() => {
@@ -291,7 +282,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const middleIndices = useMemo(() => getMiddleStepIndices(chain), [chain]);
 
   const [activeStepIndex, setActiveStepIndex] = useState(() =>
-    getFirstMiddleIndex(playReadyInitial.chain),
+    getFirstMiddleIndex(initialBundle.chain),
   );
   const [solvedByIndex, setSolvedByIndex] = useState<Record<number, string>>({});
   const [draft, setDraft] = useState('');
@@ -304,12 +295,8 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const resetForBundle = useCallback((bundle: StegvisPuzzleBundle) => {
-    const ready = chainMeetsPlayRequirement(bundle.chain)
-      ? bundle
-      : (getPlayReadyBundles([bundle])[0] ?? bundle);
-
-    setActiveBundle(ready);
-    setActiveStepIndex(getFirstMiddleIndex(ready.chain));
+    setActiveBundle(bundle);
+    setActiveStepIndex(getFirstMiddleIndex(bundle.chain));
     setSolvedByIndex({});
     setDraft('');
     setFeedback('');
@@ -407,7 +394,7 @@ export function StegvisGame({ session }: StegvisGameProps) {
   };
 
   const newPuzzle = () => {
-    const pool = puzzleBundles.length > 1 ? puzzleBundles : getPlayReadyBundles(fallbackBundles);
+    const pool = puzzleBundles.length > 1 ? puzzleBundles : fallbackBundles;
 
     if (pool.length === 0) {
       resetForBundle(activeBundle);

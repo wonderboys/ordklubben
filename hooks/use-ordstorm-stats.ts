@@ -1,6 +1,6 @@
 'use client';
 
-import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { type OrdstormStats } from '@/lib/games/ordstorm/types';
 import { useBrowserStore } from '@/hooks/use-browser-store';
 import { ordstormStatsStore } from '@/lib/storage/ordstorm-stats';
 

@@ -1,6 +1,6 @@
 import type { StegvisGeneratedPuzzle } from '@/lib/content/stegvis/generator/types';
-import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/content/stegvis/types';
-import { normalizeStegvisWord } from '@/lib/game/stegvis';
+import type { StegvisChainStep, StegvisPuzzleBundle } from '@/lib/games/stegvis/types';
+import { normalizeStegvisWord } from '@/lib/games/stegvis/rules';
 
 function toPlayAnswer(answer: string): string {
   return normalizeStegvisWord(answer);

@@ -1,4 +1,4 @@
-// Node-runnable mirror of lib/game/stegvis-validation.ts (relative imports, no @/ alias).
+// Node-runnable mirror of lib/games/stegvis/rules.ts (relative imports, no @/ alias).
 import { hasOnlySwedishLetters, normalizeSwedish } from '../lib/dictionary/normalize-swedish.ts';
 
 export type StegvisPuzzleForValidation = {

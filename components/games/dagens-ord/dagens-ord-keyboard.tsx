@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { CornerDownLeft, Delete } from 'lucide-react';
-import { type DagensOrdLetterFeedback } from '@/lib/game/dagens-ord';
+import { type DagensOrdLetterFeedback } from '@/lib/games/dagens-ord/types';
 import { cn } from '@/lib/utils';
 
 const KEYBOARD_ROWS = [

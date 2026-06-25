@@ -1,7 +1,7 @@
 import { createLetterPool } from '@/lib/dictionary/letter-pool';
 import { canBuildWord } from '@/lib/dictionary/can-build-word';
 import { normalizeSwedish } from '@/lib/dictionary/normalize-swedish';
-import { ORDSTORM_MIN_WORD_LENGTH } from '@/lib/game/ordstorm';
+import { ORDSTORM_MIN_WORD_LENGTH } from '@/lib/games/ordstorm/rules';
 
 export type LetterTilePlayState = 'idle' | 'selected' | 'depleted' | 'used';
 

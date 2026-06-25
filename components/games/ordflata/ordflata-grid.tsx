@@ -13,7 +13,7 @@ import {
   PUZZLE_GRID_BOARD_CLASS,
   PUZZLE_GRID_CELL_CLASS,
 } from '@/lib/content/puzzle/grid-layout';
-import type { OrdflataPlayerEntry } from '@/lib/content/ordflata-alpha';
+import type { OrdflataPlayerEntry } from '@/lib/games/ordflata/types';
 import { cn } from '@/lib/utils';
 
 type OrdflataGridProps = {

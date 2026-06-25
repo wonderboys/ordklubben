@@ -21,9 +21,8 @@ import {
   getWordScore,
   isOrdstormCommonWord,
   splitOrdstormWordsByCategory,
-  type OrdstormRound,
-  type OrdstormWordCatalog,
-} from '@/lib/game/ordstorm';
+} from '@/lib/games/ordstorm/rules';
+import type { OrdstormRound, OrdstormWordCatalog } from '@/lib/games/ordstorm/types';
 import {
   getLetterTilePlayState,
   getPlayingIdleMessage,
@@ -34,7 +33,7 @@ import {
   indicesToWord,
   wordToSelectedIndices,
   type TypingHint,
-} from '@/lib/game/ordstorm-ux';
+} from '@/lib/games/ordstorm/ux';
 import { useOrdstormStats } from '@/hooks/use-ordstorm-stats';
 import { loadStats, saveStats, updateStatsAfterRound } from '@/lib/storage/ordstorm-stats';
 import { cn } from '@/lib/utils';

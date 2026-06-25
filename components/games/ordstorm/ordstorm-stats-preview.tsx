@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { OrdstormStatBox } from '@/components/games/ordstorm/ordstorm-stat-box';
-import { type OrdstormStats } from '@/lib/game/ordstorm';
+import { type OrdstormStats } from '@/lib/games/ordstorm/types';
 import { MonoLabel } from '@/components/ui/typography';
 
 type OrdstormStatsPreviewProps = {

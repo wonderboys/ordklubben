@@ -3,18 +3,22 @@ import {
   formatStockholmDayKey,
   matchesStockholmDayKey,
 } from '@/lib/content/game-editions/daily-schedule';
-import type { StegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
 import { formatStegvisEndpointClue, pickPrimaryClue } from '@/lib/content/stegvis/clue-display';
-import { STEGVIS_MIDDLE_STEP_COUNT } from '@/lib/content/stegvis/play-chain';
-import type {
-  StegvisChainStep,
-  StegvisPuzzleBundle,
-  StegvisWordEndpoint,
-} from '@/lib/content/stegvis/types';
 import { ACTIVE_CLUE_STATUS } from '@/lib/content/word-bank/types';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
-import { normalizeStegvisWord } from '@/lib/games/stegvis/rules';
-import type { StegvisPuzzle } from '@/lib/games/stegvis/types';
+import {
+  getPlayReadyBundles,
+  normalizeStegvisWord,
+  resolvePlayReadyInitialBundle,
+  STEGVIS_MIDDLE_STEP_COUNT,
+} from '@/lib/games/stegvis/rules';
+import type {
+  StegvisChainStep,
+  StegvisPlaySession,
+  StegvisPuzzle,
+  StegvisPuzzleBundle,
+  StegvisWordEndpoint,
+} from '@/lib/games/stegvis/types';
 import { listActiveWords } from '@/lib/server/words/provider';
 
 const STEGVIS_GAME_SLUG = 'stegvis';
@@ -258,9 +262,15 @@ export async function loadStegvisPlaySessionFromDb(
     return null;
   }
 
+  const otherBundles = bundles.filter((bundle) => bundle.puzzle.id !== initialBundle.puzzle.id);
+  const resolvedInitial = resolvePlayReadyInitialBundle(initialBundle, otherBundles);
+  const playReadyFallbacks = getPlayReadyBundles(otherBundles).filter(
+    (bundle) => bundle.puzzle.id !== resolvedInitial.puzzle.id,
+  );
+
   return {
-    initialBundle,
-    fallbackBundles: bundles.filter((bundle) => bundle.puzzle.id !== initialBundle.puzzle.id),
+    initialBundle: resolvedInitial,
+    fallbackBundles: playReadyFallbacks,
     source: 'edition',
     allowedWords: words.map((word) => normalizeStegvisWord(word.normalizedAnswer)),
   };
