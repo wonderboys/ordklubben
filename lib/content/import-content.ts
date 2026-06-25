@@ -1,18 +1,10 @@
-import type {
-  ContentStatus,
-  HintType,
-  ImportBatchType,
-  ImportBatch,
-  PrismaClient,
-  Prisma,
-} from '@prisma/client';
+import type { ContentStatus, HintType, ImportBatchType, PrismaClient } from '@prisma/client';
+import { type ImportSourceMetadata, type LoggedImportRow } from '@/lib/content/import-job';
 import {
-  buildImportBatchSourceLabel,
-  buildImportSourceKey,
-  buildImportSourceReference,
-  type ImportSourceMetadata,
-  type LoggedImportRow,
-} from '@/lib/content/import-job';
+  createImportBatchContext,
+  finalizeImportBatch,
+  upsertWordSourceRecord,
+} from '@/lib/content/import-store';
 import { normalizeHintSource, parseHintTypeInput } from '@/lib/content/normalize-hint-metadata';
 import type { BatchSummary } from '@/lib/content/import-batch';
 import { parseCsv, requireCsvHeaders } from '@/lib/content/import-csv';
@@ -93,25 +85,6 @@ function parseContentStatus(value: string, defaultStatus: ContentStatus, label: 
 
 export function normalizeHintTextForDuplicateCheck(text: string) {
   return text.trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('sv-SE');
-}
-
-function buildSummary(summary: ImportSummary): Prisma.InputJsonObject {
-  return {
-    totalRows: summary.totalRows,
-    createdWords: summary.createdWords,
-    reusedWords: summary.reusedWords,
-    skippedWords: summary.skippedWords,
-    createdHints: summary.createdHints,
-    skippedHints: summary.skippedHints,
-    failedRows: summary.failedRows,
-    createdThemes: summary.createdThemes,
-    reusedThemes: summary.reusedThemes,
-    createdThemeLinks: summary.createdThemeLinks,
-    reusedThemeLinks: summary.reusedThemeLinks,
-    createdLexicalEntries: summary.createdLexicalEntries,
-    skippedDuplicateLexicalEntries: summary.skippedDuplicateLexicalEntries,
-    skippedMissingWords: summary.skippedMissingWords,
-  };
 }
 
 type ThemeCacheEntry = {
@@ -249,124 +222,6 @@ async function linkWordToTheme({
   return { ok: true };
 }
 
-function buildErrorRowsJson(errorRows: ImportErrorRow[]): Prisma.InputJsonArray {
-  return errorRows.map((errorRow) => ({
-    rowNumber: errorRow.rowNumber,
-    reason: errorRow.reason,
-    answer: errorRow.answer ?? null,
-    hint: errorRow.hint ?? null,
-  }));
-}
-
-async function createImportBatchRows(
-  prisma: PrismaClient,
-  batchId: string,
-  rows: LoggedImportRow[],
-) {
-  if (rows.length === 0) {
-    return;
-  }
-
-  await prisma.importBatchRow.createMany({
-    data: rows.map((row) => ({
-      importBatchId: batchId,
-      rowNumber: row.rowNumber,
-      outcome: row.outcome,
-      entityType: row.entityType,
-      answer: row.answer,
-      hint: row.hint,
-      value: row.value,
-      reason: row.reason,
-      wordId: row.wordId,
-      hintId: row.hintId,
-      lexicalEntryId: row.lexicalEntryId,
-      metadata: row.metadata,
-    })),
-  });
-}
-
-async function upsertWordSourceRecord({
-  prisma,
-  wordId,
-  importBatch,
-  batchSourceKey,
-  batchSourceReference,
-  normalizedValue,
-  observedAnswer,
-  rank,
-  frequency,
-  cefr,
-  rawValue,
-}: {
-  prisma: PrismaClient;
-  wordId: string;
-  importBatch: Pick<
-    ImportBatch,
-    'id' | 'sourceName' | 'sourceVersion' | 'sourceLicense' | 'sourceUrl' | 'sourceReference'
-  >;
-  batchSourceKey: string;
-  batchSourceReference: string | null;
-  normalizedValue: string;
-  observedAnswer: string;
-  rank?: number;
-  frequency?: number;
-  cefr?: string;
-  rawValue?: string;
-}) {
-  const existing = await prisma.wordSourceRecord.findFirst({
-    where: {
-      wordId,
-      sourceKey: batchSourceKey,
-      sourceReference: batchSourceReference,
-    },
-    select: { id: true },
-  });
-
-  const metadata = {
-    importBatchId: importBatch.id,
-    sourceName: importBatch.sourceName,
-    sourceVersion: importBatch.sourceVersion,
-    sourceLicense: importBatch.sourceLicense,
-    sourceUrl: importBatch.sourceUrl,
-    sourceReference: importBatch.sourceReference,
-  } satisfies Prisma.InputJsonObject;
-
-  if (existing) {
-    await prisma.wordSourceRecord.update({
-      where: { id: existing.id },
-      data: {
-        importBatchId: importBatch.id,
-        rawValue,
-        normalizedValue,
-        observedAnswer,
-        rank,
-        frequency,
-        cefr,
-        metadata,
-        lastImportedAt: new Date(),
-      },
-    });
-
-    return;
-  }
-
-  await prisma.wordSourceRecord.create({
-    data: {
-      wordId,
-      importBatchId: importBatch.id,
-      sourceKey: batchSourceKey,
-      sourceReference: batchSourceReference,
-      rawValue,
-      normalizedValue,
-      observedAnswer,
-      rank,
-      frequency,
-      cefr,
-      metadata,
-    },
-  });
-}
-
 export async function importContent({
   prisma,
   csvText,
@@ -377,34 +232,15 @@ export async function importContent({
   source = 'import',
   sourceMetadata,
 }: ImportContentOptions): Promise<ImportContentResult> {
-  const normalizedMetadata = {
-    ...sourceMetadata,
-    sourceName: sourceMetadata.sourceName.trim(),
-    sourceVersion: sourceMetadata.sourceVersion?.trim(),
-    sourceLicense: sourceMetadata.sourceLicense?.trim(),
-    sourceUrl: sourceMetadata.sourceUrl?.trim(),
-    sourceReference: sourceMetadata.sourceReference?.trim(),
-    sourceComment: sourceMetadata.sourceComment?.trim(),
-    importedBy: sourceMetadata.importedBy?.trim() || 'Admin',
-  };
-  const batchSource = buildImportBatchSourceLabel(normalizedMetadata);
-  const batchSourceKey = buildImportSourceKey(normalizedMetadata);
-  const batchSourceReference = buildImportSourceReference(normalizedMetadata, filename);
-  const batch = await prisma.importBatch.create({
-    data: {
-      type: importType,
+  const { batch, batchSource, batchSourceKey, batchSourceReference } =
+    await createImportBatchContext({
+      prisma,
+      importType,
       filename,
-      source: batchSource || source,
-      sourceName: normalizedMetadata.sourceName,
-      sourceVersion: normalizedMetadata.sourceVersion,
-      sourceLicense: normalizedMetadata.sourceLicense,
-      sourceUrl: normalizedMetadata.sourceUrl,
-      sourceReference: normalizedMetadata.sourceReference,
-      sourceComment: normalizedMetadata.sourceComment,
-      importedBy: normalizedMetadata.importedBy,
-      status: 'PENDING',
-    },
-  });
+      source,
+      sourceMetadata,
+      defaultImportedBy: 'Admin',
+    });
 
   const summary: ImportSummary = {
     totalRows: 0,
@@ -728,14 +564,15 @@ export async function importContent({
         prisma,
         wordId: word.id,
         importBatch: batch,
-        batchSourceKey,
-        batchSourceReference,
+        sourceKey: batchSourceKey,
+        sourceReference: batchSourceReference,
         normalizedValue: normalized.normalizedAnswer,
         observedAnswer: normalized.answer,
         rank: rowRank.value,
         frequency: rowFrequency.value,
         cefr: row.cefr?.trim() || undefined,
         rawValue: rawAnswer.trim(),
+        metadata: row.source ? { originalSourceField: row.source.trim() } : undefined,
       });
 
       const themeLink = await linkWordToTheme({
@@ -868,19 +705,16 @@ export async function importContent({
       });
     }
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'COMPLETED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdWords + summary.createdHints,
-        skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'COMPLETED',
+      importedRows: summary.createdWords + summary.createdHints,
+      skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
+      loggedRows,
     });
-    await createImportBatchRows(prisma, batch.id, loggedRows);
 
     return {
       batchId: batch.id,
@@ -904,19 +738,16 @@ export async function importContent({
 
     summary.failedRows += 1;
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'FAILED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdWords + summary.createdHints,
-        skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'FAILED',
+      importedRows: summary.createdWords + summary.createdHints,
+      skippedRows: summary.reusedWords + summary.skippedWords + summary.skippedHints,
+      loggedRows,
     });
-    await createImportBatchRows(prisma, batch.id, loggedRows);
 
     return {
       batchId: batch.id,

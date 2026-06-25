@@ -1,11 +1,11 @@
-import type { LexicalEntryType, Prisma, PrismaClient } from '@prisma/client';
+import type { LexicalEntryType, PrismaClient } from '@prisma/client';
 import type { BatchSummary } from '@/lib/content/import-batch';
+import { type ImportSourceMetadata, type LoggedImportRow } from '@/lib/content/import-job';
 import {
-  buildImportBatchSourceLabel,
-  buildImportSourceReference,
-  type ImportSourceMetadata,
-  type LoggedImportRow,
-} from '@/lib/content/import-job';
+  createEmptyBatchSummary,
+  createImportBatchContext,
+  finalizeImportBatch,
+} from '@/lib/content/import-store';
 import { parseCsv, requireCsvHeaders } from '@/lib/content/import-csv';
 import type { ImportErrorRow } from '@/lib/content/import-content';
 import { parseLexicalEntryTypeInput } from '@/lib/content/lexicon/parse-lexical-entry-type';
@@ -34,61 +34,6 @@ function lexicalEntryKey(wordId: string, type: LexicalEntryType, value: string) 
   return `${wordId}:${type}:${value.toLocaleLowerCase('sv-SE')}`;
 }
 
-function buildSummary(summary: BatchSummary): Prisma.InputJsonObject {
-  return {
-    totalRows: summary.totalRows,
-    createdWords: summary.createdWords,
-    reusedWords: summary.reusedWords,
-    skippedWords: summary.skippedWords,
-    createdHints: summary.createdHints,
-    skippedHints: summary.skippedHints,
-    failedRows: summary.failedRows,
-    createdThemes: summary.createdThemes,
-    reusedThemes: summary.reusedThemes,
-    createdThemeLinks: summary.createdThemeLinks,
-    reusedThemeLinks: summary.reusedThemeLinks,
-    createdLexicalEntries: summary.createdLexicalEntries,
-    skippedDuplicateLexicalEntries: summary.skippedDuplicateLexicalEntries,
-    skippedMissingWords: summary.skippedMissingWords,
-  };
-}
-
-function buildErrorRowsJson(errorRows: ImportErrorRow[]): Prisma.InputJsonArray {
-  return errorRows.map((errorRow) => ({
-    rowNumber: errorRow.rowNumber,
-    reason: errorRow.reason,
-    answer: errorRow.answer ?? null,
-    hint: errorRow.hint ?? null,
-  }));
-}
-
-async function createImportBatchRows(
-  prisma: PrismaClient,
-  batchId: string,
-  rows: LoggedImportRow[],
-) {
-  if (rows.length === 0) {
-    return;
-  }
-
-  await prisma.importBatchRow.createMany({
-    data: rows.map((row) => ({
-      importBatchId: batchId,
-      rowNumber: row.rowNumber,
-      outcome: row.outcome,
-      entityType: row.entityType,
-      answer: row.answer,
-      hint: row.hint,
-      value: row.value,
-      reason: row.reason,
-      wordId: row.wordId,
-      hintId: row.hintId,
-      lexicalEntryId: row.lexicalEntryId,
-      metadata: row.metadata,
-    })),
-  });
-}
-
 function isUniqueConstraintError(error: unknown) {
   return (
     typeof error === 'object' &&
@@ -99,22 +44,7 @@ function isUniqueConstraintError(error: unknown) {
 }
 
 function createEmptyLexiconSummary(totalRows = 0): BatchSummary {
-  return {
-    totalRows,
-    createdWords: 0,
-    reusedWords: 0,
-    skippedWords: 0,
-    createdHints: 0,
-    skippedHints: 0,
-    failedRows: 0,
-    createdThemes: 0,
-    reusedThemes: 0,
-    createdThemeLinks: 0,
-    reusedThemeLinks: 0,
-    createdLexicalEntries: 0,
-    skippedDuplicateLexicalEntries: 0,
-    skippedMissingWords: 0,
-  };
+  return createEmptyBatchSummary(totalRows);
 }
 
 export async function importLexicon({
@@ -123,22 +53,12 @@ export async function importLexicon({
   filename,
   sourceMetadata,
 }: ImportLexiconOptions): Promise<ImportLexiconResult> {
-  const batchSource = buildImportBatchSourceLabel(sourceMetadata);
-  const batchSourceReference = buildImportSourceReference(sourceMetadata, filename);
-  const batch = await prisma.importBatch.create({
-    data: {
-      type: 'LEXICON',
-      filename,
-      source: batchSource,
-      sourceName: sourceMetadata.sourceName.trim(),
-      sourceVersion: sourceMetadata.sourceVersion?.trim() || undefined,
-      sourceLicense: sourceMetadata.sourceLicense?.trim() || undefined,
-      sourceUrl: sourceMetadata.sourceUrl?.trim() || undefined,
-      sourceReference: sourceMetadata.sourceReference?.trim() || undefined,
-      sourceComment: sourceMetadata.sourceComment?.trim() || undefined,
-      importedBy: sourceMetadata.importedBy?.trim() || 'Admin',
-      status: 'PENDING',
-    },
+  const { batch, batchSource, batchSourceReference } = await createImportBatchContext({
+    prisma,
+    importType: 'LEXICON',
+    filename,
+    sourceMetadata,
+    defaultImportedBy: 'Admin',
   });
 
   const summary = createEmptyLexiconSummary();
@@ -338,19 +258,16 @@ export async function importLexicon({
 
     const skippedRows = summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords;
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'COMPLETED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdLexicalEntries,
-        skippedRows,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'COMPLETED',
+      importedRows: summary.createdLexicalEntries,
+      skippedRows,
+      loggedRows,
     });
-    await createImportBatchRows(prisma, batch.id, loggedRows);
 
     return {
       batchId: batch.id,
@@ -374,19 +291,16 @@ export async function importLexicon({
 
     summary.failedRows += 1;
 
-    await prisma.importBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: 'FAILED',
-        totalRows: summary.totalRows,
-        importedRows: summary.createdLexicalEntries,
-        skippedRows: summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords,
-        summary: buildSummary(summary),
-        errorRows: buildErrorRowsJson(errorRows),
-        completedAt: new Date(),
-      },
+    await finalizeImportBatch({
+      prisma,
+      batchId: batch.id,
+      summary,
+      errorRows,
+      status: 'FAILED',
+      importedRows: summary.createdLexicalEntries,
+      skippedRows: summary.skippedDuplicateLexicalEntries + summary.skippedMissingWords,
+      loggedRows,
     });
-    await createImportBatchRows(prisma, batch.id, loggedRows);
 
     return {
       batchId: batch.id,

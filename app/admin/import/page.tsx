@@ -10,7 +10,7 @@ import { AdminImportForm } from '@/components/admin/import-form';
 import { ImportResultStatGrid } from '@/components/admin/import-result-summary';
 import { IMPORT_BATCH_TYPE_LABELS } from '@/lib/content/constants';
 import { formatImportBatchSource } from '@/lib/content/import-job';
-import { parseBatchSummary } from '@/lib/content/import-batch';
+import { parseBatchSummary, type BatchSummary } from '@/lib/content/import-batch';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type SearchParams = Promise<{
@@ -19,14 +19,31 @@ type SearchParams = Promise<{
   success?: string;
 }>;
 
-function getHistoryStats(rows: Array<{ outcome: string; entityType: string }>) {
+function getHistoryStats(
+  rows: Array<{ outcome: string; entityType: string }>,
+  summary: BatchSummary | null,
+) {
   return {
-    words: rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
-    hints: rows.filter((row) => row.entityType === 'HINT' && row.outcome === 'IMPORTED').length,
-    newWords: rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
-    reusedWords: rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'REUSED').length,
-    duplicates: rows.filter((row) => row.outcome === 'IGNORED' || row.outcome === 'REUSED').length,
-    errors: rows.filter((row) => row.outcome === 'ERROR').length,
+    words:
+      summary?.createdWords != null && summary?.reusedWords != null
+        ? summary.createdWords + summary.reusedWords
+        : rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
+    hints:
+      summary?.createdHints ??
+      rows.filter((row) => row.entityType === 'HINT' && row.outcome === 'IMPORTED').length,
+    newWords:
+      summary?.createdWords ??
+      rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'IMPORTED').length,
+    reusedWords:
+      summary?.reusedWords ??
+      rows.filter((row) => row.entityType === 'WORD' && row.outcome === 'REUSED').length,
+    duplicates:
+      summary != null
+        ? (summary.skippedWords ?? 0) +
+          (summary.skippedHints ?? 0) +
+          (summary.skippedDuplicateLexicalEntries ?? 0)
+        : rows.filter((row) => row.outcome === 'IGNORED' || row.outcome === 'REUSED').length,
+    errors: summary?.failedRows ?? rows.filter((row) => row.outcome === 'ERROR').length,
   };
 }
 
@@ -167,7 +184,7 @@ export default async function AdminImportPage({ searchParams }: { searchParams: 
           ]}
         >
           {recentBatches.map((batch) => {
-            const stats = getHistoryStats(batch.rows);
+            const stats = getHistoryStats(batch.rows, parseBatchSummary(batch.summary));
 
             return (
               <tr key={batch.id} className="border-b border-print-ink/10 align-top">

@@ -146,6 +146,15 @@ Det finns just nu två aktiva importspår:
 - adminimporten i `app/admin/import`, `lib/content/import-content.ts` och `lib/content/import-lexicon.ts`
 - råimports-scriptet `scripts/import-words.ts` (`npm run import:words`)
 
+Båda använder nu samma underliggande importlager för:
+
+- `ImportBatch`
+- `ImportBatchRow`
+- `WordSourceRecord`
+- källmetadata och batchslutförande
+
+Det betyder att framtida ändringar i importmodell och importloggning ska göras i det delade lagret, inte dupliceras separat för admin och CLI.
+
 Adminimporten:
 
 - skapar `ImportBatch` med källmetadata (`sourceName`, `sourceVersion`, `sourceLicense`, `sourceUrl`, `sourceReference`, `sourceComment`)
@@ -162,7 +171,7 @@ Råimports-scriptet:
 - skriver till Postgres (`Word`, `WordSourceRecord`, `ImportBatch`)
 - stödjer `--source=all|hunspell|kelly` och `--mode=insert-missing|merge-safe|refresh-source-metadata`
 
-Det äldre råimports-scriptet använder alltså samma kärnmodeller, men det loggar ännu inte hela adminflödets detaljnivå i `ImportBatchRow` och sätter inte samma källmetadatafält som adminimporten gör.
+Råimports-scriptet och adminimporten använder alltså samma kärnmodell för importjobb. Skillnaden ligger främst i vilken typ av källa de läser från och vilka importregler de applicerar före den gemensamma motorn.
 
 ## Viktiga noteringar
 
