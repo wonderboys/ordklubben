@@ -19,6 +19,7 @@
     "import:words": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/import-words.ts",
     "seed:dagens-ord": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-dagens-ord-editions.ts",
     "seed:stegvis": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-stegvis-editions.ts",
+    "seed:ordflata": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-ordflata-editions.ts",
     "seed:emojirebus": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-emojirebus.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

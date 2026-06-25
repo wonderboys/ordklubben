@@ -16,10 +16,13 @@ export default async function OrdflataPage() {
           <GameShell
             eyebrow="Alpha"
             title="Ordfläta"
-            description="Ordflätan hämtas nu från databasens publiceringslager."
-            mobileDescription="Ingen publicerad fläta ännu."
+            description="Dagens ordfläta publiceras via GameEdition i databasen."
+            mobileDescription="Ingen publicerad daglig fläta för idag."
           >
-            <BodyText>Ingen publicerad Ordfläta finns i databasen ännu.</BodyText>
+            <BodyText>
+              Ingen publicerad Ordfläta-omgång finns för dagens datum. Kör seed:ordflata i dev om du
+              behöver testdata.
+            </BodyText>
           </GameShell>
         </div>
       </MobileInsetShell>
@@ -32,8 +35,8 @@ export default async function OrdflataPage() {
         <GameShell
           eyebrow="Alpha"
           title={puzzle.title}
-          description="Lös ordflätan med hjälp av nycklarna. Tidig testversion — senaste publicerade flätan."
-          mobileDescription="Lös den senaste flätan med nycklarna."
+          description="Lös dagens ordfläta med hjälp av nycklarna."
+          mobileDescription="Lös dagens fläta med nycklarna."
           compactMobile
           hideEyebrowOnMobile
           headerClassName="md:max-w-none"
