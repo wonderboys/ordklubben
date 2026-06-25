@@ -1,6 +1,11 @@
 import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import {
+  createDailyEditionPublishAtForOffset,
+  formatStockholmDayKey,
+} from '../lib/content/game-editions/daily-schedule.ts';
+import { dailyEditionMetadata, upsertDailyEditionForDay } from './lib/seed-daily-edition.ts';
 
 config();
 
@@ -18,27 +23,6 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString }),
   });
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + days);
-  return next;
-}
-
-function createEditionPublishAt(date: Date) {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0),
-  );
-}
-
-function formatDayKey(date: Date) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Stockholm',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
 }
 
 async function main() {
@@ -83,67 +67,59 @@ async function main() {
 
     let createdEditions = 0;
     let updatedEditions = 0;
+    let removedDuplicates = 0;
 
     for (const [index, offset] of EDITION_DAY_OFFSETS.entries()) {
-      const publishAt = createEditionPublishAt(addDays(new Date(), offset));
-      const dayKey = formatDayKey(publishAt);
+      const publishAt = createDailyEditionPublishAtForOffset(offset);
+      const dayKey = formatStockholmDayKey(publishAt);
       const solution = words[index];
+      const metadata = dailyEditionMetadata('seed-dagens-ord', dayKey, publishAt);
 
-      const existingEdition = await prisma.gameEdition.findFirst({
-        where: {
-          gameId: game.id,
+      const {
+        editionId,
+        created,
+        removedDuplicates: removedForDay,
+      } = await upsertDailyEditionForDay(prisma, {
+        gameId: game.id,
+        dayKey,
+        publishAt,
+        create: {
+          game: {
+            connect: {
+              id: game.id,
+            },
+          },
+          title: `Dagens Ord ${dayKey}`,
           editionType: 'DAILY',
+          status: 'PUBLISHED',
           publishAt,
+          metadata,
         },
-        select: {
-          id: true,
+        update: {
+          title: `Dagens Ord ${dayKey}`,
+          status: 'PUBLISHED',
+          metadata,
         },
       });
 
-      const edition = existingEdition
-        ? await prisma.gameEdition.update({
-            where: {
-              id: existingEdition.id,
-            },
-            data: {
-              title: `Dagens Ord ${dayKey}`,
-              status: 'PUBLISHED',
-              metadata: {
-                source: 'seed-dagens-ord',
-                dayKey,
-              },
-            },
-          })
-        : await prisma.gameEdition.create({
-            data: {
-              gameId: game.id,
-              title: `Dagens Ord ${dayKey}`,
-              editionType: 'DAILY',
-              status: 'PUBLISHED',
-              publishAt,
-              metadata: {
-                source: 'seed-dagens-ord',
-                dayKey,
-              },
-            },
-          });
-
-      if (existingEdition) {
-        updatedEditions += 1;
-      } else {
+      if (created) {
         createdEditions += 1;
+      } else {
+        updatedEditions += 1;
       }
+
+      removedDuplicates += removedForDay;
 
       await prisma.gameEditionWord.deleteMany({
         where: {
-          editionId: edition.id,
+          editionId,
           role: 'SOLUTION',
         },
       });
 
       await prisma.gameEditionWord.create({
         data: {
-          editionId: edition.id,
+          editionId,
           wordId: solution.id,
           role: 'SOLUTION',
         },
@@ -151,7 +127,7 @@ async function main() {
     }
 
     console.log(
-      `Dagens Ord-seed klar: ${createdEditions} nya editions, ${updatedEditions} uppdaterade editions för spelet ${game.slug}.`,
+      `Dagens Ord-seed klar: ${createdEditions} nya editions, ${updatedEditions} uppdaterade editions, ${removedDuplicates} dubbletter borttagna för spelet ${game.slug}.`,
     );
   } finally {
     await prisma.$disconnect();

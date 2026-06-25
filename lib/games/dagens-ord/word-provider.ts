@@ -1,18 +1,12 @@
+import {
+  formatStockholmDayKey,
+  matchesStockholmDayKey,
+} from '@/lib/content/game-editions/daily-schedule';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 import { listActiveWords } from '@/lib/server/words/provider';
 import type { DagensOrdWordCatalog } from '@/lib/games/dagens-ord/types';
 
 const DAGENS_ORD_GAME_SLUG = 'dagens-ord';
-const STOCKHOLM_TIME_ZONE = 'Europe/Stockholm';
-
-function formatDayKey(date: Date) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: STOCKHOLM_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
 
 async function loadPublishedDailyEditionForDate(date: Date) {
   if (!isDatabaseConfigured()) {
@@ -20,21 +14,17 @@ async function loadPublishedDailyEditionForDate(date: Date) {
   }
 
   const prisma = getPrisma();
-  const todayKey = formatDayKey(date);
+  const todayKey = formatStockholmDayKey(date);
 
   const editions = await prisma.gameEdition.findMany({
     where: {
       status: 'PUBLISHED',
       editionType: 'DAILY',
-      publishAt: {
-        lte: date,
-      },
       game: {
         slug: DAGENS_ORD_GAME_SLUG,
       },
     },
     orderBy: [{ publishAt: 'desc' }, { createdAt: 'desc' }],
-    take: 14,
     include: {
       words: {
         where: {
@@ -55,10 +45,7 @@ async function loadPublishedDailyEditionForDate(date: Date) {
     },
   });
 
-  return (
-    editions.find((edition) => edition.publishAt && formatDayKey(edition.publishAt) === todayKey) ??
-    null
-  );
+  return editions.find((edition) => matchesStockholmDayKey(edition.publishAt, todayKey)) ?? null;
 }
 
 export async function loadDagensOrdCatalog(
@@ -98,7 +85,7 @@ export async function loadDagensOrdCatalog(
   }
 
   return {
-    dayKey: formatDayKey(edition.publishAt ?? date),
+    dayKey: formatStockholmDayKey(edition.publishAt ?? date),
     targetWord: solution.normalizedAnswer,
     allowedWords,
   };

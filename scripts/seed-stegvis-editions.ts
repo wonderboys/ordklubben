@@ -4,6 +4,11 @@ import { PrismaClient } from '@prisma/client';
 import type { WordBankWordWithClues } from '../lib/content/word-bank/types.ts';
 import type { StegvisGeneratedPuzzle } from '../lib/content/stegvis/generator/types.ts';
 import {
+  createDailyEditionPublishAtForOffset,
+  formatStockholmDayKey,
+} from '../lib/content/game-editions/daily-schedule.ts';
+import { dailyEditionMetadata, upsertDailyEditionForDay } from './lib/seed-daily-edition.ts';
+import {
   buildStegvisGeneratorCorpus,
   generateStegvisPuzzleFromCorpus,
 } from './stegvis-generator-corpus.ts';
@@ -27,27 +32,6 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString }),
   });
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + days);
-  return next;
-}
-
-function createEditionPublishAt(date: Date) {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0),
-  );
-}
-
-function formatDayKey(date: Date) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Stockholm',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
 }
 
 async function loadApprovedWordsFromDatabase(length: number): Promise<WordBankWordWithClues[]> {
@@ -152,6 +136,7 @@ async function main() {
 
     let createdEditions = 0;
     let updatedEditions = 0;
+    let removedDuplicates = 0;
     let seed = INITIAL_SEED;
 
     for (const offset of EDITION_DAY_OFFSETS) {
@@ -174,61 +159,52 @@ async function main() {
         throw new Error(`Genererad Stegvis-kedja saknar wordId för ordet ${missingWordId.answer}.`);
       }
 
-      const publishAt = createEditionPublishAt(addDays(new Date(), offset));
-      const dayKey = formatDayKey(publishAt);
+      const publishAt = createDailyEditionPublishAtForOffset(offset);
+      const dayKey = formatStockholmDayKey(publishAt);
+      const metadata = {
+        ...dailyEditionMetadata('seed-stegvis', dayKey, publishAt),
+        chain: puzzle.path.map((step) => step.answer),
+        seed: seed - 1,
+      };
 
-      const existingEdition = await prisma.gameEdition.findFirst({
-        where: {
-          gameId: game.id,
+      const {
+        editionId,
+        created,
+        removedDuplicates: removedForDay,
+      } = await upsertDailyEditionForDay(prisma, {
+        gameId: game.id,
+        dayKey,
+        publishAt,
+        create: {
+          game: {
+            connect: {
+              id: game.id,
+            },
+          },
+          title: `${puzzle.start.answer} till ${puzzle.target.answer}`,
           editionType: 'DAILY',
+          status: 'PUBLISHED',
           publishAt,
+          metadata,
         },
-        select: {
-          id: true,
+        update: {
+          title: `${puzzle.start.answer} till ${puzzle.target.answer}`,
+          status: 'PUBLISHED',
+          metadata,
         },
       });
 
-      const edition = existingEdition
-        ? await prisma.gameEdition.update({
-            where: {
-              id: existingEdition.id,
-            },
-            data: {
-              title: `${puzzle.start.answer} till ${puzzle.target.answer}`,
-              status: 'PUBLISHED',
-              metadata: {
-                source: 'seed-stegvis',
-                dayKey,
-                chain: puzzle.path.map((step) => step.answer),
-                seed: seed - 1,
-              },
-            },
-          })
-        : await prisma.gameEdition.create({
-            data: {
-              gameId: game.id,
-              title: `${puzzle.start.answer} till ${puzzle.target.answer}`,
-              editionType: 'DAILY',
-              status: 'PUBLISHED',
-              publishAt,
-              metadata: {
-                source: 'seed-stegvis',
-                dayKey,
-                chain: puzzle.path.map((step) => step.answer),
-                seed: seed - 1,
-              },
-            },
-          });
-
-      if (existingEdition) {
-        updatedEditions += 1;
-      } else {
+      if (created) {
         createdEditions += 1;
+      } else {
+        updatedEditions += 1;
       }
+
+      removedDuplicates += removedForDay;
 
       await prisma.gameEditionWord.deleteMany({
         where: {
-          editionId: edition.id,
+          editionId,
         },
       });
 
@@ -237,7 +213,7 @@ async function main() {
 
         await prisma.gameEditionWord.create({
           data: {
-            editionId: edition.id,
+            editionId,
             wordId: step.wordId!,
             role,
             position: index,
@@ -250,7 +226,7 @@ async function main() {
     }
 
     console.log(
-      `Stegvis-seed klar: ${createdEditions} nya editions, ${updatedEditions} uppdaterade editions för spelet ${game.slug}.`,
+      `Stegvis-seed klar: ${createdEditions} nya editions, ${updatedEditions} uppdaterade editions, ${removedDuplicates} dubbletter borttagna för spelet ${game.slug}.`,
     );
   } finally {
     await prisma.$disconnect();

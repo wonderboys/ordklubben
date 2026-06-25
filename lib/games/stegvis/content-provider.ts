@@ -1,3 +1,8 @@
+import {
+  compareStockholmDayKeys,
+  formatStockholmDayKey,
+  matchesStockholmDayKey,
+} from '@/lib/content/game-editions/daily-schedule';
 import type { StegvisPlaySession } from '@/lib/content/stegvis/load-play-session';
 import { formatStegvisEndpointClue, pickPrimaryClue } from '@/lib/content/stegvis/clue-display';
 import { STEGVIS_MIDDLE_STEP_COUNT } from '@/lib/content/stegvis/play-chain';
@@ -13,7 +18,7 @@ import type { StegvisPuzzle } from '@/lib/games/stegvis/types';
 import { listActiveWords } from '@/lib/server/words/provider';
 
 const STEGVIS_GAME_SLUG = 'stegvis';
-const STOCKHOLM_TIME_ZONE = 'Europe/Stockholm';
+const STEGVIS_FALLBACK_EDITION_LIMIT = 6;
 
 type StegvisEditionWordRow = {
   position: number | null;
@@ -43,15 +48,6 @@ type StegvisEditionWordRow = {
     }>;
   };
 };
-
-function formatDayKey(date: Date) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: STOCKHOLM_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
 
 function toDisplayAnswer(answer: string) {
   return normalizeStegvisWord(answer).toLocaleUpperCase('sv-SE');
@@ -147,24 +143,47 @@ function createBundleFromEdition(options: {
 
 async function loadPublishedStegvisEditions(date: Date) {
   if (!isDatabaseConfigured()) {
-    return [];
+    return {
+      todayEdition: null,
+      pastEditions: [] as Awaited<ReturnType<typeof loadAllPublishedStegvisEditions>>,
+    };
   }
 
+  const dayKey = formatStockholmDayKey(date);
+  const editions = await loadAllPublishedStegvisEditions();
+  const todayEdition =
+    editions.find((edition) => matchesStockholmDayKey(edition.publishAt, dayKey)) ?? null;
+  const pastEditions = editions
+    .filter((edition) => {
+      if (!edition.publishAt) {
+        return false;
+      }
+
+      return compareStockholmDayKeys(formatStockholmDayKey(edition.publishAt), dayKey) < 0;
+    })
+    .sort((left, right) =>
+      compareStockholmDayKeys(
+        formatStockholmDayKey(right.publishAt!),
+        formatStockholmDayKey(left.publishAt!),
+      ),
+    )
+    .slice(0, STEGVIS_FALLBACK_EDITION_LIMIT);
+
+  return { todayEdition, pastEditions };
+}
+
+async function loadAllPublishedStegvisEditions() {
   const prisma = getPrisma();
 
   return prisma.gameEdition.findMany({
     where: {
       status: 'PUBLISHED',
       editionType: 'DAILY',
-      publishAt: {
-        lte: date,
-      },
       game: {
         slug: STEGVIS_GAME_SLUG,
       },
     },
     orderBy: [{ publishAt: 'desc' }, { createdAt: 'desc' }],
-    take: 7,
     include: {
       words: {
         include: {
@@ -206,7 +225,7 @@ export async function loadStegvisPlaySessionFromDb(
     return null;
   }
 
-  const [words, editions] = await Promise.all([
+  const [words, { todayEdition, pastEditions }] = await Promise.all([
     listActiveWords({
       minLength: 4,
       maxLength: 4,
@@ -214,21 +233,20 @@ export async function loadStegvisPlaySessionFromDb(
     loadPublishedStegvisEditions(date),
   ]);
 
-  const editionDayKey = formatDayKey(date);
+  const editions = todayEdition ? [todayEdition, ...pastEditions] : pastEditions;
   const bundles = editions
     .map((edition) => {
       const orderedWords = edition.words as StegvisEditionWordRow[];
       return createBundleFromEdition({
         editionId: edition.id,
-        title: edition.title?.trim() || `Stegvis ${formatDayKey(edition.publishAt ?? date)}`,
+        title:
+          edition.title?.trim() || `Stegvis ${formatStockholmDayKey(edition.publishAt ?? date)}`,
         orderedWords,
       });
     })
     .filter((bundle): bundle is StegvisPuzzleBundle => Boolean(bundle));
 
-  const initialEdition = editions.find(
-    (edition) => edition.publishAt && formatDayKey(edition.publishAt) === editionDayKey,
-  );
+  const initialEdition = todayEdition;
 
   if (!initialEdition) {
     return null;
