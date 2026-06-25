@@ -2,49 +2,144 @@
 
 Senast uppdaterad: 2026-06-25
 
-Det här dokumentet beskriver den DB-first modellen för orddata och råkällor i Ordklubben.
+Det här dokumentet beskriver Ordklubbens data- och runtime-arkitektur.
 
-## Mål
+## Översikt
 
-- spel ska inte läsa från `data/*` i runtime
-- `data/` ska bara innehålla externa råkällor och tillfälliga manuella importregler
-- import ska skriva till Postgres, inte till statiska ordlistor i repo:t
-- samma ord ska kunna komma från flera källor utan att manuellt kuraterat innehåll skrivs över
-
-## `data/`-struktur
-
-```
-data/
-  raw/
-    hunspell/
-      sv_SE.dic
-    kelly/
-      Swedish-Kelly_M3_CEFR.csv
-  seed/
-    word-filters/
-      never-allow-sv.ts
+```text
+Content Pipeline          skriver till databasen (import, seed, admin, generatorer)
+        ↓
+Database                  enda sanningskällan
+        ↓
+Content Layer             läser från databasen
+        ↓
+Game Provider             bygger spelunderlag per spel
+        ↓
+Game Rules                ren spellogik
+        ↓
+UI                        rendering och lokal spelstate
 ```
 
-`data/raw/` innehåller externa råkällor (Hunspell, Kelly).
+Arkitekturen börjar i databasen. Runtime läser bara från databasen.
 
-`data/seed/` är en temporär plats för `never-allow-sv.ts` tills DB-baserad blocklist eller editorial override finns. Målet är att ta bort `data/seed/` helt när blocklistan flyttat till databasen.
+## Database
 
-Algoritmiska importregler (t.ex. abbreviation-filter och etablerade förkortningar) ligger i `lib/dictionary/word-filters.ts`, inte i `data/`.
+Enda sanningskällan för ord, spelkopplingar, profiler och publicerat innehåll.
 
-Ordstorm seed-kurering (block/prioritet) ska framåt ligga i databasen via `OrdstormWordProfile` — inte i `data/`.
+| Begrepp              | Betydelse                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `Word`               | Lexikal sanning — ordposten (text, normaliserad form, språk, längd, status)                                 |
+| `Game`               | Spelet (`slug`, namn, status)                                                                               |
+| `GameWord`           | Hur ett specifikt spel får använda ett ord (`canBeGuess`, `canBeSeed`, `blocked`, `priority`, `difficulty`) |
+| `GameEdition`        | Publicerat innehåll för spel som använder publicerade omgångar                                              |
+| `GameEditionWord`    | Ordens roller i en edition (`SOLUTION`, `START`, `STEP`, `TARGET`, `ENTRY`, …)                              |
+| `Puzzle`             | Innehålls-/gridmodell (Ordfläta) — inte publiceringsmodell                                                  |
+| `Hint`, `Lexicon`, … | Lexikal data och nycklar                                                                                    |
 
-Det finns inga generated-filer, ingen `legacy/`, ingen `sources/`, inga kuraterade TS-listor och inga CSV-builds under `data/`.
+`Word` bär lexikal sanning. Spelstyrning ligger i `GameWord` och `GameEdition`, inte som generella fält på `Word`.
 
-## Runtime
+## Content Pipeline
 
-Aktiv runtime läser från databasen via:
+Allt som **producerar innehåll före runtime** och skriver till databasen.
 
+Exempel:
+
+- `npm run import:words` — ordimport till `Word`
+- `npm run seed:*` — dev-seed för editions och profiler
+- generatorer i `lib/content/` (Stegvis, pussel)
+- admin i `app/admin/`
+- framtida automatiska jobb
+
+Content Pipeline:
+
+- läser ev. `data/raw` som importkälla
+- skriver till Postgres
+- körs utanför spelarens runtime-väg
+
+Runtime anropar inte pipeline som fallback.
+
+## Content Layer
+
+Runtime-lagret som **läser innehåll från databasen**.
+
+Typiska mappar:
+
+- `lib/content/`
 - `lib/server/words/`
-- `lib/games/<game>/word-provider.ts` eller `content-provider.ts`
+- `lib/content/game-editions/` (DB-läsning och delade datumhjälpare)
 
-Ingen spelroute importerar från `data/`.
+Content Layer:
+
+- hämtar ord, hints, lexikon, media, editions och profiler ur DB
+- exponerar återanvändbara läsfunktioner
+
+Content Layer ska **inte**:
+
+- innehålla spellogik
+- rendera UI
+- avgöra vilket innehåll som är dagens publicerade omgång (det gör Game Provider)
+- köra generatorer eller skapa publicerat innehåll
+- läsa `data/raw`
+- använda statiska ordlistor
+
+## Game Provider
+
+Ligger i `lib/games/<game>/content-provider.ts` eller `word-provider.ts`.
+
+Bygger rätt spelunderlag för ett specifikt spel:
+
+| Spel       | Provider              | Underlag                                       |
+| ---------- | --------------------- | ---------------------------------------------- |
+| Dagens Ord | `word-provider.ts`    | `GameEdition` → `GameEditionWord(SOLUTION)`    |
+| Stegvis    | `content-provider.ts` | `GameEdition` → `GameEditionWord` (kedja)      |
+| Ordfläta   | `content-provider.ts` | `GameEdition` → `metadata.puzzleId` → `Puzzle` |
+| Ordstorm   | `word-provider.ts`    | `GameWord` (free play, ingen edition)          |
+
+Game Provider:
+
+## Speldata
+
+- läser via Content Layer och DB
+- tillämpar publiceringsregler (t.ex. Stockholm dayKey för dagens edition)
+- väljer spelspecifikt urval (`canBeGuess`, roller, puzzle-koppling)
+- innehåller varken UI eller ren spellogik
+
+## Game Rules
+
+Ligger i `lib/games/<game>/rules.ts`.
+
+- ren spellogik på redan inläst data
+- ingen DB-access
+- inga imports från `data/`
+- ingen publiceringslogik
+
+## UI
+
+- renderar spel och lokal spelstate
+- väljer inte ord ur DB
+- känner inte till `data/raw`
+- får färdig katalog eller session från Game Provider
+
+## `data/raw`
+
+En tillfällig importyta för externa ordkällor (t.ex. Hunspell, Kelly).
+
+`data/raw` är:
+
+- en plats att lägga råfiler innan `import:words`
+- **inte** ett datalager
+- **inte** en del av runtime-arkitekturen
+- **inte** en del av spelens dataflöde
+
+Den långsiktiga arkitekturen börjar i databasen.
 
 ## Import
+
+1. `Word` — canonical, spelbar vy
+2. `WordSourceRecord` — provenance per källa/import
+3. `WordEditorialOverride` — manuella redaktionella beslut
+4. `ImportBatch` — importjobb med metadata för källa, fil och status
+5. `ImportBatchRow` — radlogg för importerat, återanvänt, ignorerat och fel
 
 Aktivt importspår: `scripts/import-words.ts` (`npm run import:words`).
 
@@ -55,18 +150,6 @@ Scriptet:
 - tillämpar abbreviation-filter för Hunspell med undantag från `lib/dictionary/word-filters.ts`
 - skriver till Postgres (`Word`, `WordSourceRecord`, `ImportBatch`)
 - stödjer `--source=all|hunspell|kelly` och `--mode=insert-missing|merge-safe|refresh-source-metadata`
-
-## Datamodell
-
-1. `Word` — canonical, spelbar vy
-2. `WordSourceRecord` — provenance per källa/import
-3. `WordEditorialOverride` — manuella redaktionella beslut
-4. `ImportBatch` — importjobb med metadata för källa, fil och status
-5. `ImportBatchRow` — radlogg för importerat, återanvänt, ignorerat och fel
-
-Importer ska upserta `Word` på `normalizedAnswer`, skapa/uppdatera källposter och reconciliara canonical fält via `resolveCanonicalWord`.
-
-Rekommenderat default-läge: `merge-safe`.
 
 ## Viktiga noteringar
 
@@ -92,6 +175,30 @@ Redaktionella beslut lever i `Word`, `WordEditorialOverride` och övriga innehå
 
 Den separationen är viktig: en ny import får uppdatera provenance och rå källinformation, men ska inte skriva över Ordklubbens redaktionella bedömningar.
 
-## Speldata
+## Aktiva spel
 
-Dagens Ord, Stegvis, Ordstorm och övriga spel hämtar ord och spelinnehåll från databasen — inte från filer under `data/`.
+| Spel       | Publicering                | Runtime                            |
+| ---------- | -------------------------- | ---------------------------------- |
+| Dagens Ord | `GameEdition` + `SOLUTION` | Dagens lösningsord + gissningspool |
+| Stegvis    | `GameEdition` + kedja      | Dagens publicerade kedja           |
+| Ordfläta   | `GameEdition` → `Puzzle`   | Dagens grid via `puzzleId`         |
+| Ordstorm   | ingen edition              | `GameWord`, obegränsade rundor     |
+
+Testspel (`Emojirebus`, `Kastet`, `Skrapet`, `Bildjakten`) ligger utanför denna arkitekturfas.
+
+## Dev-seed
+
+```bash
+npm run seed:dagens-ord
+npm run seed:stegvis
+npm run seed:ordflata
+npm run seed:ordstorm
+```
+
+Seed-script är Content Pipeline — inte runtime.
+
+## Flöde i runtime
+
+1. Game Provider hämtar edition, profiler eller puzzle-referens via Content Layer
+2. Game Rules arbetar på det inlästa underlaget
+3. UI renderar resultatet
