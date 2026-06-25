@@ -6,42 +6,38 @@ import {
   DatabaseNotice,
   Table,
 } from '@/components/admin/admin-ui';
-import { importErrorTableHeaders } from '@/components/admin/import-result-summary';
+import { ImportResultStatGrid } from '@/components/admin/import-result-summary';
 import { IMPORT_BATCH_TYPE_LABELS } from '@/lib/content/constants';
-import { parseBatchErrorRows, parseBatchSummary } from '@/lib/content/import-batch';
+import { formatImportBatchSource } from '@/lib/content/import-job';
+import { parseBatchSummary } from '@/lib/content/import-batch';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/prisma';
 
 type Params = Promise<{
   id: string;
 }>;
 
-function buildSummaryRows(
-  batchType: import('@prisma/client').ImportBatchType,
-  summary: ReturnType<typeof parseBatchSummary>,
-  errorCount: number,
+function renderOutcomeTableRows(
+  rows: Array<{
+    id: string;
+    rowNumber: number;
+    entityType: string;
+    answer: string | null;
+    hint: string | null;
+    value: string | null;
+    reason: string | null;
+  }>,
 ) {
-  if (batchType === 'LEXICON') {
-    return [
-      ['Rader lästa', String(summary?.totalRows ?? 0)],
-      ['Importerade', String(summary?.createdLexicalEntries ?? 0)],
-      ['Dubbletter', String(summary?.skippedDuplicateLexicalEntries ?? 0)],
-      ['Saknade ord', String(summary?.skippedMissingWords ?? 0)],
-      ['Felrader', String(summary?.failedRows ?? errorCount)],
-    ];
-  }
-
-  return [
-    ['Skapade ord', String(summary?.createdWords ?? 0)],
-    ['Återanvända ord', String(summary?.reusedWords ?? 0)],
-    ['Skippade ord', String(summary?.skippedWords ?? 0)],
-    ['Skapade nycklar', String(summary?.createdHints ?? 0)],
-    ['Skippade nycklar', String(summary?.skippedHints ?? 0)],
-    ['Skapade teman', String(summary?.createdThemes ?? 0)],
-    ['Återanvända teman', String(summary?.reusedThemes ?? 0)],
-    ['Skapade temakopplingar', String(summary?.createdThemeLinks ?? 0)],
-    ['Återanvända temakopplingar', String(summary?.reusedThemeLinks ?? 0)],
-    ['Felrader', String(summary?.failedRows ?? errorCount)],
-  ];
+  return rows.map((row) => (
+    <tr key={row.id} className="border-b border-print-ink/10 align-top">
+      <td className="px-3 py-3 text-print-ink">
+        {row.rowNumber === 0 ? 'Allmant' : row.rowNumber}
+      </td>
+      <td className="px-3 py-3 text-print-ink">{row.entityType}</td>
+      <td className="px-3 py-3 text-print-ink">{row.answer ?? '—'}</td>
+      <td className="px-3 py-3 text-print-muted">{row.hint ?? row.value ?? '—'}</td>
+      <td className="px-3 py-3 text-print-muted">{row.reason ?? '—'}</td>
+    </tr>
+  ));
 }
 
 export default async function ImportBatchDetailPage({ params }: { params: Params }) {
@@ -49,7 +45,7 @@ export default async function ImportBatchDetailPage({ params }: { params: Params
 
   if (!isDatabaseConfigured()) {
     return (
-      <AdminPage title="Importbatch">
+      <AdminPage title="Importdetaljer">
         <DatabaseNotice />
       </AdminPage>
     );
@@ -58,6 +54,11 @@ export default async function ImportBatchDetailPage({ params }: { params: Params
   const prisma = getPrisma();
   const batch = await prisma.importBatch.findUnique({
     where: { id },
+    include: {
+      rows: {
+        orderBy: [{ rowNumber: 'asc' }, { createdAt: 'asc' }],
+      },
+    },
   });
 
   if (!batch) {
@@ -65,69 +66,98 @@ export default async function ImportBatchDetailPage({ params }: { params: Params
   }
 
   const summary = parseBatchSummary(batch.summary);
-  const errorRows = parseBatchErrorRows(batch.errorRows);
-  const errorHeaders = importErrorTableHeaders(batch.type);
+  const importedRows = batch.rows.filter((row) => row.outcome === 'IMPORTED');
+  const reusedRows = batch.rows.filter((row) => row.outcome === 'REUSED');
+  const ignoredRows = batch.rows.filter((row) => row.outcome === 'IGNORED');
+  const errorRows = batch.rows.filter((row) => row.outcome === 'ERROR');
 
   return (
     <AdminPage
-      title="Importbatch"
-      description={batch.filename ?? 'CSV-import'}
+      title="Importdetaljer"
+      description={batch.filename ?? 'Importjobb'}
       actions={
         <AdminLinkButton href="/admin/import" variant="secondary">
-          Tillbaka
+          Tillbaka till import
         </AdminLinkButton>
       }
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <AdminPanel title="Batchmetadata">
-          <Table headers={['Fält', 'Värde']}>
+        <AdminPanel title="Metadata">
+          <Table headers={['Falt', 'Varde']}>
             {[
-              ['Typ', IMPORT_BATCH_TYPE_LABELS[batch.type]],
+              ['Importtyp', IMPORT_BATCH_TYPE_LABELS[batch.type]],
               ['Status', batch.status],
-              ['Filnamn', batch.filename ?? '—'],
-              ['Källa', batch.source ?? '—'],
-              ['totalRows', String(batch.totalRows)],
-              ['importedRows', String(batch.importedRows)],
-              ['skippedRows', String(batch.skippedRows)],
-              ['createdAt', batch.createdAt.toLocaleString('sv-SE')],
-              ['completedAt', batch.completedAt?.toLocaleString('sv-SE') ?? '—'],
+              ['Fil', batch.filename ?? '—'],
+              [
+                'Kalla',
+                formatImportBatchSource({
+                  sourceName: batch.sourceName,
+                  sourceVersion: batch.sourceVersion,
+                }),
+              ],
+              ['Licens', batch.sourceLicense ?? '—'],
+              ['URL', batch.sourceUrl ?? '—'],
+              ['Referens', batch.sourceReference ?? '—'],
+              ['Kommentar', batch.sourceComment ?? '—'],
+              ['Importerad', batch.importedAt.toLocaleString('sv-SE')],
+              ['Importerad av', batch.importedBy ?? '—'],
+              ['Fardig', batch.completedAt?.toLocaleString('sv-SE') ?? '—'],
             ].map(([label, value]) => (
               <tr key={label} className="border-b border-print-ink/10 align-top">
-                <td className="font-mono text-xs text-print-muted">{label}</td>
-                <td>{value}</td>
+                <td className="px-3 py-3 font-mono text-xs text-print-muted">{label}</td>
+                <td className="px-3 py-3 text-print-ink">{value}</td>
               </tr>
             ))}
           </Table>
         </AdminPanel>
 
-        <AdminPanel title="Sammanfattning">
-          <Table headers={['Resultat', 'Antal']}>
-            {buildSummaryRows(batch.type, summary, errorRows.length).map(([label, value]) => (
-              <tr key={label} className="border-b border-print-ink/10 align-top">
-                <td>{label}</td>
-                <td>{value}</td>
-              </tr>
-            ))}
-          </Table>
+        <AdminPanel title="Resultat">
+          <ImportResultStatGrid
+            batchType={batch.type}
+            summary={summary}
+            totalRows={batch.totalRows}
+            errorCount={errorRows.length}
+          />
         </AdminPanel>
       </div>
 
-      <AdminPanel title="Felrader och hoppade rader">
-        <Table headers={[...errorHeaders]}>
-          {errorRows.map((errorRow, index) => (
-            <tr
-              key={`${errorRow.rowNumber}-${index}`}
-              className="border-b border-print-ink/10 align-top"
-            >
-              <td>{errorRow.rowNumber === 0 ? 'Allmänt' : errorRow.rowNumber}</td>
-              <td>{errorRow.reason}</td>
-              <td className="text-print-muted">{errorRow.answer || '—'}</td>
-              <td className="text-print-muted">{errorRow.hint || '—'}</td>
-            </tr>
-          ))}
+      <AdminPanel title="Importerat">
+        <Table headers={['Rad', 'Typ', 'Ord', 'Post', 'Kommentar']}>
+          {renderOutcomeTableRows(importedRows)}
+        </Table>
+        {importedRows.length === 0 ? (
+          <p className="mt-3 text-sm text-print-muted">
+            Inga poster importerades i det har jobbet.
+          </p>
+        ) : null}
+      </AdminPanel>
+
+      <AdminPanel title="Ateranvant">
+        <Table headers={['Rad', 'Typ', 'Ord', 'Post', 'Kommentar']}>
+          {renderOutcomeTableRows(reusedRows)}
+        </Table>
+        {reusedRows.length === 0 ? (
+          <p className="mt-3 text-sm text-print-muted">
+            Inga poster ateranvandes i det har jobbet.
+          </p>
+        ) : null}
+      </AdminPanel>
+
+      <AdminPanel title="Ignorerat">
+        <Table headers={['Rad', 'Typ', 'Ord', 'Post', 'Kommentar']}>
+          {renderOutcomeTableRows(ignoredRows)}
+        </Table>
+        {ignoredRows.length === 0 ? (
+          <p className="mt-3 text-sm text-print-muted">Inga poster ignorerades i det har jobbet.</p>
+        ) : null}
+      </AdminPanel>
+
+      <AdminPanel title="Fel">
+        <Table headers={['Rad', 'Typ', 'Ord', 'Post', 'Kommentar']}>
+          {renderOutcomeTableRows(errorRows)}
         </Table>
         {errorRows.length === 0 ? (
-          <p className="mt-3 text-sm text-print-muted">Inga felrader i denna importbatch.</p>
+          <p className="mt-3 text-sm text-print-muted">Inga fel uppstod i det har jobbet.</p>
         ) : null}
       </AdminPanel>
     </AdminPage>

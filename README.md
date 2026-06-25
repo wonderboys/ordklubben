@@ -163,7 +163,12 @@ Scriptet:
 - tillämpar `data/seed/word-filters/never-allow-sv.ts`
 - tillämpar abbreviation-filter för Hunspell via `lib/dictionary/word-filters.ts`
 - importerar ord och källmetadata till Postgres
-- skapar `ImportBatch` och `WordSourceRecord` per källa
+- skapar `ImportBatch`, `ImportBatchRow` och `WordSourceRecord` per källa
+
+Viktiga noteringar:
+
+- `ImportBatch` fungerar nu praktiskt som projektets importjobb, även om modellnamnet fortfarande heter `ImportBatch` internt
+- `importedBy` sätts automatiskt till `Admin` tills adminflödet har riktig användaridentitet
 
 `data/seed/` är temporär tills never-allow flyttar till DB. Ordstorm seed-kurering ska till `OrdstormWordProfile` i databasen, inte till `data/`.
 
@@ -216,7 +221,15 @@ Första versionen av contentdatabasen använder Prisma + Postgres och innehålle
 - `Hint` för teknisk hintmodell, som i UI visas som `Nyckel`
 - `HintCandidate` för föreslagna nycklar som granskas innan de blir riktiga nycklar
 - `Theme` och `WordTheme` för teman
-- `ImportBatch` för enkel importspårning
+- `ImportBatch` för importjobb med källmetadata, filspårning och status
+- `ImportBatchRow` för radnivåloggning av importerat, återanvänt, ignorerat och fel
+
+Importflödet ska bevara separationen mellan:
+
+- datakälla och importproveniens
+- Ordklubbens redaktionella beslut
+
+En ny import får alltså inte skriva över redaktionellt arbete.
 
 Miljövariabel:
 

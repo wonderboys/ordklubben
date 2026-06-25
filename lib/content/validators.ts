@@ -304,6 +304,12 @@ export const importContentSchema = z.object({
   importType: z.enum(IMPORT_BATCH_TYPES),
   wordStatus: z.enum(['DRAFT', 'APPROVED']).optional(),
   hintStatus: z.enum(['DRAFT', 'APPROVED']).optional(),
+  sourceName: requiredTextField('Datakalla'),
+  sourceVersion: optionalTextField(),
+  sourceLicense: optionalTextField(),
+  sourceUrl: optionalTextField(),
+  sourceReference: optionalTextField(),
+  sourceComment: optionalTextField(),
 });
 
 export const addThemeToWordSchema = z.object({

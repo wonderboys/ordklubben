@@ -161,6 +161,7 @@ model Word {
   editorialOverride    WordEditorialOverride?
   gameWords            GameWord[]
   gameEditionWords     GameEditionWord[]
+  importRows           ImportBatchRow[]
 
   @@index([answer])
   @@index([status])
@@ -214,6 +215,8 @@ model WordLexicalEntry {
   id              String           @id @default(cuid())
   wordId          String
   word            Word             @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  importBatchId   String?
+  importBatch     ImportBatch?     @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
   type            LexicalEntryType
   value           String
   source          String           @default("manual")
@@ -223,9 +226,11 @@ model WordLexicalEntry {
   notes           String?          @db.Text
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  importRows      ImportBatchRow[]
 
   @@unique([wordId, type, value])
   @@index([wordId])
+  @@index([importBatchId])
   @@index([type])
   @@index([linkedWordId])
 }
@@ -341,6 +346,8 @@ model Hint {
   id                     String          @id @default(cuid())
   wordId                 String
   word                   Word            @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  importBatchId          String?
+  importBatch            ImportBatch?    @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
   text                   String
   type                   HintType        @default(DEFINITION)
   status                 ContentStatus   @default(DRAFT)
@@ -352,9 +359,11 @@ model Hint {
   updatedAt              DateTime        @updatedAt
   approvedFromCandidates HintCandidate[]
   puzzleEntries          PuzzleEntry[]
+  importRows             ImportBatchRow[] @relation("ImportBatchRowHint")
 
   @@unique([wordId, text])
   @@index([wordId])
+  @@index([importBatchId])
   @@index([status])
 }
 
@@ -500,6 +509,14 @@ model ImportBatch {
   type          ImportBatchType    @default(WORDS)
   filename      String?
   source        String?
+  sourceName    String?
+  sourceVersion String?
+  sourceLicense String?
+  sourceUrl     String?
+  sourceReference String?
+  sourceComment String?            @db.Text
+  importedAt    DateTime           @default(now())
+  importedBy    String?
   status        ImportBatchStatus  @default(PENDING)
   totalRows     Int                @default(0)
   importedRows  Int                @default(0)
@@ -508,5 +525,35 @@ model ImportBatch {
   summary       Json?
   createdAt     DateTime           @default(now())
   completedAt   DateTime?
+  rows          ImportBatchRow[]
   sourceRecords WordSourceRecord[]
+  hints         Hint[]
+  lexicalEntries WordLexicalEntry[]
+}
+
+model ImportBatchRow {
+  id             String           @id @default(cuid())
+  importBatchId  String
+  importBatch    ImportBatch      @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  rowNumber      Int
+  outcome        String
+  entityType     String
+  answer         String?
+  hint           String?
+  value          String?
+  reason         String?          @db.Text
+  wordId         String?
+  word           Word?            @relation(fields: [wordId], references: [id], onDelete: SetNull)
+  hintId         String?
+  importedHint   Hint?            @relation("ImportBatchRowHint", fields: [hintId], references: [id], onDelete: SetNull)
+  lexicalEntryId String?
+  lexicalEntry   WordLexicalEntry? @relation(fields: [lexicalEntryId], references: [id], onDelete: SetNull)
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+
+  @@index([importBatchId, outcome])
+  @@index([importBatchId, entityType])
+  @@index([wordId])
+  @@index([hintId])
+  @@index([lexicalEntryId])
 }

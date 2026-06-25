@@ -126,6 +126,7 @@ function redirectToWordsList(
 function revalidateWordListPaths() {
   revalidatePath('/admin/words');
   revalidatePath('/admin/review');
+  revalidatePath('/admin/ordvard');
   revalidatePath('/admin/themes');
 }
 
@@ -1001,6 +1002,15 @@ export async function importContentAction(formData: FormData) {
           prisma,
           csvText,
           filename: file.name,
+          sourceMetadata: {
+            sourceName: parsed.data.sourceName,
+            sourceVersion: parsed.data.sourceVersion,
+            sourceLicense: parsed.data.sourceLicense,
+            sourceUrl: parsed.data.sourceUrl,
+            sourceReference: parsed.data.sourceReference,
+            sourceComment: parsed.data.sourceComment,
+            importedBy: 'Admin',
+          },
         })
       : await importContent({
           prisma,
@@ -1009,9 +1019,19 @@ export async function importContentAction(formData: FormData) {
           importType: parsed.data.importType,
           defaultWordStatus: parsed.data.wordStatus ?? 'DRAFT',
           defaultHintStatus: parsed.data.hintStatus ?? 'DRAFT',
+          sourceMetadata: {
+            sourceName: parsed.data.sourceName,
+            sourceVersion: parsed.data.sourceVersion,
+            sourceLicense: parsed.data.sourceLicense,
+            sourceUrl: parsed.data.sourceUrl,
+            sourceReference: parsed.data.sourceReference,
+            sourceComment: parsed.data.sourceComment,
+            importedBy: 'Admin',
+          },
         });
 
   revalidatePath('/admin/import');
+  revalidatePath('/admin/ordvard');
   revalidatePath('/admin/words');
   revalidatePath('/admin/themes');
 
@@ -1665,5 +1685,5 @@ export async function approveAllDraftWords() {
   });
 
   revalidateWordListPaths();
-  redirectWithMessage('/admin/review', 'success', `${result.count} utkast godkändes.`);
+  redirectWithMessage('/admin/ordvard', 'success', `${result.count} utkast godkändes.`);
 }

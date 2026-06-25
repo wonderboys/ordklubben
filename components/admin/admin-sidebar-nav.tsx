@@ -52,10 +52,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     match: (path) => path.startsWith('/admin/proposals'),
   },
   {
-    href: '/admin/review',
-    label: 'Granska',
+    href: '/admin/ordvard',
+    label: 'Ordvard',
     icon: SearchCheck,
-    match: (path) => path.startsWith('/admin/review') || path.startsWith('/admin/queue'),
+    match: (path) =>
+      path.startsWith('/admin/ordvard') ||
+      path.startsWith('/admin/review') ||
+      path.startsWith('/admin/queue'),
   },
 ];
 
