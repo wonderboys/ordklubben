@@ -101,34 +101,66 @@ enum WordRelationType {
   PART_OF
 }
 
+enum GameStatus {
+  ACTIVE
+  HIDDEN
+  ARCHIVED
+}
+
+enum EditionStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EditionType {
+  DAILY
+  WEEKLY
+  FEATURED
+  TEST
+  STATIC
+}
+
+enum GameEditionWordRole {
+  SOLUTION
+  SEED
+  START
+  TARGET
+  STEP
+  ENTRY
+}
+
 model Word {
-  id               String              @id @default(cuid())
-  answer           String
-  normalizedAnswer String              @unique
-  length           Int
-  language         String              @default("sv")
-  status           ContentStatus       @default(DRAFT)
-  source           String              @default("manual")
-  sourceReference  String?
-  difficulty       Int?
-  frequency        Int?
-  crosswordScore   Int?
-  notes            String?             @db.Text
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  hints            Hint[]
-  hintCandidates   HintCandidate[]
-  themes           WordTheme[]
-  puzzleEntries    PuzzleEntry[]
-  lexicalEntries         WordLexicalEntry[]
-  linkedLexicalEntries   WordLexicalEntry[] @relation("LexicalLinkedWord")
-  rebusEntries           RebusEntry[]
-  mediaAssets            MediaAsset[]
-  languageData           WordLanguageData?
-  outgoingRelations      WordRelation[]     @relation("WordRelationSource")
-  incomingRelations      WordRelation[]     @relation("WordRelationTarget")
-  sourceRecords          WordSourceRecord[]
-  editorialOverride      WordEditorialOverride?
+  id                   String                 @id @default(cuid())
+  answer               String
+  normalizedAnswer     String                 @unique
+  length               Int
+  language             String                 @default("sv")
+  status               ContentStatus          @default(DRAFT)
+  source               String                 @default("manual")
+  sourceReference      String?
+  difficulty           Int?
+  frequency            Int?
+  crosswordScore       Int?
+  notes                String?                @db.Text
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  hints                Hint[]
+  hintCandidates       HintCandidate[]
+  themes               WordTheme[]
+  puzzleEntries        PuzzleEntry[]
+  lexicalEntries       WordLexicalEntry[]
+  linkedLexicalEntries WordLexicalEntry[]     @relation("LexicalLinkedWord")
+  rebusEntries         RebusEntry[]
+  mediaAssets          MediaAsset[]
+  languageData         WordLanguageData?
+  outgoingRelations    WordRelation[]         @relation("WordRelationSource")
+  incomingRelations    WordRelation[]         @relation("WordRelationTarget")
+  sourceRecords        WordSourceRecord[]
+  editorialOverride    WordEditorialOverride?
+  gameWords            GameWord[]
+  gameEditionWords     GameEditionWord[]
 
   @@index([answer])
   @@index([status])
@@ -136,25 +168,25 @@ model Word {
 }
 
 model WordSourceRecord {
-  id               String       @id @default(cuid())
-  wordId           String
-  word             Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  importBatchId    String?
-  importBatch      ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
-  sourceKey        String
-  sourceReference  String?
-  rawValue         String?
-  normalizedValue  String
-  observedAnswer   String?
-  rank             Int?
-  frequency        Int?
-  cefr             String?
-  metadata         Json?
-  isExcluded       Boolean      @default(false)
-  firstImportedAt  DateTime     @default(now())
-  lastImportedAt   DateTime     @default(now())
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  wordId          String
+  word            Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  importBatchId   String?
+  importBatch     ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  sourceKey       String
+  sourceReference String?
+  rawValue        String?
+  normalizedValue String
+  observedAnswer  String?
+  rank            Int?
+  frequency       Int?
+  cefr            String?
+  metadata        Json?
+  isExcluded      Boolean      @default(false)
+  firstImportedAt DateTime     @default(now())
+  lastImportedAt  DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@unique([wordId, sourceKey, sourceReference])
   @@index([wordId])
@@ -163,17 +195,17 @@ model WordSourceRecord {
 }
 
 model WordEditorialOverride {
-  id             String        @id @default(cuid())
-  wordId         String        @unique
-  word           Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  id             String         @id @default(cuid())
+  wordId         String         @unique
+  word           Word           @relation(fields: [wordId], references: [id], onDelete: Cascade)
   answer         String?
   status         ContentStatus?
   difficulty     Int?
   frequency      Int?
   crosswordScore Int?
-  notes          String?       @db.Text
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 /// Lexical data describes meaning and relations — not playable hints.
@@ -235,25 +267,95 @@ model WordRelation {
   @@index([relationType])
 }
 
-model Hint {
-  id         String        @id @default(cuid())
-  wordId     String
-  word       Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  text       String
-  type       HintType      @default(DEFINITION)
-  status     ContentStatus @default(DRAFT)
-  difficulty Int?
-  tone       String?
-  source     String?
-  notes      String?       @db.Text
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
-  approvedFromCandidates HintCandidate[]
-  puzzleEntries        PuzzleEntry[]
+model Game {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  status      GameStatus    @default(ACTIVE)
+  description String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  words       GameWord[]
+  editions    GameEdition[]
+}
 
+model GameWord {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  wordId        String
+  word          Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  canBeGuess    Boolean  @default(false)
+  canBeSolution Boolean  @default(false)
+  canBeSeed     Boolean  @default(false)
+  blocked       Boolean  @default(false)
+  priority      Int?
+  difficulty    Int?
+  notes         String?  @db.Text
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([gameId, wordId])
+  @@index([gameId, blocked])
+  @@index([gameId, canBeGuess])
+  @@index([gameId, canBeSolution])
+  @@index([gameId, canBeSeed])
+  @@index([wordId])
+}
+
+model GameEdition {
+  id          String            @id @default(cuid())
+  gameId      String
+  game        Game              @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  title       String?
+  editionType EditionType
+  status      EditionStatus     @default(DRAFT)
+  publishAt   DateTime?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  words       GameEditionWord[]
+
+  @@index([gameId, status])
+  @@index([gameId, publishAt])
+}
+
+model GameEditionWord {
+  id        String              @id @default(cuid())
+  editionId String
+  edition   GameEdition         @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  wordId    String
+  word      Word                @relation(fields: [wordId], references: [id], onDelete: Restrict)
+  role      GameEditionWordRole
+  position  Int?
+  metadata  Json?
+  createdAt DateTime            @default(now())
+
+  @@unique([editionId, wordId, role])
+  @@index([editionId, role, position])
+  @@index([wordId])
+}
+
+model Hint {
+  id                     String          @id @default(cuid())
+  wordId                 String
+  word                   Word            @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  text                   String
+  type                   HintType        @default(DEFINITION)
+  status                 ContentStatus   @default(DRAFT)
+  difficulty             Int?
+  tone                   String?
+  source                 String?
+  notes                  String?         @db.Text
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  approvedFromCandidates HintCandidate[]
+  puzzleEntries          PuzzleEntry[]
+
+  @@unique([wordId, text])
   @@index([wordId])
   @@index([status])
-  @@unique([wordId, text])
 }
 
 model HintCandidate {
@@ -331,27 +433,27 @@ model Theme {
 }
 
 model WordTheme {
-  wordId    String
-  themeId   String
-  word      Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  theme     Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  wordId  String
+  themeId String
+  word    Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  theme   Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
 
   @@id([wordId, themeId])
   @@index([themeId])
 }
 
 model Puzzle {
-  id          String        @id @default(cuid())
-  type        PuzzleType    @default(WORD_GRID)
-  title       String
-  slug        String?       @unique
-  status      PuzzleStatus  @default(DRAFT)
-  width       Int
-  height      Int
-  description String?       @db.Text
-  publishDate DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String              @id @default(cuid())
+  type         PuzzleType          @default(WORD_GRID)
+  title        String
+  slug         String?             @unique
+  status       PuzzleStatus        @default(DRAFT)
+  width        Int
+  height       Int
+  description  String?             @db.Text
+  publishDate  DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   entries      PuzzleEntry[]
   blockedCells PuzzleBlockedCell[]
 
@@ -394,17 +496,17 @@ model PuzzleEntry {
 }
 
 model ImportBatch {
-  id           String            @id @default(cuid())
-  type         ImportBatchType   @default(WORDS)
-  filename     String?
-  source       String?
-  status       ImportBatchStatus @default(PENDING)
-  totalRows    Int               @default(0)
-  importedRows Int               @default(0)
-  skippedRows  Int               @default(0)
-  errorRows    Json?
-  summary      Json?
-  createdAt    DateTime          @default(now())
-  completedAt  DateTime?
+  id            String             @id @default(cuid())
+  type          ImportBatchType    @default(WORDS)
+  filename      String?
+  source        String?
+  status        ImportBatchStatus  @default(PENDING)
+  totalRows     Int                @default(0)
+  importedRows  Int                @default(0)
+  skippedRows   Int                @default(0)
+  errorRows     Json?
+  summary       Json?
+  createdAt     DateTime           @default(now())
+  completedAt   DateTime?
   sourceRecords WordSourceRecord[]
 }
