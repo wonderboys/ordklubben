@@ -409,6 +409,11 @@ export function StegvisGame({ session }: StegvisGameProps) {
   const newPuzzle = () => {
     const pool = puzzleBundles.length > 1 ? puzzleBundles : getPlayReadyBundles(fallbackBundles);
 
+    if (pool.length === 0) {
+      resetForBundle(activeBundle);
+      return;
+    }
+
     const puzzle = pickRandomPuzzle(
       pool.map((bundle) => bundle.puzzle),
       activeBundle.puzzle.id,

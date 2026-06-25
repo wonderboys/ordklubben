@@ -21,7 +21,7 @@ export default async function StegvisPage() {
           {session ? (
             <StegvisGame session={session} />
           ) : (
-            <BodyText>Ingen spelbar Stegvis-kedja finns publicerad i databasen ännu.</BodyText>
+            <BodyText>Ingen publicerad Stegvis-omgång finns för idag ännu.</BodyText>
           )}
         </GameShell>
       </div>
