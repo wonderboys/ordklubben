@@ -14,8 +14,8 @@ Ordklubben is a Swedish word-game platform built as a focused, mobile-first web 
 
 Current product shape:
 
-- one active playable game in development: `Ordstorm`
-- a small platform shell for future Swedish word games
+- four active DB-backed games: `Dagens Ord`, `Ordstorm`, `Stegvis`, `Ordfläta`
+- test prototypes (`Emojirebus`, `Kastet`, `Skrapet`, `Bildjakten`) — outside the active architecture phase
 - local-first state and lightweight architecture
 
 Long-term vision:
@@ -69,7 +69,7 @@ A stronger core loop is preferred over a larger feature set.
 
 Current priorities:
 
-1. Improve Swedish word quality and the wordlist pipeline.
+1. Improve Swedish word quality and the import/editorial pipeline around the database.
 2. Improve mobile gameplay and interaction quality.
 3. Improve Ordstorm game feel, feedback, and replayability.
 4. Validate that players want “one more round”.
@@ -84,9 +84,21 @@ Do not prioritize right now:
 
 ## Current Games
 
+### Dagens Ord
+
+Daily five-letter word game. Published via `GameEdition` + `GameEditionWord(SOLUTION)`.
+
+### Stegvis
+
+Daily word-chain game. Published via `GameEdition` + `START`/`STEP`/`TARGET` roles.
+
+### Ordfläta
+
+Daily crossword beta. Published via `GameEdition` → `metadata.puzzleId` → `Puzzle` grid.
+
 ### Ordstorm
 
-Ordstorm is a fast Swedish anagram game.
+Fast Swedish anagram game — **free play**, not daily.
 
 Core rules:
 
@@ -97,13 +109,9 @@ Core rules:
 - each letter can only be used as many times as it appears
 - scoring is length-based, with a bonus for 6-letter words
 - duplicate finds are rejected
+- unlimited rounds; seed chosen randomly per round from `GameWord` profiles
 
-Design goals:
-
-- instant readability
-- high tempo without visual stress
-- tactile, focused, game-first interaction
-- clear feedback, minimal chrome
+Word catalog comes from `Game` → `GameWord` → `Word`. No `GameEdition` in normal runtime.
 
 Other routes such as `Ladder` and `Connections` are placeholders or concept space unless the user explicitly asks to work on them.
 
@@ -117,52 +125,106 @@ Stack:
 - Framer Motion
 - shadcn/ui-style primitives
 
+Runtime stack:
+
+```text
+Content Pipeline  →  Database  →  Content Layer  →  Game Provider  →  Game Rules  →  UI
+```
+
 Architecture shape:
 
 - `app/` contains routes and page composition
 - `components/games/` contains reusable game UI and HUD pieces
-- `lib/games/` contains game-local rules and content providers
-- `lib/game/` contains compatibility exports and shared legacy helpers during migration
-- `lib/dictionary/` contains Swedish word rules, normalization, and wordlist tooling
-- `lib/server/words/` contains DB-backed word access
+- `lib/games/` contains game-local rules and Game Providers
+- `lib/game/` contains shared game helpers reused across games
+- `lib/dictionary/` contains Swedish word rules, normalization, and import/editorial language tooling
+- `lib/content/` and `lib/server/words/` form the **Content Layer** — runtime DB reads without game rules, UI, publication logic, generators, or `data/raw`
 - `lib/storage/` contains browser persistence only
-- `data/` contains raw import sources and seed filter rules only
+- `data/raw/` is a temporary import surface for external word sources — not runtime, not part of game data flow
 
 Important boundaries:
 
 - keep gameplay logic out of page files when possible
 - keep dictionary rules reusable across future games
 - keep storage concerns separate from game rules
-- avoid introducing backend assumptions into current game logic
+- keep Content Layer separate from game-specific selection
+- keep publication concerns in Game Providers, not in Content Layer or Game Rules
+- runtime reads only from the database — never from `data/raw` or static word lists
+- Content Pipeline (import, seed, admin, generators) writes to DB and is not called by runtime
 
-## Wordlist System
+## Data Model
 
-Ord quality matters. Treat the word pipeline as product infrastructure.
+Word quality matters. Treat the database model and Content Pipeline as product infrastructure.
 
-Current model:
+### Database
 
-- active runtime words come from the database via `lib/server/words/`
-- raw local source files live in `data/raw/`
-- `data/seed/word-filters/never-allow-sv.ts` is a temporary import blocklist until DB editorial override exists
-- algorithmic import rules live in `lib/dictionary/word-filters.ts`
-- Ordstorm seed curation belongs in DB (`OrdstormWordProfile`), not in `data/`
-- raw word import runs through `scripts/import-words.ts` (`npm run import:words`)
+End-to-end architecture starts in the database.
 
-Source intent:
+| Concept                | Meaning                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `Word`                 | Lexical truth — the word record                                                                  |
+| `Game`                 | The game (`slug`)                                                                                |
+| `GameWord`             | How a specific game uses a word (`canBeGuess`, `canBeSeed`, `blocked`, `priority`, `difficulty`) |
+| `GameEdition`          | Published content for games with published rounds                                                |
+| `GameEditionWord`      | Word roles in an edition (`SOLUTION`, `START`, `STEP`, `TARGET`, …)                              |
+| `Puzzle`               | Content/grid model (Ordfläta) — not the publication model                                        |
+| `Language` / `Lexicon` | Lexical information (evolving)                                                                   |
 
-- Hunspell/SFOL style inputs support broad word coverage
-- Kelly/Språkbanken style inputs support frequency and playability metadata
+### Content Pipeline
 
-Runtime rule:
+Everything that **produces content before runtime** and writes to the database.
+
+Examples:
+
+- `npm run import:words`
+- `npm run seed:dagens-ord` · `seed:stegvis` · `seed:ordflata` · `seed:ordstorm`
+- generators in `lib/content/`
+- admin in `app/admin/`
+- future automated jobs
+
+Pipeline may read `data/raw` as an import source. Runtime never does.
+
+### Content Layer
+
+- lives in `lib/content/` and `lib/server/words/`
+- reads words, hints, editions, profiles from DB
+- no game UI, no game rules, no publication logic, no generators, no `data/raw`
+
+### Game Providers
+
+- `lib/games/<game>/word-provider.ts` or `content-provider.ts`
+- build the right catalog or session per game
+
+### Game Rules
+
+- `lib/games/<game>/rules.ts`
+- pure game logic, no DB, no `data/` imports
+
+Dev seeds:
+
+```bash
+npm run seed:dagens-ord
+npm run seed:stegvis
+npm run seed:ordflata
+npm run seed:ordstorm
+```
+
+Runtime rules:
 
 - no active game route should read directly from `data/`
-- all game word access should go through DB-backed providers
+- all game content goes through DB-backed Game Providers
+- Content Layer must not contain game-specific selection logic or create published content
+- `rules.ts` must not read from `data/` or talk directly to the database
+- Ordstorm free play uses `GameWord` — no `GameEdition` in normal runtime
+- Ordfläta publication is via `GameEdition` → `Puzzle`; `Puzzle.status` does not drive runtime
 
 Do not:
 
 - download new lexical data automatically unless explicitly asked
 - silently weaken Swedish normalization or filtering rules
-- add static word lists, generated files, or CSV build outputs under `data/`
+- describe Hunspell, Kelly, CSV files, or other raw sources as runtime architecture
+- add static word lists, generated files, or CSV build outputs as runtime dependencies
+- use `GameEdition` for Ordstorm free play unless explicitly building a special-round feature
 - treat placeholder word data as “good enough” for product decisions
 
 ## Local Storage
@@ -209,13 +271,14 @@ Do not build without explicit instruction:
 - heavy global state management
 - large visual redesigns
 
-Avoid speculative platform work unless it directly improves current gameplay or the word pipeline.
+Avoid speculative platform work unless it directly improves current gameplay, the database-backed content model, or the Content Pipeline.
 
 ## Development Principles
 
 - make small, incremental improvements
 - verify changes with `npm run lint` and `npm run build`
-- when working on word data, also run `npm run import:words` against a dev database if relevant
+- when working on word data, run `npm run import:words` against a dev database if relevant
+- when working on game content, run the relevant `seed:*` script in dev
 - avoid large refactors unless the user explicitly asks for one
 - preserve working behavior while improving internals
 - prefer reversible changes over sweeping rewrites

@@ -1,6 +1,6 @@
 # Ordklubben
 
-Ordklubben är en svensk ordspelsplattform byggd som en fokuserad, mobil-först webbapp. Projektet började med `Ordstorm`, men innehåller nu flera spelbara prototyper, dagliga format och ett växande content/admin-flöde för att kurera ord, teman, pussel och ledtrådar lokalt.
+Ordklubben är en svensk ordspelsplattform byggd som en fokuserad, mobil-först webbapp med fyra aktiva DB-drivna spel och ett växande content/admin-flöde för ord, teman, pussel och ledtrådar.
 
 Målet med projektet:
 
@@ -10,7 +10,7 @@ Målet med projektet:
 
 Nuvarande fokus:
 
-- stark svensk språkkvalitet i ordlistor, ledtrådar och pussel
+- stark svensk språkkvalitet i orddata, ledtrådar och pussel
 - snabb, tydlig mobilupplevelse
 - återanvändbara spelmönster för fler små spel utan att låsa arkitekturen för tidigt
 
@@ -27,11 +27,11 @@ Nuvarande fokus:
 Produktionsnära eller spelbara just nu:
 
 - `Dagens Ord`: dagligt fem-bokstavsspel med sex försök
-- `Ordstorm`: snabbt anagramspel med sex bokstäver och en minut per runda
+- `Ordstorm`: snabbt anagramspel med sex bokstäver — free play, obegränsat antal rundor
 - `Stegvis`: dagligt ordkedjespel där ett ord förvandlas till ett annat
 - `Ordfläta`: dagligt betatest med nycklar och flätad ordstruktur
 
-Tidiga testspel och koncept i repo:t:
+Tidiga testspel (utanför den aktiva arkitekturfasen):
 
 - `Emojirebus`
 - `Kastet`
@@ -63,9 +63,6 @@ data/
   raw/
     hunspell/
     kelly/
-  seed/
-    word-filters/
-      never-allow-sv.ts
 hooks/
   use-ordstorm-stats.ts
   use-stegvis-stats.ts
@@ -74,6 +71,8 @@ lib/
   db/
   dictionary/
   game/
+  games/
+  server/
   storage/
 prisma/
 scripts/
@@ -81,13 +80,18 @@ scripts/
 
 Arkitektur i korthet:
 
-- `app/` innehåller routes och sidkomposition
-- `components/games/` samlar återanvändbara spellayouter, HUD-delar och spelspecifika UI-komponenter
-- `lib/game/` innehåller regler, scoring och ren spelogik
-- `lib/dictionary/` innehåller svensk normalisering, ordregler och ordlisteverktyg
-- `lib/content/` innehåller contentmodell, import, pusselgeneratorer och adminlogik
-- `lib/storage/` innehåller defensiv browser storage utan backendkrav
-- `data/` innehåller råimportkällor och manuella filterregler — inte spelruntime
+```text
+Content Pipeline  →  Database  →  Content Layer  →  Game Provider  →  Game Rules  →  UI
+```
+
+- `app/` — routes och sidkomposition
+- `components/games/` — spellayouter, HUD, spelspecifikt UI
+- `lib/games/` — Game Providers och Game Rules per spel
+- `lib/game/` — delade spelhjälpare mellan spel
+- `lib/dictionary/` — svensk normalisering och språkregler
+- `lib/content/` och `lib/server/words/` — **Content Layer** (läser DB)
+- `lib/storage/` — browser storage
+- `data/raw/` — tillfällig importyta för externa ordkällor (inte runtime)
 
 ## Ordstorm
 
@@ -106,38 +110,75 @@ Nuvarande gameplay:
 - hittade ord visas live
 - rundstatistik sparas i `localStorage`
 
-## Ordlistor
+## Låst arkitektur
 
-Spel hämtar ord från Postgres via `lib/server/words/` och spelspecifika providers.
+Databasen är enda sanningskällan. Arkitekturen börjar i databasen — inte i filer.
 
-Repo:t innehåller bara råkällor och importstöd under `data/`:
+```text
+Content Pipeline     import, seed, admin, generatorer
+        ↓
+Database
+        ↓
+Content Layer        lib/content/, lib/server/words/
+        ↓
+Game Provider        lib/games/<game>/
+        ↓
+Game Rules           lib/games/<game>/rules.ts
+        ↓
+UI
+```
 
-- `data/raw/hunspell/sv_SE.dic` — bred Hunspell/SFOL-täckning
-- `data/raw/kelly/Swedish-Kelly_M3_CEFR.csv` — frekvens och CEFR-metadata
-- `data/seed/word-filters/never-allow-sv.ts` — temporär importblocklista (flyttas till DB senare)
+| Lager             | Ansvar                                                                       |
+| ----------------- | ---------------------------------------------------------------------------- |
+| **Database**      | `Word`, `Game`, `GameWord`, `GameEdition`, `GameEditionWord`, `Puzzle`, …    |
+| **Content Layer** | Läser DB. Ingen spellogik, UI, publiceringslogik, generator eller `data/raw` |
+| **Game Provider** | Bygger spelunderlag per spel. Tillämpar publiceringsregler                   |
+| **Game Rules**    | Ren spellogik utan DB                                                        |
+| **UI**            | Rendering och lokal spelstate                                                |
 
-Algoritmiska importregler (t.ex. abbreviation-filter) ligger i `lib/dictionary/word-filters.ts`.
+### Begrepp
 
-All normalisering och validering i spel går via `lib/dictionary/`:
+- `Word` — lexikal sanning
+- `Game` — spel
+- `GameWord` — hur ett specifikt spel använder ett ord
+- `GameEdition` — publicerat innehåll för spel med publicerade omgångar
+- `GameEditionWord` — ordens roller i en edition
+- `Puzzle` — innehålls-/gridmodell (Ordfläta), inte publiceringsmodell
+
+### Aktiva spel
+
+| Spel       | Provider              | Publicering                |
+| ---------- | --------------------- | -------------------------- |
+| Dagens Ord | `word-provider.ts`    | `GameEdition` + `SOLUTION` |
+| Stegvis    | `content-provider.ts` | `GameEdition` + kedja      |
+| Ordfläta   | `content-provider.ts` | `GameEdition` → `Puzzle`   |
+| Ordstorm   | `word-provider.ts`    | `GameWord` (free play)     |
+
+All normalisering och validering i spel går via `lib/dictionary/` och rena spelregler:
 
 - `normalize-swedish.ts`: trim, casing och stöd för svenska tecken
 - `can-build-word.ts`: kontrollerar att ett ord faktiskt kan byggas av sexbokstavsrundan
 - `validate-word.ts`: samlar Ordstorms ordregler i en ren, testbar funktion
 - `letter-pool.ts`: bokstavsräkning och bokstavsblandning
 
-## Orddatapipeline
+## Content Pipeline
 
-Rådata läggs lokalt i:
+Allt som producerar innehåll före runtime och skriver till databasen.
 
-- `data/raw/hunspell/`
-- `data/raw/kelly/`
+- `npm run import:words` — ordimport
+- `npm run seed:dagens-ord` · `seed:stegvis` · `seed:ordflata` · `seed:ordstorm`
+- generatorer i `lib/content/`
+- admin i `app/admin/`
 
-Stödda källor:
+Pipeline läser ev. `data/raw` som importkälla. Runtime läser bara från databasen.
 
-- Hunspell/SFOL för bred ordtäckning
-- Kelly-listan eller annan Språkbanken-export för frekvens och spelbarhet
+### `data/raw`
 
-Stödda filformat:
+En tillfällig importyta för externa ordkällor — inte ett datalager, inte runtime, inte del av spelens dataflöde.
+
+Råfiler kan läggas i `data/raw/hunspell/` och `data/raw/kelly/` innan import.
+
+Stödda filformat i nuvarande importspår:
 
 - Hunspell `.dic`
 - Kelly `.csv` (semikolonseparerad export)
@@ -160,19 +201,19 @@ Scriptet:
 - normaliserar svenska ord till lowercase
 - stödjer `å`, `ä`, `ö`
 - filtrerar bort ogiltiga format och proper nouns
-- tillämpar `data/seed/word-filters/never-allow-sv.ts`
+- kan tillfälligt tillämpa manuella importfilter innan motsvarande editorial override finns i DB
 - tillämpar abbreviation-filter för Hunspell via `lib/dictionary/word-filters.ts`
 - importerar ord och källmetadata till Postgres
 - skapar `ImportBatch` och `WordSourceRecord` per källa
 
-`data/seed/` är temporär tills never-allow flyttar till DB. Ordstorm seed-kurering ska till `OrdstormWordProfile` i databasen, inte till `data/`.
+Importkällor (Hunspell, Kelly) beskriver provenance — inte aktivt spelinnehåll.
 
 ## Källor Och Licens
 
 - Rådata laddas inte ner automatiskt av projektet
 - Du ansvarar själv för att lägga rätt filer i `data/raw/`
 - Kontrollera licensvillkor för Hunspell/SFOL, Kelly-listan och eventuella Språkbanken-exporter innan du distribuerar rådata eller importerad härledd data
-- README:n och scriptet dokumenterar källorna, men bundlar ingen extern orddatabas
+- README och scriptet dokumenterar källorna — de är inte runtime-källa för spelen
 
 ## Lokalt utvecklingsflöde
 
@@ -206,17 +247,30 @@ När du arbetar med orddata:
 npm run import:words
 ```
 
+När du arbetar med speldata i dev:
+
+```bash
+npm run seed:dagens-ord
+npm run seed:stegvis
+npm run seed:ordflata
+npm run seed:ordstorm
+```
+
 ## Contentdatabas
 
 Första versionen av contentdatabasen använder Prisma + Postgres och innehåller:
 
 - `Word` för ord
+- framtida `Language`-lager för språkregler och språkkontext
+- framtida `Lexicon`-lager för lexikal information som inte är spelstyrning
 - `WordSourceRecord` för provenance per råkälla/import
 - `WordEditorialOverride` för manuella redaktionella avvikelser
 - `Hint` för teknisk hintmodell, som i UI visas som `Nyckel`
 - `HintCandidate` för föreslagna nycklar som granskas innan de blir riktiga nycklar
 - `Theme` och `WordTheme` för teman
 - `ImportBatch` för enkel importspårning
+
+På sikt utökas databasen med tydligare `Language`/`Lexicon`-lager. Publicering sker via `Game`, `GameEdition` och `GameWord`.
 
 Miljövariabel:
 
@@ -344,16 +398,16 @@ Rekommenderat testflöde:
 
 ## Arkitekturprinciper
 
-- `app/(games)` innehåller spelrutter och kan växa utan att påverka övriga sidor.
-- `components/games` innehåller återanvändbara HUD- och interaktionskomponenter för flera spel.
-- `lib/dictionary` kapslar svenska ordregler och bokstavslogik så att flera framtida spel kan dela samma motor.
-- `lib/game` håller ren spelogik som kan återanvändas och testas separat.
-- `lib/storage` kapslar browser-lagrad statistik så att vi senare kan byta till API eller sync utan att röra spellagret.
+- Content Layer läser DB — utan spelspecifikt urval, spellogik eller UI
+- Game Provider bygger rätt underlag per spel
+- Game Rules håller ren spelogik utan DB-access
+- Content Pipeline (import, seed, admin, generatorer) skriver till DB — anropas inte av runtime
+- `data/raw` är importyta, inte arkitektur
 
 ## Nästa steg
 
-- lägga in riktiga Hunspell- och Kelly-filer i `data/raw/` om de saknas
-- köra `npm run import:words` mot en dev-databas
-- lägga till seedad daily-logik ovanpå samma seed-words-struktur
+- admin/publicerings-UI för `GameEdition` och `GameWord`
+- `GameWord` för Dagens Ord gissningspool
+- flytta kvarvarande manuella importregler till databasen
 - skapa gemensam statistikmodell för fler spel
 - lägga till lättare ljud eller haptik för ännu skarpare mobil feedback
