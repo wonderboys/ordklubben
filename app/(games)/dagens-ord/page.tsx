@@ -25,7 +25,7 @@ export default async function DagensOrdPage() {
           {catalog ? (
             <DagensOrdGame catalog={catalog} />
           ) : (
-            <BodyText>Inga fem-bokstavsord finns publicerade i databasen ännu.</BodyText>
+            <BodyText>Ingen publicerad Dagens Ord-omgång finns för idag ännu.</BodyText>
           )}
         </GameShell>
       </div>

@@ -17,6 +17,7 @@
     "check:stegvis-generator": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-stegvis-generator.ts",
     "check:dagens-ord": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-dagens-ord-rules.ts",
     "import:words": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/import-words.ts",
+    "seed:dagens-ord": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-dagens-ord-editions.ts",
     "seed:emojirebus": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/seed-emojirebus.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
