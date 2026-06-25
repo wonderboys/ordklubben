@@ -1,8 +1,4 @@
 export { formatStegvisEndpointClue, pickPrimaryClue } from '@/lib/content/stegvis/clue-display';
-export { generatedPuzzleToBundle } from '@/lib/content/stegvis/generated-puzzle-to-bundle';
-export { logStegvisGeneratorMetrics } from '@/lib/content/stegvis/generator-metrics';
-export { loadStegvisPuzzleBundle } from '@/lib/content/stegvis/load-puzzle-bundle';
-export { loadStegvisPuzzleBundles } from '@/lib/content/stegvis/load-puzzles';
 export {
   chainMeetsPlayRequirement,
   STEGVIS_CHAIN_WORD_COUNT,
@@ -18,7 +14,7 @@ export type {
   StegvisChainStep,
   StegvisPuzzleBundle,
   StegvisWordEndpoint,
-} from '@/lib/content/stegvis/types';
+} from '@/lib/games/stegvis/types';
 
 export {
   buildWordGraph,
