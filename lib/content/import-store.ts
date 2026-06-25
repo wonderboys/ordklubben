@@ -1,6 +1,6 @@
 import type { ImportBatch, ImportBatchType, Prisma, PrismaClient } from '@prisma/client';
-import type { BatchSummary } from '@/lib/content/import-batch';
-import type { ImportErrorRow } from '@/lib/content/import-content';
+import type { BatchSummary } from './import-batch.ts';
+import type { ImportErrorRow } from './import-content.ts';
 import {
   buildImportBatchSourceLabel,
   buildImportSourceKey,
@@ -8,7 +8,7 @@ import {
   trimImportMetadata,
   type ImportSourceMetadata,
   type LoggedImportRow,
-} from '@/lib/content/import-job';
+} from './import-job.ts';
 
 function isJsonObject(value: Prisma.InputJsonValue | undefined): value is Prisma.InputJsonObject {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);

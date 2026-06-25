@@ -1,4 +1,4 @@
-import { normalizeSwedish } from './normalize-swedish';
+import { normalizeSwedish } from './normalize-swedish.ts';
 import type {
   CefrLevel,
   FilterReason,
@@ -8,7 +8,7 @@ import type {
   RawWordSource,
   SeedCandidate,
   WordEntry,
-} from './wordlist-types';
+} from './wordlist-types.ts';
 
 export const ALLOWED_CEFR_LEVELS = new Set<CefrLevel>(['A1', 'A2', 'B1', 'B2']);
 

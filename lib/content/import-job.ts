@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { normalizeWordSource } from '@/lib/content/normalize-word-source';
+import { normalizeWordSource } from './normalize-word-source.ts';
 
 export const IMPORT_ROW_OUTCOMES = ['IMPORTED', 'REUSED', 'IGNORED', 'ERROR'] as const;
 export type ImportRowOutcome = (typeof IMPORT_ROW_OUTCOMES)[number];

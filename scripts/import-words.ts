@@ -1,14 +1,16 @@
+import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PrismaClient, type ContentStatus } from '@prisma/client';
-import { importRawWords, type ImportMode } from '../lib/content/import-raw-words';
-import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer';
+import type { ContentStatus } from '@prisma/client';
+import { getPrisma } from '../lib/db/prisma.ts';
+import { importRawWords, type ImportMode } from '../lib/content/import-raw-words.ts';
+import { isValidAnswerFormat, normalizeAnswer } from '../lib/content/normalize-answer.ts';
 import {
   detectAllowedAbbreviationFilterReason,
   ESTABLISHED_ABBREVIATIONS,
-} from '../lib/dictionary/word-filters';
+} from '../lib/dictionary/word-filters.ts';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 const ROOT_DIR = process.cwd();
 const RAW_DIR = path.join(ROOT_DIR, 'data', 'raw');
 const HUNSPELL_DIR = path.join(RAW_DIR, 'hunspell');
