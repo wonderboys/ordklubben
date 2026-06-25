@@ -141,15 +141,28 @@ Den långsiktiga arkitekturen börjar i databasen.
 4. `ImportBatch` — importjobb med metadata för källa, fil och status
 5. `ImportBatchRow` — radlogg för importerat, återanvänt, ignorerat och fel
 
-Aktivt importspår: `scripts/import-words.ts` (`npm run import:words`).
+Det finns just nu två aktiva importspår:
 
-Scriptet:
+- adminimporten i `app/admin/import`, `lib/content/import-content.ts` och `lib/content/import-lexicon.ts`
+- råimports-scriptet `scripts/import-words.ts` (`npm run import:words`)
+
+Adminimporten:
+
+- skapar `ImportBatch` med källmetadata (`sourceName`, `sourceVersion`, `sourceLicense`, `sourceUrl`, `sourceReference`, `sourceComment`)
+- sätter `importedBy` automatiskt till `Admin` tills riktig adminidentitet finns
+- loggar radutfall i `ImportBatchRow`
+- kopplar importerade hints och lexikonposter tillbaka till sitt `ImportBatch`
+- uppdaterar `WordSourceRecord` utan att skriva över redaktionella beslut
+
+Råimports-scriptet:
 
 - läser `data/raw/hunspell/*.dic` och `data/raw/kelly/*.csv`
 - tillämpar `data/seed/word-filters/never-allow-sv.ts`
 - tillämpar abbreviation-filter för Hunspell med undantag från `lib/dictionary/word-filters.ts`
 - skriver till Postgres (`Word`, `WordSourceRecord`, `ImportBatch`)
 - stödjer `--source=all|hunspell|kelly` och `--mode=insert-missing|merge-safe|refresh-source-metadata`
+
+Det äldre råimports-scriptet använder alltså samma kärnmodeller, men det loggar ännu inte hela adminflödets detaljnivå i `ImportBatchRow` och sätter inte samma källmetadatafält som adminimporten gör.
 
 ## Viktiga noteringar
 
@@ -165,7 +178,7 @@ Vi behöll det interna namnet för att undvika en onödigt riskfylld total renam
 
 Fältet `importedBy` sätts automatiskt vid import och ska inte anges manuellt i adminformuläret.
 
-Just nu används värdet `Admin`, eftersom adminflödet ännu inte har riktig användaridentitet eller sessionskoppling. När admin senare får autentisering bör `importedBy` börja spegla faktisk användare utan att ändra importens övriga proveniensmodell.
+Just nu används värdet `Admin` i adminimporten, eftersom adminflödet ännu inte har riktig användaridentitet eller sessionskoppling. När admin senare får autentisering bör `importedBy` börja spegla faktisk användare utan att ändra importens övriga proveniensmodell.
 
 ### Redaktionella ändringar ska fortsätta vara separata
 
